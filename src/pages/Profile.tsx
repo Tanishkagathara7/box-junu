@@ -139,62 +139,138 @@ const Profile = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-24 h-24 bg-gradient-cricket rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-12 h-12 text-white" />
+            <Card className="overflow-hidden shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="text-center bg-gradient-to-br from-cricket-green/5 to-sky-blue/5 pb-6">
+                <div className="relative w-28 h-28 mx-auto mb-6">
+                  <div className="w-full h-full bg-gradient-to-br from-cricket-green to-emerald-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white">
+                    {user?.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={user.name} 
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-14 h-14 text-white" />
+                    )}
+                  </div>
+                  {user?.isVerified && (
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center ring-3 ring-white">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
-                <CardTitle className="text-xl">{user?.name}</CardTitle>
-                <p className="text-gray-600">Cricket Enthusiast</p>
+                <CardTitle className="text-2xl font-bold text-gray-900 mb-2">{user?.name}</CardTitle>
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-2 h-2 bg-cricket-green rounded-full animate-pulse"></div>
+                  <p className="text-cricket-green font-medium">Cricket Enthusiast</p>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2 text-sm">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  <span>{user?.email}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span>{user?.phone}</span>
-                </div>
-                {user?.location && (
-                  <div className="flex items-center space-x-2 text-sm">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span>{user.location.cityName}, {user.location.state}</span>
+              
+              <CardContent className="p-6 space-y-6">
+                {/* Contact Information */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Contact Info</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Mail className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-sm text-gray-700 font-medium">{user?.email}</span>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Phone className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span className="text-sm text-gray-700 font-medium">{user?.phone}</span>
+                    </div>
+                    {user?.location && (
+                      <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <MapPin className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">{user.location.cityName}, {user.location.state}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
+                      <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <span className="text-sm text-gray-700 font-medium">Member since {formatDate(user?.createdAt || new Date().toISOString())}</span>
+                    </div>
                   </div>
-                )}
-                <div className="flex items-center space-x-2 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <span>Member since {formatDate(user?.createdAt || new Date().toISOString())}</span>
                 </div>
 
-                <Separator />
+                <Separator className="my-6" />
 
+                {/* Statistics */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Statistics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-cricket-green/10 to-emerald-50 p-4 rounded-xl border border-cricket-green/20">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-cricket-green mb-1">{bookings.length}</div>
+                        <div className="text-xs text-gray-600 font-medium">Total Bookings</div>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-sky-50 p-4 rounded-xl border border-blue-200">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600 mb-1">
+                          {bookings.filter(b => b.status === "confirmed" || b.status === "pending").length}
+                        </div>
+                        <div className="text-xs text-gray-600 font-medium">Active Bookings</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Booking Status Breakdown */}
+                  <div className="space-y-2">
+                    {[
+                      { status: 'confirmed', label: 'Confirmed', color: 'bg-green-500' },
+                      { status: 'pending', label: 'Pending', color: 'bg-yellow-500' },
+                      { status: 'completed', label: 'Completed', color: 'bg-blue-500' },
+                      { status: 'cancelled', label: 'Cancelled', color: 'bg-red-500' }
+                    ].map(({ status, label, color }) => {
+                      const count = bookings.filter(b => b.status === status).length;
+                      const percentage = bookings.length > 0 ? (count / bookings.length) * 100 : 0;
+                      return count > 0 ? (
+                        <div key={status} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-2 h-2 rounded-full ${color}`}></div>
+                            <span className="text-gray-600">{label}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900">{count}</span>
+                            <span className="text-gray-500">({percentage.toFixed(0)}%)</span>
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Action Buttons */}
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
-                      Total Bookings
-                    </span>
-                    <Badge variant="secondary">{bookings.length}</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
-                      Active Bookings
-                    </span>
-                    <Badge variant="secondary">
-                      {bookings.filter(b => b.status === "confirmed" || b.status === "pending").length}
-                    </Badge>
-                  </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-600/90 text-white font-medium py-3 shadow-lg hover:shadow-xl transition-all duration-200"
+                    onClick={() => navigate("/")}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Book New Ground
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full border-2 border-gray-200 hover:border-cricket-green/30 hover:bg-cricket-green/5 text-gray-700 font-medium py-3 transition-all duration-200"
+                    onClick={() => {/* Add edit profile functionality */}}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
                 </div>
-
-                <Separator />
-
-                <Button
-                  variant="outline"
-                  className="w-full text-cricket-green border-cricket-green hover:bg-cricket-green/10"
-                  onClick={() => navigate("/")}
-                >
-                  Book New Ground
-                </Button>
               </CardContent>
             </Card>
           </div>

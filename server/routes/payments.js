@@ -165,7 +165,7 @@ router.post("/create-order", authMiddleware, async (req, res) => {
       order_meta: {
         // Always use your real frontend and backend URLs for redirect and webhook
         return_url: `https://box-cash.vercel.app/payment/callback?booking_id=${booking._id}`,
-        notify_url: `${req.protocol}://${req.get('host')}/api/payments/webhook`,
+  notify_url: `https://${req.get('host')}/api/payments/webhook`,
         payment_methods: "cc,dc,nb,upi,paylater,emi"
       }
     };

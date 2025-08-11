@@ -404,6 +404,27 @@ const Navbar = ({
           {isMenuOpen && (
             <div className="md:hidden border-t border-gray-200 bg-white/98 backdrop-blur-md shadow-lg">
               <div className="px-4 py-6">
+                {/* Mobile User Profile - Top Section */}
+                {isAuthenticated && user ? (
+                  <div className="mb-6">
+                    {/* User Profile Card */}
+                    <div className="flex items-center space-x-4 px-4 py-4 bg-gradient-to-r from-cricket-green/5 to-emerald-50 rounded-xl border border-cricket-green/10">
+                      <Avatar className="w-14 h-14 ring-2 ring-white shadow-sm">
+                        <AvatarImage src={user.avatar} />
+                        <AvatarFallback className="bg-gradient-to-br from-cricket-green to-emerald-600 text-white font-semibold text-lg">
+                          {getUserInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-gray-900 text-lg truncate">{user.name}</div>
+                        <div className="text-sm text-gray-600 truncate font-medium">
+                          {user.email}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 {/* Mobile Location and Filter */}
                 <div className="flex gap-3 mb-6">
                   <Button
@@ -448,31 +469,9 @@ const Navbar = ({
                   })}
                 </div>
 
-                {/* Mobile User Profile & Menu */}
+                {/* Mobile User Menu Items */}
                 {isAuthenticated && user ? (
                   <div className="pt-6 border-t border-gray-100">
-                    {/* User Profile Card */}
-                    <div className="flex items-center space-x-4 px-4 py-4 mb-4 bg-gradient-to-r from-cricket-green/5 to-emerald-50 rounded-xl border border-cricket-green/10">
-                      <Avatar className="w-14 h-14 ring-2 ring-white shadow-sm">
-                        <AvatarImage src={user.avatar} />
-                        <AvatarFallback className="bg-gradient-to-br from-cricket-green to-emerald-600 text-white font-semibold text-lg">
-                          {getUserInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-gray-900 text-lg truncate">{user.name}</div>
-                        <div className="text-sm text-gray-600 truncate font-medium">
-                          {user.email}
-                        </div>
-                        {user?.isVerified && (
-                          <div className="flex items-center mt-1">
-                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                            <span className="text-xs text-green-600 font-medium">Verified Account</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
                     {/* Menu Items */}
                     <div className="space-y-1">
                       <Link

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { MapPin, Zap, Star, Clock, Sparkles, Search, Play, Trophy, Users, Shield, ChevronLeft, ChevronRight, Bell, Target, Filter } from "lucide-react";
+import { MapPin, Zap, Star, Clock, Sparkles, Search, Play, Trophy, Users, Shield, ChevronLeft, ChevronRight, Bell, Target, Filter, Smartphone, Phone, Mail, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
@@ -521,7 +521,7 @@ const Index = () => {
         
         {/* Animated Cricket Elements */}
         <div className="absolute top-10 left-2 animate-float hidden sm:block">
-          <div className="w-12 h-12 bg-cricket-green/20 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-gradient-to-br from-cricket-green/20 to-emerald-200 rounded-full flex items-center justify-center">
             <span className="text-xl">🏏</span>
           </div>
         </div>
@@ -540,7 +540,7 @@ const Index = () => {
           {/* Main Heading */}
           <div className="relative mb-6 sm:mb-8">
             <div className="absolute inset-0 bg-gradient-cricket opacity-20 blur-3xl rounded-full"></div>
-            <h1 className="relative text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display text-gray-900 mb-4 sm:mb-6 leading-tight">
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display text-gray-900 mb-4 sm:mb-6 leading-tight">
               Book Your Perfect{" "}
               <span className="text-transparent bg-gradient-to-r from-cricket-green via-cricket-yellow to-sky-blue bg-clip-text animate-pulse">
                 Cricket Ground
@@ -559,7 +559,7 @@ const Index = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-50"></div>
               <CardContent className="p-4 sm:p-5 lg:p-6 text-center relative z-10">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-cricket-green/20 to-emerald-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-green group-hover:animate-pulse" />
+                  <Trophy className="w-6 h-6 text-cricket-green group-hover:animate-pulse" />
                 </div>
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cricket-green to-emerald-600 bg-clip-text text-transparent mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300">{heroStats.grounds}+</h3>
                 <p className="text-gray-700 font-semibold text-xs sm:text-sm lg:text-base">Premium Cricket Grounds</p>
@@ -576,7 +576,7 @@ const Index = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-50"></div>
               <CardContent className="p-4 sm:p-5 lg:p-6 text-center relative z-10">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-cricket-yellow/20 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <Users className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-yellow group-hover:animate-bounce" />
+                  <Users className="w-6 h-6 text-cricket-yellow group-hover:animate-bounce" />
                 </div>
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cricket-yellow to-orange-500 bg-clip-text text-transparent mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300">{heroStats.players}+</h3>
                 <p className="text-gray-700 font-semibold text-xs sm:text-sm lg:text-base">Happy Players</p>
@@ -593,7 +593,7 @@ const Index = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-50"></div>
               <CardContent className="p-4 sm:p-5 lg:p-6 text-center relative z-10">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-sky-blue/20 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <Play className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-sky-blue group-hover:animate-spin" />
+                  <Play className="w-6 h-6 text-sky-blue group-hover:animate-spin" />
                 </div>
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-sky-blue to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300">{heroStats.bookings}+</h3>
                 <p className="text-gray-700 font-semibold text-xs sm:text-sm lg:text-base">Successful Bookings</p>
@@ -902,7 +902,7 @@ const Index = () => {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-1 bg-cricket-green"></div>
         </div>
         
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center space-x-2 bg-cricket-green/10 border border-cricket-green/20 rounded-full px-6 py-3 mb-6">
               <Trophy className="w-5 h-5 text-cricket-green animate-pulse" />
@@ -1028,11 +1028,11 @@ const Index = () => {
         {/* Stadium-style background pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23059669' fill-opacity='0.1'%3E%3Cpath d='M50 50m-20 0a20 20 0 1 1 40 0a20 20 0 1 1 -40 0'/%3E%3Cpath d='M30 50h40M50 30v40' stroke='%23059669' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }} />
         </div>
         
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center space-x-2 bg-cricket-green/10 border border-cricket-green/20 rounded-full px-6 py-3 mb-6">
               <Shield className="w-5 h-5 text-cricket-green animate-pulse" />
@@ -1055,7 +1055,7 @@ const Index = () => {
                   <Zap className="w-8 h-8 text-white group-hover:animate-pulse" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">⚡ Instant Booking</h3>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4">Book your slot instantly with real-time availability. No waiting, no delays - just pure cricket action!</p>
+                <p className="text-gray-600 text-sm mb-4">Book your slot instantly with real-time availability. No waiting, no delays - just pure cricket action!</p>
                 {/* Cricket stars */}
                 <div className="flex justify-center space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -1073,7 +1073,7 @@ const Index = () => {
                   <Shield className="w-8 h-8 text-white group-hover:animate-bounce" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">🛡️ Verified Grounds</h3>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4">All grounds are verified for quality and safety. Play with confidence on championship-level pitches!</p>
+                <p className="text-gray-600 text-sm mb-4">All grounds are verified for quality and safety. Play with confidence on championship-level pitches!</p>
                 {/* Cricket stars */}
                 <div className="flex justify-center space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -1091,7 +1091,7 @@ const Index = () => {
                   <Shield className="w-8 h-8 text-white group-hover:animate-spin" style={{ animationDuration: '2s' }} />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">🔒 Secure Payments</h3>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4">Multiple secure payment options available. Your money is as safe as a wicket-keeper's gloves!</p>
+                <p className="text-gray-600 text-sm mb-4">Multiple secure payment options available. Your money is as safe as a wicket-keeper's gloves!</p>
                 {/* Cricket stars */}
                 <div className="flex justify-center space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -1109,7 +1109,7 @@ const Index = () => {
                   <Clock className="w-8 h-8 text-white group-hover:animate-pulse" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">🏆 24/7 Support</h3>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4">Round-the-clock customer support for any queries. We're always here for your cricket journey!</p>
+                <p className="text-gray-600 text-sm mb-4">Round-the-clock customer support for any queries. We're always here for your cricket journey!</p>
                 {/* Cricket stars */}
                 <div className="flex justify-center space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -1394,7 +1394,7 @@ const Index = () => {
                 <div className="flex flex-col md:flex-row items-center justify-between">
                   <div className="flex items-center space-x-6 mb-4 md:mb-0">
                     <p className="text-gray-400 text-sm">
-                      © 2024 BoxCric. All rights reserved.
+                      &copy; 2024 BoxCric. All rights reserved.
                     </p>
                     <div className="flex items-center space-x-4 text-sm">
                       <a href="#" className="text-gray-400 hover:text-cricket-green transition-colors">Privacy Policy</a>
@@ -1485,4 +1485,3 @@ const Index = () => {
 };
 
 export default Index;
-

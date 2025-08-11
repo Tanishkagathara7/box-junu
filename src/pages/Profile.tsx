@@ -164,7 +164,6 @@ const Profile = () => {
                 )}
                 <div className="flex items-center space-x-2 text-sm">
                   <Calendar className="w-4 h-4 text-gray-500" />
-                  //@ts-ignore
                   <span>Member since {formatDate(user?.createdAt || new Date().toISOString())}</span>
                 </div>
 
@@ -202,11 +201,10 @@ const Profile = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="bookings" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="bookings" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="bookings">My Bookings</TabsTrigger>
                 <TabsTrigger value="favorites">Favorites</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
               {/* Bookings Tab */}
@@ -372,82 +370,7 @@ const Profile = () => {
                 </Card>
               </TabsContent>
 
-              {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Account Settings
-                  </h2>
-                </div>
 
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Email Notifications</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span>Booking confirmations</span>
-                        <Button variant="outline" size="sm">
-                          Enable
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Ground recommendations</span>
-                        <Button variant="outline" size="sm">
-                          Enable
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Promotional offers</span>
-                        <Button variant="outline" size="sm">
-                          Disable
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Privacy Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span>Location sharing</span>
-                        <Button variant="outline" size="sm">
-                          Enable
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Profile visibility</span>
-                        <Button variant="outline" size="sm">
-                          Public
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Account Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button
-                        variant="outline"
-                        className="w-full text-cricket-green border-cricket-green hover:bg-cricket-green/10"
-                      >
-                        Change Password
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full text-red-600 border-red-600 hover:bg-red-50"
-                      >
-                        Delete Account
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
             </Tabs>
           </div>
         </div>

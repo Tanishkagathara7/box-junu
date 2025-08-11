@@ -7,7 +7,7 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://box-new.onrender.com/api"
+    "VITE_API_URL": "https://box-cash.onrender.com/api"
   },
   "buildCommand": "npm run build",
   "outputDirectory": "dist",

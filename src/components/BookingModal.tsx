@@ -248,14 +248,16 @@ const BookingModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Book Cricket Ground</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-2xl max-sm:max-w-none max-sm:w-full max-sm:h-full max-sm:max-h-none max-sm:rounded-none">
+        <DialogHeader className="max-sm:pb-4">
+          <DialogTitle className="text-xl font-semibold text-gray-900 max-sm:text-lg max-sm:text-center">
+            Book {ground?.name}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 max-sm:space-y-4">
           {/* Ground Info */}
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="bg-gray-50 p-4 rounded-lg space-y-2 max-sm:p-3 max-sm:text-sm">
             <h3 className="font-semibold">{ground.name}</h3>
             <p className="text-sm text-gray-600">{ground.location.address}</p>
             <div className="mt-2 flex items-center space-x-4 text-sm">
@@ -266,108 +268,79 @@ const BookingModal = ({
 
           {/* Date Selection */}
           <div className="space-y-2">
-            <Label>Select Date</Label>
+            <Label htmlFor="date" className="flex items-center gap-2 max-sm:text-sm">
+              <Calendar className="h-4 w-4" />
+              Date <span className="text-red-500">*</span>
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
-                <div tabIndex={0} role="button" aria-label="Select date" className={cn(
-                  "w-full border rounded-lg px-4 py-3 flex items-center cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-cricket-green shadow-sm hover:shadow-md transition-all",
-                  !bookingData.date && "text-muted-foreground"
-                )}>
-                  <Calendar className="mr-2 h-5 w-5 text-cricket-green" />
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal max-sm:h-12 max-sm:text-sm",
+                    !bookingData.date && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
                   {bookingData.date ? (
                     format(bookingData.date, "PPP")
                   ) : (
                     <span>Pick a date</span>
                   )}
-                </div>
+                </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[350px] p-0 rounded-xl shadow-lg" side="bottom" align="start" onInteractOutside={e => e.preventDefault()}>
-                <div className="p-3">
-                  <CalendarComponent
-                    mode="single"
-                    selected={bookingData.date}
-                    onSelect={(date) =>
-                      date && setBookingData((prev) => ({ ...prev, date, timeSlot: "" }))
-                    }
-                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                    initialFocus
-                    showOutsideDays
-                  />
-                  <div className="flex justify-between mt-2 gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setBookingData((prev) => ({ ...prev, date: new Date(), timeSlot: "" }))}
-                    >
-                      Today
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setBookingData((prev) => ({ ...prev, date: undefined, timeSlot: "" }))}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
+              <PopoverContent className="w-auto p-0 max-sm:w-screen max-sm:max-w-none" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={bookingData.date}
+                  onSelect={(date) =>
+                    date &&
+                    setBookingData((prev) => ({ ...prev, date }))
+                  }
+                  disabled={(date) =>
+                    date < new Date() || date < new Date("1900-01-01")
+                  }
+                  initialFocus
+                  className="max-sm:text-sm"
+                />
               </PopoverContent>
             </Popover>
           </div>
 
           {/* Time Slot Selection */}
           <div className="space-y-2">
-            <Label>Select Time Slot</Label>
+            <Label className="flex items-center gap-2 max-sm:text-sm">
+              <Clock className="h-4 w-4" />
+              Time Slot <span className="text-red-500">*</span>
+            </Label>
             {isLoadingSlots ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-2 border-cricket-green border-t-transparent rounded-full animate-spin" />
+              <div className="text-center py-4 text-gray-500 max-sm:text-sm">
+                Loading available slots...
               </div>
             ) : (
-              <>
-                {(() => {
-                  // Filter slots: only show future slots for today, and available ones
-                  const now = new Date();
-                  const isToday = bookingData.date && format(bookingData.date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-                  const currentHour = now.getHours();
-                  const filteredSlots = availableSlots.filter(slotObj => {
-                    const slotHour = parseInt(slotObj.slot.split(':')[0], 10);
-                    if (isToday && slotHour <= currentHour) return false; // Hide past slots for today
-                    return true;
-                  });
-                  const amSlots = filteredSlots.filter(slot => parseInt(slot.slot.split(':')[0], 10) < 12);
-                  const pmSlots = filteredSlots.filter(slot => parseInt(slot.slot.split(':')[0], 10) >= 12);
-                  if (filteredSlots.length === 0) {
-                    return <div className="text-center text-gray-500 py-4">No available slots for this day</div>;
-                  }
-                  return (
-                    <select
-                      className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cricket-green text-base bg-white disabled:bg-gray-100 disabled:text-gray-400 shadow-sm hover:shadow-md transition-all"
-                      value={bookingData.timeSlot || ''}
-                      onChange={e => setBookingData(prev => ({ ...prev, timeSlot: e.target.value }))}
-                    >
-                      <option value="" disabled>Select a time slot</option>
-                      <optgroup label="AM">
-                        {amSlots.map(slot => (
-                          <option key={slot.slot} value={slot.slot} disabled={!slot.isAvailable}>
-                            {slot.label} {slot.isAvailable ? '' : '(Booked)'}
-                          </option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="PM">
-                        {pmSlots.map(slot => (
-                          <option key={slot.slot} value={slot.slot} disabled={!slot.isAvailable}>
-                            {slot.label} {slot.isAvailable ? '' : '(Booked)'}
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
-                  );
-                })()}
-              </>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto max-sm:grid-cols-1 max-sm:gap-3 max-sm:max-h-40">
+                {availableSlots.map((slot) => (
+                  <Button
+                    key={slot.slot}
+                    variant="outline"
+                    disabled={!slot.isAvailable}
+                    className={cn(
+                      "justify-start text-left font-normal max-sm:h-12 max-sm:text-sm",
+                      slot.isAvailable ? "" : "text-gray-400"
+                    )}
+                    onClick={() =>
+                      setBookingData((prev) => ({ ...prev, timeSlot: slot.slot }))
+                    }
+                  >
+                    {slot.label} {slot.isAvailable ? "" : "(Booked)"}
+                  </Button>
+                ))}
+              </div>
             )}
           </div>
 
           {/* Team Details */}
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1 max-sm:gap-3">
             <div className="space-y-2">
               <Label htmlFor="teamName">Team Name (Optional)</Label>
               <Input
@@ -408,8 +381,8 @@ const BookingModal = ({
             </div>
           </div>
 
-          {/* Contact Person */}
-          <div className="space-y-4">
+          {/* Contact Information */}
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1 max-sm:gap-3">
             <h4 className="font-medium">Contact Person Details</h4>
 
             <div className="space-y-2">
@@ -526,8 +499,8 @@ const BookingModal = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+          <div className="flex space-x-3 max-sm:flex-col max-sm:space-x-0 max-sm:space-y-3 max-sm:pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1 max-sm:h-12 max-sm:text-base">
               Cancel
             </Button>
             <Button
@@ -539,7 +512,7 @@ const BookingModal = ({
                 !bookingData.contactPerson.name ||
                 !bookingData.contactPerson.phone
               }
-              className="flex-1 bg-cricket-green hover:bg-cricket-green/90"
+              className="flex-1 bg-cricket-green hover:bg-cricket-green/90 max-sm:h-12 max-sm:text-base max-sm:font-semibold"
             >
               {isCreatingBooking ? "Creating..." : "Create Booking"}
             </Button>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell, Home, HelpCircle, Settings } from "lucide-react";
+import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell, Home, HelpCircle, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,7 +63,7 @@ const Navbar = ({
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
-    { name: "About Us", path: "/about", icon: Heart },
+    { name: "About Us", path: "/about", icon: Users },
     { name: "Help & Support", path: "/help", icon: HelpCircle },
   ];
 

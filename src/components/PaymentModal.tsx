@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { CreditCard, Shield, Clock, MapPin, Calendar, Users, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +64,7 @@ const PaymentModal = ({
   booking,
   onPaymentSuccess,
 }: PaymentModalProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -208,6 +210,9 @@ const PaymentModal = ({
           if ((verifyResponse as any)?.success) {
             toast.success("Payment successful! Booking confirmed.");
             onPaymentSuccess(booking);
+            setTimeout(() => {
+              navigate("/profile/bookings");
+            }, 500);
             onClose();
             return true;
           }
@@ -233,13 +238,19 @@ const PaymentModal = ({
         setTimeout(() => {
           clearInterval(interval);
           setIsProcessing(false);
-          toast.error("Payment timeout. Please try again.");
+          toast.error("Payment timeout or failed. Redirecting to home page.");
+          setTimeout(() => {
+            navigate("/");
+          }, 1000);
         }, 900000); // 15 minutes
       }, 5000); // Wait 5 seconds before first check
 
     } catch (error: any) {
       console.error("Payment initiation error:", error);
-      toast.error(error.message || "Failed to initiate payment");
+      toast.error("Payment failed or cancelled. Redirecting to home page.");
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
       setIsProcessing(false);
     }
   }, [booking, user, bookingData, onPaymentSuccess, onClose]);
@@ -247,7 +258,15 @@ const PaymentModal = ({
   if (!booking || !bookingData) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        toast.error("Payment was not completed. Redirecting to home page.");
+        setTimeout(() => {
+          navigate("/");
+        }, 1000);
+      }
+      onClose();
+    }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="payment-description">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-cricket-green">

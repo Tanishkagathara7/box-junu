@@ -260,7 +260,8 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
       return;
     }
     try {
-      const healthResponse = await fetch('http://localhost:3001/api/health');
+  const API = import.meta.env.VITE_API_URL || "https://box-cash.onrender.com/api";
+  const healthResponse = await fetch(`${API}/health`);
       if (!healthResponse.ok) throw new Error('Server not responding');
     } catch {
       toast.error("Server is not running. Please start the server first.");

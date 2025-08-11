@@ -179,10 +179,11 @@ const Index = () => {
 
   // Test API connection on mount
   useEffect(() => {
+    const API = import.meta.env.VITE_API_URL || "https://box-cash.onrender.com/api";
     const testAPI = async () => {
       try {
         console.log("🧪 Testing API connection...");
-        const response = await fetch("http://localhost:3001/api/test");
+        const response = await fetch(`${API}/test`);
         const data = await response.json();
         console.log("✅ API Test Result:", data);
       } catch (error) {

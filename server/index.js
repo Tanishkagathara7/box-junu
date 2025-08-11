@@ -157,6 +157,24 @@ io.on("connection", (socket) => {
 // Attach IO to app
 app.set("io", io);
 
+// Generic API info endpoint (optional)
+app.get("/api", (req, res) => {
+  res.json({
+    message: "BoxCric API",
+    status: "active",
+    version: "1.0.0",
+    endpoints: [
+      "/api/auth",
+      "/api/grounds",
+      "/api/bookings",
+      "/api/payments",
+      "/api/users",
+      "/api/test"
+    ],
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API Routes
 app.use("/api/test", testRoutes);
 app.use("/api/auth", authRoutes);

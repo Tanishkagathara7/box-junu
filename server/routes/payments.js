@@ -1,3 +1,39 @@
+import express from "express";
+import crypto from "crypto";
+import { authMiddleware } from "../middleware/auth.js";
+import Booking from "../models/Booking.js";
+import Ground from "../models/Ground.js";
+import { Cashfree, CFEnvironment } from "cashfree-pg";
+
+// NOTE: For development, we use placeholder HTTPS URLs since Cashfree requires HTTPS
+// In production, these will be your actual domain URLs
+
+// Cashfree credentials
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
+const CASHFREE_API_URL = process.env.CASHFREE_API_URL || "https://api.cashfree.com/pg"; // Production API
+const CASHFREE_SANDBOX_URL = "https://sandbox.cashfree.com/pg"; // Sandbox API
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+const IS_TEST_MODE = process.env.CASHFREE_MODE === 'test';
+
+// Use sandbox mode only if explicitly set to test mode
+const USE_SANDBOX = IS_TEST_MODE;
+
+// Initialize Cashfree SDK
+const cashfree = new Cashfree(
+  USE_SANDBOX ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION,
+  CASHFREE_APP_ID,
+  CASHFREE_SECRET_KEY
+);
+
+// Validate credentials
+if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+  console.error("❌ Cashfree credentials not found in environment variables!");
+  console.error("   Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY for payment processing");
+}
+
+const router = express.Router();
+
 /**
  * Public endpoint to fetch payment status from Cashfree if booking is not found
  * GET /api/payments/status/:bookingId

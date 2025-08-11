@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlify Deployment Test</title>
+</head>
+<body>
+    <h1>Netlify Deployment Test</h1>
+    <div id="status"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        // Test 1: Check if we can access the API
+        async function testAPI() {
+            try {
+                const response = await fetch('https://boxcric-api.onrender.com/api/health');
+                const data = await response.json();
+                statusDiv.innerHTML += `<p>✅ API Health Check: ${JSON.stringify(data)}</p>`;
+            } catch (error) {
+                statusDiv.innerHTML += `<p>❌ API Health Check Failed: ${error.message}</p>`;
+            }
+        }
+        
+        // Test 2: Check environment variables
+        function testEnvironment() {
+            statusDiv.innerHTML += `<p>🔍 Current URL: ${window.location.href}</p>`;
+            statusDiv.innerHTML += `<p>🔍 Hostname: ${window.location.hostname}</p>`;
+            statusDiv.innerHTML += `<p>🔍 Protocol: ${window.location.protocol}</p>`;
+        }
+        
+        // Test 3: Check if assets are loading
+        function testAssets() {
+            const assets = [
+                '/assets/index-CI8vptQP.js',
+                '/assets/index-DrAfakQ2.css',
+                '/assets/vendor-BtP0CW_r.js',
+                '/assets/ui-Cdwx3jfr.js'
+            ];
+            
+            assets.forEach(asset => {
+                fetch(asset)
+                    .then(response => {
+                        if (response.ok) {
+                            statusDiv.innerHTML += `<p>✅ Asset loaded: ${asset}</p>`;
+                        } else {
+                            statusDiv.innerHTML += `<p>❌ Asset failed: ${asset} (${response.status})</p>`;
+                        }
+                    })
+                    .catch(error => {
+                        statusDiv.innerHTML += `<p>❌ Asset error: ${asset} - ${error.message}</p>`;
+                    });
+            });
+        }
+        
+        // Run tests
+        testEnvironment();
+        testAPI();
+        testAssets();
+    </script>
+</body>
+</html> 

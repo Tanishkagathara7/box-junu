@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive jsxDEV Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Comprehensive jsxDEV Fix Test</h1>
+    
+    <div id="test-results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        // Test 1: Check if jsxDEV exists
+        addResult('🔍 Testing jsxDEV availability...', 'info');
+        
+        if (typeof window.jsxDEV === 'function') {
+            addResult('✅ jsxDEV function is available', 'success');
+        } else {
+            addResult('❌ jsxDEV function is NOT available', 'error');
+        }
+
+        // Test 2: Test calling jsxDEV
+        addResult('🔍 Testing jsxDEV function call...', 'info');
+        
+        try {
+            const result = window.jsxDEV();
+            addResult(`✅ jsxDEV call successful, returned: ${result}`, 'success');
+        } catch (error) {
+            addResult(`❌ jsxDEV call failed: ${error.message}`, 'error');
+        }
+
+        // Test 3: Test with different arguments
+        addResult('🔍 Testing jsxDEV with arguments...', 'info');
+        
+        try {
+            const result1 = window.jsxDEV('test', 'props', 'key');
+            const result2 = window.jsxDEV(null, null, null);
+            addResult('✅ jsxDEV handles arguments correctly', 'success');
+        } catch (error) {
+            addResult(`❌ jsxDEV argument test failed: ${error.message}`, 'error');
+        }
+
+        // Test 4: Check if it's properly defined in window
+        addResult('🔍 Testing window object...', 'info');
+        
+        if (window.hasOwnProperty('jsxDEV')) {
+            addResult('✅ jsxDEV is properly defined on window object', 'success');
+        } else {
+            addResult('❌ jsxDEV is not properly defined on window object', 'error');
+        }
+
+        // Test 5: Check function type
+        addResult('🔍 Testing function type...', 'info');
+        
+        if (typeof window.jsxDEV === 'function' && window.jsxDEV.constructor === Function) {
+            addResult('✅ jsxDEV is a proper function', 'success');
+        } else {
+            addResult('❌ jsxDEV is not a proper function', 'error');
+        }
+
+        // Final summary
+        setTimeout(() => {
+            const allTests = document.querySelectorAll('.test-result');
+            const successTests = document.querySelectorAll('.test-result.success');
+            
+            if (successTests.length === allTests.length - 1) { // -1 for info messages
+                addResult('🎉 ALL TESTS PASSED! The jsxDEV fix is working perfectly!', 'success');
+            } else {
+                addResult('⚠️ Some tests failed. Please check the results above.', 'error');
+            }
+        }, 100);
+    </script>
+</body>
+</html> 

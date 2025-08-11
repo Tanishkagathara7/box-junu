@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 CORS Fix Test</h1>
+    
+    <div id="test-results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        // Test 1: Health endpoint
+        addResult('🔍 Testing health endpoint...', 'info');
+        
+        fetch('http://localhost:3001/api/health')
+            .then(response => response.json())
+            .then(data => {
+                addResult(`✅ Health endpoint working: ${data.status}`, 'success');
+            })
+            .catch(error => {
+                addResult(`❌ Health endpoint failed: ${error.message}`, 'error');
+            });
+
+        // Test 2: Test endpoint
+        addResult('🔍 Testing test endpoint...', 'info');
+        
+        fetch('http://localhost:3001/api/test')
+            .then(response => response.json())
+            .then(data => {
+                addResult(`✅ Test endpoint working: ${data.message}`, 'success');
+            })
+            .catch(error => {
+                addResult(`❌ Test endpoint failed: ${error.message}`, 'error');
+            });
+
+        // Test 3: Grounds endpoint
+        addResult('🔍 Testing grounds endpoint...', 'info');
+        
+        fetch('http://localhost:3001/api/grounds?cityId=mumbai&page=1&limit=5')
+            .then(response => response.json())
+            .then(data => {
+                addResult(`✅ Grounds endpoint working: Found ${data.grounds?.length || 0} grounds`, 'success');
+            })
+            .catch(error => {
+                addResult(`❌ Grounds endpoint failed: ${error.message}`, 'error');
+            });
+
+        // Test 4: Check current origin
+        addResult('🔍 Current origin info...', 'info');
+        addResult(`📍 Current origin: ${window.location.origin}`, 'info');
+        addResult(`📍 Current port: ${window.location.port}`, 'info');
+    </script>
+</body>
+</html> 

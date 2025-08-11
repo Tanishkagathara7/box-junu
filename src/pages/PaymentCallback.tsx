@@ -1,3 +1,5 @@
+// Use the same API base URL logic as the rest of the app
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://box-cash.onrender.com/api";
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -30,7 +32,7 @@ const PaymentCallback = () => {
       setLoading(false);
       return;
     }
-    fetch(`/api/bookings/${bookingId}`)
+  fetch(`${API_BASE_URL}/bookings/${bookingId}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.booking) {
@@ -39,7 +41,7 @@ const PaymentCallback = () => {
           setLoading(false);
         } else {
           // fallback: try to fetch from Cashfree directly
-          fetch(`/api/payments/status/${bookingId}`)
+          fetch(`${API_BASE_URL}/payments/status/${bookingId}`)
             .then(res2 => res2.json())
             .then(data2 => {
               if (data2.success && data2.status) {
@@ -54,7 +56,7 @@ const PaymentCallback = () => {
       })
       .catch(() => {
         // fallback: try to fetch from Cashfree directly
-        fetch(`/api/payments/status/${bookingId}`)
+  fetch(`${API_BASE_URL}/payments/status/${bookingId}`)
           .then(res2 => res2.json())
           .then(data2 => {
             if (data2.success && data2.status) {

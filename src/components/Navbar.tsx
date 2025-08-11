@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell } from "lucide-react";
+import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell, Home, HelpCircle, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -62,9 +62,9 @@ const Navbar = ({
   };
 
   const navItems = [
-    { name: "Home", path: "/" },
-    { name: "About Us", path: "/about" },
-    { name: "Help & Support", path: "/help" },
+    { name: "Home", path: "/", icon: Home },
+    { name: "About Us", path: "/about", icon: Heart },
+    { name: "Help & Support", path: "/help", icon: HelpCircle },
   ];
 
   const getUserInitials = (name: string) => {
@@ -402,30 +402,18 @@ const Navbar = ({
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-6 bg-white/95 backdrop-blur-md">
-              <div className="space-y-6 px-4">
-                {/* Mobile Search */}
-                <form onSubmit={handleSearch} className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Search grounds..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border-gray-200 focus:border-cricket-green text-base"
-                  />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                </form>
-
+            <div className="md:hidden border-t border-gray-200 bg-white/98 backdrop-blur-md shadow-lg">
+              <div className="px-4 py-6">
                 {/* Mobile Location and Filter */}
-                <div className="flex flex-col space-y-3">
+                <div className="flex gap-3 mb-6">
                   <Button
                     variant="outline"
                     size="lg"
                     onClick={onCitySelect}
-                    className="flex items-center justify-center space-x-3 py-3 h-12"
+                    className="flex-1 flex items-center justify-center space-x-2 py-3 h-12 border-2 border-gray-200 hover:border-cricket-green/30 hover:bg-cricket-green/5 transition-all duration-200"
                   >
-                    <MapPin className="w-5 h-5" />
-                    <span className="text-base font-medium">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm font-medium truncate">
                       {selectedCity || "Select City"}
                     </span>
                   </Button>
@@ -434,85 +422,113 @@ const Navbar = ({
                       variant="outline"
                       size="lg"
                       onClick={onFilterToggle}
-                      className="flex items-center justify-center space-x-3 py-3 h-12"
+                      className="flex items-center justify-center space-x-2 px-4 py-3 h-12 border-2 border-gray-200 hover:border-cricket-green/30 hover:bg-cricket-green/5 transition-all duration-200"
                     >
-                      <Filter className="w-5 h-5" />
-                      <span className="text-base">Filters</span>
+                      <Filter className="w-4 h-4" />
+                      <span className="text-sm font-medium">Filters</span>
                     </Button>
                   )}
                 </div>
 
                 {/* Mobile Navigation */}
-                <div className="space-y-2">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 font-medium text-base"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+                <div className="space-y-1 mb-6">
+                  {navItems.map((item) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-cricket-green/5 rounded-xl transition-all duration-200 font-medium text-base border border-transparent hover:border-cricket-green/20"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <IconComponent className="w-5 h-5 mr-3 text-gray-500" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
                 </div>
 
-                {/* Mobile Auth */}
+                {/* Mobile User Profile & Menu */}
                 {isAuthenticated && user ? (
-                  <div className="space-y-4 pt-6 border-t border-gray-200">
-                    <div className="flex items-center space-x-4 px-4 py-3 bg-gray-50 rounded-lg">
-                      <Avatar className="w-14 h-14">
+                  <div className="pt-6 border-t border-gray-100">
+                    {/* User Profile Card */}
+                    <div className="flex items-center space-x-4 px-4 py-4 mb-4 bg-gradient-to-r from-cricket-green/5 to-emerald-50 rounded-xl border border-cricket-green/10">
+                      <Avatar className="w-14 h-14 ring-2 ring-white shadow-sm">
                         <AvatarImage src={user.avatar} />
-                        <AvatarFallback className="bg-cricket-green text-white font-semibold text-lg">
+                        <AvatarFallback className="bg-gradient-to-br from-cricket-green to-emerald-600 text-white font-semibold text-lg">
                           {getUserInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-base">{user.name}</div>
-                        <div className="text-sm text-gray-500">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-gray-900 text-lg truncate">{user.name}</div>
+                        <div className="text-sm text-gray-600 truncate font-medium">
                           {user.email}
                         </div>
+                        {user?.isVerified && (
+                          <div className="flex items-center mt-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span className="text-xs text-green-600 font-medium">Verified Account</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <User className="w-5 h-5 inline mr-3" />
-                      My Profile
-                    </Link>
-                    <Link
-                      to="/profile/bookings"
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <BookOpen className="w-5 h-5 inline mr-3" />
-                      My Bookings
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMenuOpen(false);
-                      }}
-                      className="block w-full text-left px-4 py-4 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 text-base"
-                    >
-                      <LogOut className="w-5 h-5 inline mr-3" />
-                      Sign Out
-                    </button>
+                    
+                    {/* Menu Items */}
+                    <div className="space-y-1">
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-cricket-green/5 rounded-xl transition-all duration-200 text-base border border-transparent hover:border-cricket-green/20 font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User className="w-5 h-5 mr-3 text-gray-500" />
+                        My Profile
+                      </Link>
+                      <Link
+                        to="/profile/bookings"
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-cricket-green/5 rounded-xl transition-all duration-200 text-base border border-transparent hover:border-cricket-green/20 font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <BookOpen className="w-5 h-5 mr-3 text-gray-500" />
+                        My Bookings
+                      </Link>
+                      <Link
+                        to="/favorites"
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-cricket-green/5 rounded-xl transition-all duration-200 text-base border border-transparent hover:border-cricket-green/20 font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Heart className="w-5 h-5 mr-3 text-gray-500" />
+                        Favorites
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-cricket-green/5 rounded-xl transition-all duration-200 text-base border border-transparent hover:border-cricket-green/20 font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Settings className="w-5 h-5 mr-3 text-gray-500" />
+                        Settings
+                      </Link>
+                      
+                      {/* Divider */}
+                      <div className="border-t border-gray-200 my-2"></div>
+                      
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center w-full px-4 py-4 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 text-base border border-transparent hover:border-red-200 font-medium"
+                      >
+                        <LogOut className="w-5 h-5 mr-3" />
+                        Sign Out
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col space-y-3 pt-6 border-t border-gray-200">
+                  <div className="flex flex-col space-y-3 pt-6 border-t border-gray-100">
                     <Button
                       variant="outline"
                       size="lg"
-                      className="py-3 h-12 text-base"
+                      className="py-3 h-12 text-base border-2 border-gray-200 hover:border-cricket-green/30 hover:bg-cricket-green/5 transition-all duration-200 rounded-xl"
                       onClick={() => {
                         handleAuthClick("login");
                         setIsMenuOpen(false);
@@ -522,7 +538,7 @@ const Navbar = ({
                     </Button>
                     <Button
                       size="lg"
-                      className="py-3 h-12 bg-cricket-green hover:bg-cricket-green/90 text-white font-semibold text-base"
+                      className="py-3 h-12 bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-600/90 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
                       onClick={() => {
                         handleAuthClick("register");
                         setIsMenuOpen(false);

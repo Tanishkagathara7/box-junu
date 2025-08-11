@@ -36,12 +36,36 @@ const PaymentCallback = () => {
         if (data.success && data.booking) {
           const paymentStatus = data.booking.payment?.status || data.booking.status;
           setStatus(paymentStatus?.toUpperCase() || null);
+          setLoading(false);
         } else {
-          setError("Could not fetch booking/payment status.");
+          // fallback: try to fetch from Cashfree directly
+          fetch(`/api/payments/status/${bookingId}`)
+            .then(res2 => res2.json())
+            .then(data2 => {
+              if (data2.success && data2.status) {
+                setStatus(data2.status?.toUpperCase() || null);
+              } else {
+                setError("Could not fetch booking/payment status.");
+              }
+            })
+            .catch(() => setError("Could not fetch booking/payment status."))
+            .finally(() => setLoading(false));
         }
       })
-      .catch(() => setError("Could not fetch booking/payment status."))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        // fallback: try to fetch from Cashfree directly
+        fetch(`/api/payments/status/${bookingId}`)
+          .then(res2 => res2.json())
+          .then(data2 => {
+            if (data2.success && data2.status) {
+              setStatus(data2.status?.toUpperCase() || null);
+            } else {
+              setError("Could not fetch booking/payment status.");
+            }
+          })
+          .catch(() => setError("Could not fetch booking/payment status."))
+          .finally(() => setLoading(false));
+      });
   }, [location]);
 
   useEffect(() => {

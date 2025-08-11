@@ -1,3 +1,60 @@
+/**
+ * Public endpoint to fetch payment status from Cashfree if booking is not found
+ * GET /api/payments/status/:bookingId
+ * Returns: { success, status, message, order_status, cashfreeOrderId }
+ */
+router.get("/status/:bookingId", async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    if (!bookingId) return res.status(400).json({ success: false, message: "No bookingId provided" });
+
+    // Try to find booking in DB
+    const booking = await Booking.findById(bookingId);
+    if (booking && booking.payment && booking.payment.cashfreeOrderId) {
+      // Try to fetch latest status from Cashfree
+      try {
+        const response = await cashfree.PGFetchOrder(booking.payment.cashfreeOrderId);
+        const order_status = response.data.order_status;
+        return res.json({
+          success: true,
+          status: order_status,
+          message: `Fetched from Cashfree for booking ${bookingId}`,
+          order_status,
+          cashfreeOrderId: booking.payment.cashfreeOrderId
+        });
+      } catch (err) {
+        // If Cashfree fails, fallback to DB status
+        return res.json({
+          success: true,
+          status: booking.payment.status || booking.status,
+          message: "Fetched from DB (Cashfree fetch failed)",
+          cashfreeOrderId: booking.payment.cashfreeOrderId
+        });
+      }
+    }
+    // If booking not found, try to find by cashfree order id (if passed as query)
+    const { order_id } = req.query;
+    if (order_id) {
+      try {
+        const response = await cashfree.PGFetchOrder(order_id);
+        const order_status = response.data.order_status;
+        return res.json({
+          success: true,
+          status: order_status,
+          message: `Fetched from Cashfree for order_id ${order_id}`,
+          order_status,
+          cashfreeOrderId: order_id
+        });
+      } catch (err) {
+        return res.status(404).json({ success: false, message: "Order not found in Cashfree" });
+      }
+    }
+    return res.status(404).json({ success: false, message: "Booking not found" });
+  } catch (error) {
+    console.error("/payments/status error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 import express from "express";
 import crypto from "crypto";
 import { authMiddleware } from "../middleware/auth.js";

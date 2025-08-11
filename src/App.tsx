@@ -12,6 +12,7 @@ import Help from "./pages/Help";
 import BookingDetails from "./pages/BookingDetails";
 import GroundDetails from "./pages/GroundDetails";
 import NotFound from "./pages/NotFound";
+import PaymentCallback from "./pages/PaymentCallback";
 import Footer from "./components/Footer";
 import OwnerPanel from "./pages/OwnerPanel";
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/ground/:id" element={<GroundDetails />} />
             <Route path="/booking/:id" element={<BookingDetails />} />
             <Route path="/owner-panel" element={<OwnerPanel />} />
+            <Route path="/payment/callback" element={<PaymentCallback />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

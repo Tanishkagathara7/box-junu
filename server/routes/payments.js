@@ -163,12 +163,9 @@ router.post("/create-order", authMiddleware, async (req, res) => {
         customer_email: booking.playerDetails?.contactPerson?.email || "customer@example.com"
       },
       order_meta: {
-        return_url: IS_DEVELOPMENT 
-          ? "https://example.com/payment/callback" // Placeholder for development
-          : `${req.protocol}://${req.get('host')}/payment/callback?booking_id=${booking._id}`,
-        notify_url: IS_DEVELOPMENT 
-          ? "https://example.com/payment/webhook" // Placeholder for development
-          : `${req.protocol}://${req.get('host')}/api/payments/webhook`,
+        // Always use your real frontend and backend URLs for redirect and webhook
+        return_url: `https://box-cash.vercel.app/payment/callback?booking_id=${booking._id}`,
+        notify_url: `${req.protocol}://${req.get('host')}/api/payments/webhook`,
         payment_methods: "cc,dc,nb,upi,paylater,emi"
       }
     };

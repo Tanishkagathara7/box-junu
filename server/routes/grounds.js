@@ -200,26 +200,60 @@ async function getAllGroundsHandler(req, res) {
           )
           .sort((a, b) => (a.distance || 0) - (b.distance || 0));
       }
-      // Get today's bookings for availability
+      // Get today's bookings for availability from MongoDB
       const today = new Date().toISOString().split("T")[0];
       const groundIds = grounds.map((g) => g._id);
-      const todayBookings = demoBookings.filter(
-        (b) => groundIds.includes(b.groundId) && b.bookingDate === today
-      );
+      
+      let todayBookings = [];
+      try {
+        // Fetch real bookings from MongoDB
+        todayBookings = await Booking.find({
+          groundId: { $in: groundIds },
+          bookingDate: new Date(today),
+          status: { $in: ["pending", "confirmed"] }
+        }).lean();
+        
+        console.log(`Found ${todayBookings.length} bookings for today (${today})`);
+      } catch (bookingError) {
+        console.error("Error fetching bookings for availability:", bookingError);
+        // Fallback to demo bookings if MongoDB query fails
+        todayBookings = demoBookings.filter(
+          (b) => groundIds.map(id => id.toString()).includes(b.groundId) && b.bookingDate === today
+        );
+      }
+      
       // Add availability info
       grounds = grounds.map((ground) => {
         const groundBookings = todayBookings.filter(
-          (b) => b.groundId === ground._id.toString(),
+          (b) => b.groundId.toString() === ground._id.toString(),
         );
-        const bookedSlots = groundBookings.map((b) => b.timeSlot);
+        
+        // Extract booked time slots from bookings
+        const bookedSlots = groundBookings.map((b) => {
+          // Handle both string format ("10:00-12:00") and object format {startTime, endTime}
+          if (typeof b.timeSlot === 'string') {
+            return b.timeSlot;
+          } else if (b.timeSlot && b.timeSlot.startTime && b.timeSlot.endTime) {
+            return `${b.timeSlot.startTime}-${b.timeSlot.endTime}`;
+          }
+          return null;
+        }).filter(slot => slot !== null);
+        
+        // Get all available time slots for the ground
+        const allSlots = ground.availability?.timeSlots || DEFAULT_TIME_SLOTS;
+        
+        // Calculate available slots by filtering out booked slots
+        const availableSlots = allSlots.filter((slot) => !bookedSlots.includes(slot));
+        
+        console.log(`Ground ${ground.name}: ${bookedSlots.length} booked, ${availableSlots.length} available out of ${allSlots.length} total slots`);
+        
         return {
-          ...ground.toObject(),
+          ...ground,
           availability: {
             ...ground.availability,
+            timeSlots: allSlots,
             bookedSlots,
-            availableSlots: ground.availability?.timeSlots?.filter(
-              (slot) => !bookedSlots.includes(slot),
-            ) || [],
+            availableSlots,
           },
         };
       });
@@ -349,19 +383,59 @@ async function getGroundByIdHandler(req, res) {
 
         if (ground) {
           console.log("Ground found in MongoDB:", ground.name);
-          // Get today's bookings for this ground
-          const today = new Date().toISOString().split("T")[0];
-          const bookings = demoBookings.filter(
-            (b) => b.groundId === req.params.id && b.bookingDate === today
-          );
-          // Group bookings by date
-          bookings.forEach((booking) => {
-            const date = booking.bookingDate;
-            if (!bookingsByDate[date]) {
-              bookingsByDate[date] = [];
+          
+          try {
+            // Get bookings for this ground for the next 7 days from MongoDB
+            const today = new Date();
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+              const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+              dates.push(date);
             }
-            bookingsByDate[date].push(booking.timeSlot);
-          });
+            
+            const bookings = await Booking.find({
+              groundId: req.params.id,
+              bookingDate: { $in: dates },
+              status: { $in: ["pending", "confirmed"] }
+            }).lean();
+            
+            console.log(`Found ${bookings.length} bookings for ground ${ground.name}`);
+            
+            // Group bookings by date
+            bookings.forEach((booking) => {
+              const date = booking.bookingDate.toISOString().split("T")[0];
+              if (!bookingsByDate[date]) {
+                bookingsByDate[date] = [];
+              }
+              
+              // Handle both string format and object format for timeSlot
+              let timeSlot;
+              if (typeof booking.timeSlot === 'string') {
+                timeSlot = booking.timeSlot;
+              } else if (booking.timeSlot && booking.timeSlot.startTime && booking.timeSlot.endTime) {
+                timeSlot = `${booking.timeSlot.startTime}-${booking.timeSlot.endTime}`;
+              }
+              
+              if (timeSlot) {
+                bookingsByDate[date].push(timeSlot);
+              }
+            });
+          } catch (bookingError) {
+            console.error("Error fetching bookings for ground details:", bookingError);
+            // Fallback to demo bookings
+            const today = new Date().toISOString().split("T")[0];
+            const fallbackBookings = demoBookings.filter(
+              (b) => b.groundId === req.params.id && b.bookingDate === today
+            );
+            fallbackBookings.forEach((booking) => {
+              const date = booking.bookingDate;
+              if (!bookingsByDate[date]) {
+                bookingsByDate[date] = [];
+              }
+              bookingsByDate[date].push(booking.timeSlot);
+            });
+          }
+          
           ground = mapMongoGroundToFallback(ground, bookingsByDate);
         } else {
           console.log("Ground not found in MongoDB");

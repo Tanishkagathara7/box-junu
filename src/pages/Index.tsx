@@ -935,7 +935,7 @@ const Index = () => {
               isHowItWorksVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
             }`}>
               <div className="relative mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-cricket-green to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-transform duration-300">
+                <div className="w-24 h-24 bg-gradient-to-br from-cricket-green to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:scale-110 transition-transform duration-300">
                   <Search className="w-10 h-10 text-white animate-pulse" />
                 </div>
                 {/* Cricket bat animation */}
@@ -958,7 +958,7 @@ const Index = () => {
               isHowItWorksVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
             }`}>
               <div className="relative mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-cricket-yellow to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-transform duration-300">
+                <div className="w-24 h-24 bg-gradient-to-br from-cricket-yellow to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:scale-110 transition-transform duration-300">
                   <Clock className="w-10 h-10 text-white animate-spin" style={{ animationDuration: '3s' }} />
                 </div>
                 {/* Cricket ball animation */}
@@ -981,7 +981,7 @@ const Index = () => {
               isHowItWorksVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
             }`}>
               <div className="relative mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-sky-blue to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-transform duration-300">
+                <div className="w-24 h-24 bg-gradient-to-br from-sky-blue to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:scale-110 transition-transform duration-300">
                   <Play className="w-10 h-10 text-white animate-pulse" />
                 </div>
                 {/* Trophy animation */}
@@ -1192,222 +1192,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Stadium-Style Footer */}
-      <footer className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden">
-        {/* Stadium background pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        
-        {/* Stadium floodlights */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-cricket-yellow/30 to-transparent"></div>
-        <div className="absolute top-0 left-1/4 w-32 h-32 bg-cricket-yellow/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-0 right-1/4 w-32 h-32 bg-cricket-yellow/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        
-        <div className="relative z-10">
-          {/* Championship Banner */}
-          <div className="bg-gradient-to-r from-cricket-green via-emerald-600 to-cricket-green py-6">
-            <div className="container mx-auto px-4">
-              <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="flex items-center space-x-6 mb-4 md:mb-0">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <Trophy className="w-6 h-6 text-white animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">🏆 India's #1 Cricket Booking Platform</h3>
-                    <p className="text-green-100 text-sm">Join thousands of cricket enthusiasts nationwide</p>
-                  </div>
-                </div>
-                
-                {/* Live stats ticker */}
-                <div className="flex items-center space-x-6 text-white">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">50K+</div>
-                    <div className="text-xs text-green-100">Matches Played</div>
-                  </div>
-                  <div className="w-px h-8 bg-white/20"></div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">500+</div>
-                    <div className="text-xs text-green-100">Grounds</div>
-                  </div>
-                  <div className="w-px h-8 bg-white/20"></div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold flex items-center">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-ping mr-2"></div>
-                      LIVE
-                    </div>
-                    <div className="text-xs text-green-100">Bookings Active</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Main Footer Content */}
-          <div className="py-16">
-            <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-                {/* Brand Section */}
-                <div className="lg:col-span-1">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-cricket-green to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <span className="text-white font-bold text-lg">🏏</span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-white">BoxCric</h3>
-                      <p className="text-gray-400 text-sm">Your Cricket Journey Starts Here</p>
-                    </div>
-                  </div>
-                  <p className="text-gray-300 mb-6 leading-relaxed">
-                    India's premier cricket ground booking platform. From weekend warriors to championship teams, 
-                    we connect cricket lovers with the perfect pitches across the nation.
-                  </p>
-                  
-                  {/* App Download */}
-                  <div className="space-y-3">
-                    <p className="text-white font-semibold flex items-center">
-                      <Smartphone className="w-4 h-4 mr-2" />
-                      Download the App
-                    </p>
-                    <div className="flex space-x-3">
-                      <a href="#" className="inline-block group">
-                        <div className="bg-white text-black px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-gray-100 transition-colors text-sm">
-                          <span>📱 App Store</span>
-                        </div>
-                      </a>
-                      <a href="#" className="inline-block group">
-                        <div className="bg-white text-black px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-gray-100 transition-colors text-sm">
-                          <span>📱 Play Store</span>
-                        </div>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Quick Links */}
-                <div>
-                  <h4 className="text-white font-bold text-lg mb-6 flex items-center">
-                    <Target className="w-5 h-5 mr-2 text-cricket-green" />
-                    Quick Links
-                  </h4>
-                  <ul className="space-y-3">
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Find Grounds
-                    </a></li>
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Book Instantly
-                    </a></li>
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Tournament Booking
-                    </a></li>
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Ground Partnerships
-                    </a></li>
-                  </ul>
-                </div>
-                
-                {/* Support */}
-                <div>
-                  <h4 className="text-white font-bold text-lg mb-6 flex items-center">
-                    <HelpCircle className="w-5 h-5 mr-2 text-cricket-green" />
-                    Support
-                  </h4>
-                  <ul className="space-y-3">
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Help Center
-                    </a></li>
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Contact Support
-                    </a></li>
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Booking Guidelines
-                    </a></li>
-                    <li><a href="#" className="text-gray-300 hover:text-cricket-green transition-colors flex items-center group">
-                      <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                      Safety Protocols
-                    </a></li>
-                  </ul>
-                </div>
-                
-                {/* Connect */}
-                <div>
-                  <h4 className="text-white font-bold text-lg mb-6 flex items-center">
-                    <Users className="w-5 h-5 mr-2 text-cricket-green" />
-                    Connect
-                  </h4>
-                  
-                  {/* Social Media */}
-                  <div className="flex space-x-4 mb-6">
-                    <a href="#" className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center hover:scale-110 transition-transform group">
-                      <span className="text-white text-sm">📘</span>
-                    </a>
-                    <a href="#" className="w-10 h-10 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg flex items-center justify-center hover:scale-110 transition-transform group">
-                      <span className="text-white text-sm">💼</span>
-                    </a>
-                    <a href="#" className="w-10 h-10 bg-gradient-to-br from-pink-600 to-purple-600 rounded-lg flex items-center justify-center hover:scale-110 transition-transform group">
-                      <span className="text-white text-sm">📸</span>
-                    </a>
-                    <a href="#" className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center hover:scale-110 transition-transform group">
-                      <span className="text-white text-sm">📺</span>
-                    </a>
-                  </div>
-                  
-                  {/* Contact Info */}
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-300">
-                      <Phone className="w-4 h-4 mr-3 text-cricket-green" />
-                      <span className="text-sm">+91 98765 43210</span>
-                    </div>
-                    <div className="flex items-center text-gray-300">
-                      <Mail className="w-4 h-4 mr-3 text-cricket-green" />
-                      <span className="text-sm">support@boxcric.com</span>
-                    </div>
-                    <div className="flex items-center text-gray-300">
-                      <MapPin className="w-4 h-4 mr-3 text-cricket-green" />
-                      <span className="text-sm">Mumbai, India</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Bottom Section */}
-              <div className="mt-12 pt-8 border-t border-gray-700">
-                <div className="flex flex-col md:flex-row items-center justify-between">
-                  <div className="flex items-center space-x-6 mb-4 md:mb-0">
-                    <p className="text-gray-400 text-sm">
-                      &copy; 2024 BoxCric. All rights reserved.
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <a href="#" className="text-gray-400 hover:text-cricket-green transition-colors">Privacy Policy</a>
-                      <span className="text-gray-600">•</span>
-                      <a href="#" className="text-gray-400 hover:text-cricket-green transition-colors">Terms of Service</a>
-                      <span className="text-gray-600">•</span>
-                      <a href="#" className="text-gray-400 hover:text-cricket-green transition-colors">Cookie Policy</a>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 text-gray-400 text-sm">
-                    <span>Made with</span>
-                    <span className="text-red-500 animate-pulse">❤️</span>
-                    <span>for Cricket Lovers</span>
-                    <span className="text-cricket-green">🏏</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
 
       {/* Components */}
       <LocationSelector

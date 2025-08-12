@@ -631,7 +631,7 @@ const Index = () => {
 
       {/* Grounds Listing */}
       {selectedCity && (
-        <section className="py-8 sm:py-12 px-4 sm:px-6">
+        <section id="grounds-section" className="py-8 sm:py-12 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             {/* Section Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
@@ -1005,7 +1005,18 @@ const Index = () => {
           <div className="text-center mt-12">
             <Button 
               size="lg"
-              onClick={() => setIsVideoModalOpen(true)}
+              onClick={() => {
+                const groundsSection = document.getElementById('grounds-section');
+                if (groundsSection) {
+                  groundsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  // If no grounds section, scroll to location selector
+                  const locationSection = document.querySelector('[data-location-selector]');
+                  if (locationSection) {
+                    locationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }
+              }}
               className="bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-700 text-white px-8 py-4 text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
             >
               <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />

@@ -219,6 +219,7 @@ router.post("/", authMiddleware, async (req, res) => {
     if (isValidObjectId) {
       try {
         // Find any booking that overlaps with the requested slot
+        // Check both confirmed and pending bookings to prevent double booking
         const existingBookings = await Booking.find({
           groundId,
           bookingDate: new Date(bookingDate),
@@ -233,7 +234,7 @@ router.post("/", authMiddleware, async (req, res) => {
           
           const hasOverlap = start < bookingEnd && end > bookingStart;
           if (hasOverlap) {
-            console.log(`Found overlap: New booking (${startTime}-${endTime}) overlaps with existing booking (${booking.timeSlot.startTime}-${booking.timeSlot.endTime})`);
+            console.log(`Found overlap: New booking (${startTime}-${endTime}) overlaps with existing booking (${booking.timeSlot.startTime}-${booking.timeSlot.endTime}) with status ${booking.status}`);
           }
           
           return hasOverlap;
@@ -243,7 +244,31 @@ router.post("/", authMiddleware, async (req, res) => {
           console.log("Slot overlaps with an existing booking:", overlappingBooking.bookingId);
           return res.status(400).json({ 
             success: false, 
-            message: `This time slot (${startTime}-${endTime}) overlaps with an existing booking (${overlappingBooking.timeSlot.startTime}-${overlappingBooking.timeSlot.endTime}). Please select a different time.` 
+            message: `This time slot (${startTime}-${endTime}) is no longer available. It overlaps with an existing ${overlappingBooking.status} booking (${overlappingBooking.timeSlot.startTime}-${overlappingBooking.timeSlot.endTime}). Please select a different time.` 
+          });
+        }
+
+        // Additional check: Look for any pending bookings that might have been created
+        // while this request was being processed (within the last 30 seconds)
+        const recentTime = new Date(Date.now() - 30000); // 30 seconds ago
+        const recentOverlappingBookings = await Booking.find({
+          groundId,
+          bookingDate: new Date(bookingDate),
+          status: "pending",
+          createdAt: { $gte: recentTime }
+        }).session(session);
+
+        const recentOverlap = recentOverlappingBookings.find(booking => {
+          const bookingStart = new Date(`2000-01-01 ${booking.timeSlot.startTime}`);
+          const bookingEnd = new Date(`2000-01-01 ${booking.timeSlot.endTime}`);
+          return start < bookingEnd && end > bookingStart;
+        });
+
+        if (recentOverlap) {
+          console.log("Found recent overlapping booking, potential race condition:", recentOverlap.bookingId);
+          return res.status(409).json({ 
+            success: false, 
+            message: "This time slot is currently being booked by another user. Please try again in a moment or select a different time." 
           });
         }
       } catch (overlapError) {

@@ -376,6 +376,58 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
       });
     }
 
+    // Check if booking is still available before confirming
+    // This prevents race conditions where slot gets booked by someone else
+    // while this user was completing payment
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(booking.groundId._id || booking.groundId);
+    
+    if (isValidObjectId) {
+      // Check for any overlapping confirmed bookings created after this booking
+      const overlappingBookings = await Booking.find({
+        groundId: booking.groundId._id || booking.groundId,
+        bookingDate: booking.bookingDate,
+        status: "confirmed",
+        _id: { $ne: booking._id }, // Exclude current booking
+        createdAt: { $gte: booking.createdAt } // Only check bookings created after this one
+      });
+
+      // Check for time slot overlaps
+      const start = new Date(`2000-01-01 ${booking.timeSlot.startTime}`);
+      const end = new Date(`2000-01-01 ${booking.timeSlot.endTime}`);
+      
+      const hasOverlap = overlappingBookings.some(existingBooking => {
+        const bookingStart = new Date(`2000-01-01 ${existingBooking.timeSlot.startTime}`);
+        const bookingEnd = new Date(`2000-01-01 ${existingBooking.timeSlot.endTime}`);
+        return start < bookingEnd && end > bookingStart;
+      });
+
+      if (hasOverlap) {
+        // Slot is no longer available, cancel this booking and initiate refund
+        booking.payment = {
+          cashfreeOrderId: order_id,
+          cashfreePaymentSessionId: payment_session_id,
+          status: "refunded",
+          paidAt: new Date(),
+          paymentDetails: paymentDetails
+        };
+        booking.status = "cancelled";
+        booking.cancellation = {
+          cancelledBy: "system",
+          cancelledAt: new Date(),
+          reason: "Slot no longer available - booking conflict detected after payment"
+        };
+
+        await booking.save();
+
+        return res.status(409).json({
+          success: false,
+          message: "Sorry, this time slot has been booked by someone else. Your payment will be refunded.",
+          booking: booking.toObject(),
+          requiresRefund: true
+        });
+      }
+    }
+
     // Update booking with payment details
     booking.payment = {
       cashfreeOrderId: order_id,

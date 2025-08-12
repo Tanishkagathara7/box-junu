@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell } from "lucide-react";
+import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell, Home, Info, HelpCircle, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -62,9 +62,9 @@ const Navbar = ({
   };
 
   const navItems = [
-    { name: "Home", path: "/" },
-    { name: "About Us", path: "/about" },
-    { name: "Help & Support", path: "/help" },
+    { name: "Home", path: "/", icon: Home },
+    { name: "About Us", path: "/about", icon: Info },
+    { name: "Help & Support", path: "/help", icon: HelpCircle },
   ];
 
   const getUserInitials = (name: string) => {
@@ -79,25 +79,29 @@ const Navbar = ({
   return (
     <>
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo at the far left */}
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-12 h-12 bg-gradient-cricket rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-cricket-green rounded-md"></div>
+
+
+            {/* Logo */}
+            <div className="flex-shrink-0 flex items-center">
+              <Link to="/" className="flex items-center space-x-1 sm:space-x-3 group">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-cricket rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                  <div className="w-4 h-4 sm:w-7 sm:h-7 bg-white rounded sm:rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 sm:w-4 sm:h-4 bg-cricket-green rounded-sm sm:rounded-md"></div>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold font-display text-cricket-green group-hover:text-cricket-green/80 transition-colors">
-                  BoxCric
-                </h1>
-                <p className="text-xs text-gray-500 -mt-1 font-medium">Book. Play. Win.</p>
-              </div>
-            </Link>
+                <div className="text-left">
+                  <h1 className="text-xl sm:text-2xl font-bold font-display text-cricket-green group-hover:text-cricket-green/80 transition-colors">
+                    BoxCric
+                  </h1>
+                  <p className="hidden xs:block text-xs text-gray-500 -mt-0.5 sm:-mt-1 font-medium">Book. Play. Win.</p>
+                </div>
+              </Link>
+            </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -108,6 +112,63 @@ const Navbar = ({
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cricket-green transition-all duration-200 group-hover:w-full"></span>
                 </Link>
               ))}
+            </div>
+
+            {/* Mobile menu */}
+            <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}>
+              <div className="pt-2 pb-3 space-y-1 bg-white absolute left-0 right-0 top-16 z-50 shadow-lg">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className="block px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-cricket-green border-b border-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-cricket-green border-b border-gray-100"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      My Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-base font-medium text-red-600 hover:bg-red-50 border-b border-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <div className="px-4 pt-2 pb-4 space-y-2">
+                    <button
+                      onClick={() => {
+                        handleAuthClick('login');
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cricket-green hover:bg-cricket-green/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cricket-green"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleAuthClick('register');
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cricket-green"
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Search Bar and Actions */}
@@ -442,23 +503,10 @@ const Navbar = ({
                   )}
                 </div>
 
-                {/* Mobile Navigation */}
-                <div className="space-y-2">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 font-medium text-base"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-
                 {/* Mobile Auth */}
                 {isAuthenticated && user ? (
                   <div className="space-y-4 pt-6 border-t border-gray-200">
+                    {/* User Info at Top */}
                     <div className="flex items-center space-x-4 px-4 py-3 bg-gray-50 rounded-lg">
                       <Avatar className="w-14 h-14">
                         <AvatarImage src={user.avatar} />
@@ -473,37 +521,58 @@ const Navbar = ({
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Combined Navigation Items */}
+                    {navItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 font-medium text-base"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <item.icon className="w-5 h-5 mr-3" />
+                        {item.name}
+                      </Link>
+                    ))}
+
+                    <div className="border-t border-gray-200 my-2"></div>
+
+                    {/* User-specific links */}
                     <Link
                       to="/profile"
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
+                      className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <User className="w-5 h-5 inline mr-3" />
+                      <User className="w-5 h-5 mr-3" />
                       My Profile
                     </Link>
                     <Link
                       to="/profile/bookings"
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
+                      className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <BookOpen className="w-5 h-5 inline mr-3" />
+                      <BookOpen className="w-5 h-5 mr-3" />
                       My Bookings
                     </Link>
                     <Link
                       to="/settings"
-                      className="block px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
+                      className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base"
                       onClick={() => setIsMenuOpen(false)}
                     >
+                      <Settings className="w-5 h-5 mr-3" />
                       Settings
                     </Link>
+
+                    <div className="border-t border-gray-200 my-2"></div>
+
                     <button
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-4 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 text-base"
+                      className="flex items-center w-full text-left px-4 py-4 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 text-base"
                     >
-                      <LogOut className="w-5 h-5 inline mr-3" />
+                      <LogOut className="w-5 h-5 mr-3" />
                       Sign Out
                     </button>
                   </div>

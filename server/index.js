@@ -19,6 +19,7 @@ import bookingRoutes, { adminRouter as adminBookingsRouter } from "./routes/book
 import userRoutes from "./routes/users.js";
 import paymentsRoutes from "./routes/payments.js";
 import { adminRouter as adminLocationsRouter } from "./routes/locations.js";
+import { startBookingCleanupService } from "./lib/bookingCleanup.js";
 
 // Environment Config
 dotenv.config();
@@ -126,6 +127,14 @@ mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log("✅ Connected to MongoDB Atlas");
     isMongoConnected = true;
+    
+    // Start booking cleanup service after MongoDB connection
+    try {
+      startBookingCleanupService(5); // Run cleanup every 5 minutes
+      console.log("🧹 Booking cleanup service started");
+    } catch (cleanupError) {
+      console.error("❌ Failed to start booking cleanup service:", cleanupError);
+    }
   })
   .catch((error) => {
     console.error("❌ MongoDB connection error:", error.message);

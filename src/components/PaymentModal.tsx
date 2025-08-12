@@ -215,8 +215,28 @@ const PaymentModal = ({
             }, 500);
             onClose();
             return true;
+          } else if ((verifyResponse as any)?.requiresRefund) {
+            // Handle the case where slot was taken by someone else
+            toast.error((verifyResponse as any)?.message || "This time slot is no longer available. Your payment will be refunded.");
+            setIsProcessing(false);
+            setTimeout(() => {
+              navigate("/grounds"); // Redirect to grounds to book again
+            }, 3000);
+            onClose();
+            return true; // Stop checking
           }
-        } catch (error) {
+        } catch (error: any) {
+          // Check if it's a conflict error (409 status)
+          if (error.response?.status === 409) {
+            const errorData = error.response?.data;
+            toast.error(errorData?.message || "This time slot is no longer available. Your payment will be refunded.");
+            setIsProcessing(false);
+            setTimeout(() => {
+              navigate("/grounds"); // Redirect to grounds to book again
+            }, 3000);
+            onClose();
+            return true; // Stop checking
+          }
           // Don't log errors for pending payments - this is normal
           return false;
         }

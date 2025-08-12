@@ -92,6 +92,7 @@ const Index = () => {
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [selectedGround, setSelectedGround] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [grounds, setGrounds] = useState<any[]>([]);
@@ -1004,7 +1005,7 @@ const Index = () => {
           <div className="text-center mt-12">
             <Button 
               size="lg"
-              onClick={() => setIsLocationSelectorOpen(true)}
+              onClick={() => setIsVideoModalOpen(true)}
               className="bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-700 text-white px-8 py-4 text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
             >
               <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />

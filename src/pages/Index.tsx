@@ -6,7 +6,6 @@ import Navbar from "@/components/Navbar";
 import { Link } from "react-router-dom";
 
 
-import Footer from "@/components/Footer";
 import LocationSelector from "@/components/LocationSelector";
 import GroundCard from "@/components/GroundCard";
 import FilterPanel from "@/components/FilterPanel";
@@ -103,7 +102,6 @@ const Index = () => {
   const [activeStep, setActiveStep] = useState(0);
   const statsRef = useRef<HTMLDivElement>(null);
   const howItWorksRef = useRef<HTMLDivElement>(null);
-  const [isFloatingSearchVisible, setIsFloatingSearchVisible] = useState(false);
 
   // State for testimonials carousel
   const [testimonialIndex, setTestimonialIndex] = useState(0);
@@ -267,16 +265,9 @@ const Index = () => {
     if (statsRef.current) statsObserver.observe(statsRef.current);
     if (howItWorksRef.current) howItWorksObserver.observe(howItWorksRef.current);
 
-    // Floating search visibility on scroll
-    const handleScroll = () => {
-      setIsFloatingSearchVisible(window.scrollY > 600);
-    };
-    window.addEventListener('scroll', handleScroll);
-
     return () => {
       if (statsRef.current) statsObserver.unobserve(statsRef.current);
       if (howItWorksRef.current) howItWorksObserver.unobserve(howItWorksRef.current);
-      window.removeEventListener('scroll', handleScroll);
     };
   }, [isStatsVisible]);
 
@@ -1024,7 +1015,7 @@ const Index = () => {
       </section>
 
       {/* Why Choose Us - Enhanced with Cricket Theme */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-cricket-green/10 via-emerald-50 to-sky-blue/10 relative overflow-hidden">
+      <section className="py-16 sm:py-20 bg-gradient-to-br from-cricket-green/10 via-emerald-600 to-green-700 relative overflow-hidden">
         {/* Stadium-style background pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
@@ -1051,7 +1042,7 @@ const Index = () => {
               {/* Textured overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent opacity-50"></div>
               <div className="relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-sky-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <Zap className="w-8 h-8 text-white group-hover:animate-pulse" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">⚡ Instant Booking</h3>
@@ -1141,7 +1132,7 @@ const Index = () => {
         {/* Stadium background pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M60 60m-30 0a30 30 0 1 1 60 0a30 30 0 1 1 -60 0'/%3E%3Cpath d='M30 60h60M60 30v60' stroke='%23ffffff' stroke-width='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }} />
         </div>
         
@@ -1152,7 +1143,7 @@ const Index = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-6 py-3 mb-8 backdrop-blur-sm">
+            <div className="inline-flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-6 py-3 mb-6 backdrop-blur-sm">
               <Trophy className="w-5 h-5 text-white animate-pulse" />
               <span className="text-white font-semibold">Join the Championship League</span>
             </div>
@@ -1207,7 +1198,7 @@ const Index = () => {
         {/* Stadium background pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='100' cy='100' r='80'/%3E%3Ccircle cx='100' cy='100' r='60'/%3E%3Ccircle cx='100' cy='100' r='40'/%3E%3Ccircle cx='100' cy='100' r='20'/%3E%3Cpath d='M20 100h160M100 20v160' stroke='%23ffffff' stroke-width='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }} />
         </div>
         
@@ -1221,7 +1212,7 @@ const Index = () => {
           <div className="bg-gradient-to-r from-cricket-green via-emerald-600 to-cricket-green py-6">
             <div className="container mx-auto px-4">
               <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                <div className="flex items-center space-x-6 mb-4 md:mb-0">
                   <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                     <Trophy className="w-6 h-6 text-white animate-pulse" />
                   </div>
@@ -1440,46 +1431,6 @@ const Index = () => {
         ground={selectedGround}
         onBookingCreated={handleBookingCreated}
       />
-
-      {/* Floating Quick Search Button */}
-      {isFloatingSearchVisible && (
-        <div className="fixed bottom-24 right-6 z-50 animate-fade-in-up">
-          <Button
-            onClick={() => setIsLocationSelectorOpen(true)}
-            className="bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-700 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 group"
-            aria-label="Quick search"
-          >
-            <Search className="w-6 h-6 group-hover:animate-spin" />
-          </Button>
-          <div className="absolute -top-12 right-0 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-            Quick Search
-          </div>
-        </div>
-      )}
-
-      {/* Floating Filter Button */}
-      {isFloatingSearchVisible && selectedCity && (
-        <div className="fixed bottom-24 right-20 z-50 animate-fade-in-up animation-delay-200">
-          <Button
-            onClick={() => setIsFilterPanelOpen(true)}
-            className="bg-gradient-to-r from-cricket-yellow to-orange-500 hover:from-cricket-yellow/90 hover:to-orange-600 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 group"
-            aria-label="Quick filters"
-          >
-            <Filter className="w-6 h-6 group-hover:animate-pulse" />
-          </Button>
-        </div>
-      )}
-
-      {/* Scroll to Top Button */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-6 right-6 bg-cricket-green hover:bg-cricket-green/90 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40 group"
-        aria-label="Scroll to top"
-      >
-        <svg className="w-5 h-5 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-        </svg>
-      </button>
     </div>
   );
 };

@@ -221,7 +221,44 @@ const About = () => {
         </div>
       </section>
 
+      {/* Team Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Meet Our Team
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Passionate cricket enthusiasts working to revolutionize how you
+              discover and book cricket grounds.
+            </p>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {team.map((member, index) => (
+              <Card
+                key={index}
+                className="border-0 bg-white/80 backdrop-blur-sm text-center"
+              >
+                <CardContent className="p-6">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
+                  />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                    {member.name}
+                  </h3>
+                  <Badge variant="secondary" className="mb-3">
+                    {member.role}
+                  </Badge>
+                  <p className="text-gray-600 text-sm">{member.bio}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-16 px-4 bg-gradient-cricket">

@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { MapPin, Zap, Star, Clock, Sparkles, Search, Play, Trophy, Users, Shield, ChevronLeft, ChevronRight, Bell, Target, Filter, Smartphone, Phone, Mail, HelpCircle } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { MapPin, Zap, Star, Clock, Sparkles, Search, Play, Trophy, Users, Shield, ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import { Link } from "react-router-dom";
 
 
+import Footer from "@/components/Footer";
 import LocationSelector from "@/components/LocationSelector";
 import GroundCard from "@/components/GroundCard";
 import FilterPanel from "@/components/FilterPanel";
@@ -92,17 +93,11 @@ const Index = () => {
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [selectedGround, setSelectedGround] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [grounds, setGrounds] = useState<any[]>([]);
   const [isLoadingGrounds, setIsLoadingGrounds] = useState(false);
   const [heroStats, setHeroStats] = useState({ grounds: 0, players: 0, bookings: 0 });
-  const [isStatsVisible, setIsStatsVisible] = useState(false);
-  const [isHowItWorksVisible, setIsHowItWorksVisible] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
-  const statsRef = useRef<HTMLDivElement>(null);
-  const howItWorksRef = useRef<HTMLDivElement>(null);
 
   // State for testimonials carousel
   const [testimonialIndex, setTestimonialIndex] = useState(0);
@@ -137,39 +132,32 @@ const Index = () => {
 
   const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
 
-  // Animate stats when they come into view with cricket-themed progression
-  const animateStats = () => {
-    const targets = { grounds: 500, players: 50000, bookings: 25000 };
-    const duration = 2500; // Slightly longer for dramatic effect
-    const steps = 80;
-    const increment = {
-      grounds: targets.grounds / steps,
-      players: targets.players / steps,
-      bookings: targets.bookings / steps,
+  // Animated stats counter
+  useEffect(() => {
+    const animateStats = () => {
+      const duration = 2000;
+      const steps = 60;
+      const stepDuration = duration / steps;
+      
+      let currentStep = 0;
+      const interval = setInterval(() => {
+        currentStep++;
+        const progress = currentStep / steps;
+        
+        setHeroStats({
+          grounds: Math.floor(500 * progress),
+          players: Math.floor(50000 * progress),
+          bookings: Math.floor(10000 * progress),
+        });
+        
+        if (currentStep >= steps) {
+          clearInterval(interval);
+        }
+      }, stepDuration);
     };
 
-    let currentStep = 0;
-    const timer = setInterval(() => {
-      currentStep++;
-      // Add some bounce effect to make it feel like cricket ball bouncing
-      const easeOut = 1 - Math.pow(1 - currentStep / steps, 3);
-      setHeroStats({
-        grounds: Math.min(Math.floor(increment.grounds * easeOut), targets.grounds),
-        players: Math.min(Math.floor(increment.players * easeOut), targets.players),
-        bookings: Math.min(Math.floor(increment.bookings * easeOut), targets.bookings),
-      });
-
-      if (currentStep >= steps) {
-        clearInterval(timer);
-      }
-    }, duration / steps);
-  };
-
-  useEffect(() => {
-    if (isStatsVisible) {
-      animateStats();
-    }
-  }, [isStatsVisible]);
+    animateStats();
+  }, []);
 
   // Add loading state for initial page load
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -234,43 +222,6 @@ const Index = () => {
     document.addEventListener('click', smoothScroll);
     return () => document.removeEventListener('click', smoothScroll);
   }, []);
-
-  // Intersection Observer for scroll-triggered animations
-  useEffect(() => {
-    const observerOptions = {
-      threshold: 0.3,
-      rootMargin: '-50px 0px'
-    };
-
-    const statsObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && !isStatsVisible) {
-          setIsStatsVisible(true);
-          animateStats();
-        }
-      });
-    }, observerOptions);
-
-    const howItWorksObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setIsHowItWorksVisible(true);
-          // Animate steps sequentially
-          setTimeout(() => setActiveStep(1), 300);
-          setTimeout(() => setActiveStep(2), 600);
-          setTimeout(() => setActiveStep(3), 900);
-        }
-      });
-    }, observerOptions);
-
-    if (statsRef.current) statsObserver.observe(statsRef.current);
-    if (howItWorksRef.current) howItWorksObserver.observe(howItWorksRef.current);
-
-    return () => {
-      if (statsRef.current) statsObserver.unobserve(statsRef.current);
-      if (howItWorksRef.current) howItWorksObserver.unobserve(howItWorksRef.current);
-    };
-  }, [isStatsVisible]);
 
   // Fetch grounds when city or filters change
   useEffect(() => {
@@ -513,7 +464,7 @@ const Index = () => {
         
         {/* Animated Cricket Elements */}
         <div className="absolute top-10 left-2 animate-float hidden sm:block">
-          <div className="w-12 h-12 bg-gradient-to-br from-cricket-green/20 to-emerald-200 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-cricket-green/20 rounded-full flex items-center justify-center">
             <span className="text-xl">🏏</span>
           </div>
         </div>
@@ -532,7 +483,7 @@ const Index = () => {
           {/* Main Heading */}
           <div className="relative mb-6 sm:mb-8">
             <div className="absolute inset-0 bg-gradient-cricket opacity-20 blur-3xl rounded-full"></div>
-            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display text-gray-900 mb-4 sm:mb-6 leading-tight">
+            <h1 className="relative text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display text-gray-900 mb-4 sm:mb-6 leading-tight">
               Book Your Perfect{" "}
               <span className="text-transparent bg-gradient-to-r from-cricket-green via-cricket-yellow to-sky-blue bg-clip-text animate-pulse">
                 Cricket Ground
@@ -544,57 +495,33 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Animated Stats with Textured Cards */}
-          <div ref={statsRef} className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 max-w-4xl mx-auto px-4">
-            <Card className="border-0 bg-gradient-to-br from-white via-cricket-green/5 to-emerald-50 backdrop-blur-sm hover:from-white hover:via-cricket-green/10 hover:to-emerald-100 transition-all duration-500 hover:scale-110 hover:shadow-2xl group relative overflow-hidden">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-50"></div>
-              <CardContent className="p-4 sm:p-5 lg:p-6 text-center relative z-10">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-cricket-green/20 to-emerald-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <Trophy className="w-6 h-6 text-cricket-green group-hover:animate-pulse" />
+          {/* Animated Stats */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 max-w-4xl mx-auto px-4">
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105">
+              <CardContent className="p-4 sm:p-5 lg:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-cricket-green/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-green" />
                 </div>
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cricket-green to-emerald-600 bg-clip-text text-transparent mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300">{heroStats.grounds}+</h3>
-                <p className="text-gray-700 font-semibold text-xs sm:text-sm lg:text-base">Premium Cricket Grounds</p>
-                {/* Cricket stars rating */}
-                <div className="flex justify-center mt-2 space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-cricket-green fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.grounds}+</h3>
+                <p className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">Premium Cricket Grounds</p>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-gradient-to-br from-white via-cricket-yellow/5 to-orange-50 backdrop-blur-sm hover:from-white hover:via-cricket-yellow/10 hover:to-orange-100 transition-all duration-500 hover:scale-110 hover:shadow-2xl group relative overflow-hidden">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-50"></div>
-              <CardContent className="p-4 sm:p-5 lg:p-6 text-center relative z-10">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-cricket-yellow/20 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <Users className="w-6 h-6 text-cricket-yellow group-hover:animate-bounce" />
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105">
+              <CardContent className="p-4 sm:p-5 lg:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-cricket-yellow/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-yellow" />
                 </div>
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cricket-yellow to-orange-500 bg-clip-text text-transparent mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300">{heroStats.players}+</h3>
-                <p className="text-gray-700 font-semibold text-xs sm:text-sm lg:text-base">Happy Players</p>
-                {/* Cricket stars rating */}
-                <div className="flex justify-center mt-2 space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-cricket-yellow fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.players}+</h3>
+                <p className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">Happy Players</p>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-gradient-to-br from-white via-sky-blue/5 to-blue-50 backdrop-blur-sm hover:from-white hover:via-sky-blue/10 hover:to-blue-100 transition-all duration-500 hover:scale-110 hover:shadow-2xl group relative overflow-hidden xs:col-span-2 sm:col-span-1">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-50"></div>
-              <CardContent className="p-4 sm:p-5 lg:p-6 text-center relative z-10">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-sky-blue/20 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <Play className="w-6 h-6 text-sky-blue group-hover:animate-spin" />
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105 xs:col-span-2 sm:col-span-1">
+              <CardContent className="p-4 sm:p-5 lg:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-sky-blue/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Play className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-sky-blue" />
                 </div>
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-sky-blue to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300">{heroStats.bookings}+</h3>
-                <p className="text-gray-700 font-semibold text-xs sm:text-sm lg:text-base">Successful Bookings</p>
-                {/* Cricket stars rating */}
-                <div className="flex justify-center mt-2 space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-sky-blue fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.bookings}+</h3>
+                <p className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">Successful Bookings</p>
               </CardContent>
             </Card>
           </div>
@@ -631,7 +558,7 @@ const Index = () => {
 
       {/* Grounds Listing */}
       {selectedCity && (
-        <section id="grounds-section" className="py-8 sm:py-12 px-4 sm:px-6">
+        <section className="py-8 sm:py-12 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             {/* Section Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
@@ -729,401 +656,161 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Enhanced Grounds Grid with Live Availability */}
+            {/* Grounds Grid */}
             {isLoadingGrounds ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse border-0 bg-gradient-to-br from-white to-gray-50 shadow-xl">
-                    <div className="h-48 sm:h-52 bg-gradient-to-br from-gray-200 to-gray-300 rounded-t-lg relative">
-                      <div className="absolute top-4 right-4 w-16 h-6 bg-gray-300 rounded-full"></div>
-                    </div>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="h-5 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                        <div className="h-8 bg-gray-200 rounded w-20"></div>
-                      </div>
+                  <Card key={i} className="animate-pulse">
+                    <div className="h-48 sm:h-52 bg-gray-200 rounded-t-lg"></div>
+                    <CardContent className="p-4 sm:p-5 space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-full"></div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : realGrounds.length > 0 ? (
-              <div className="space-y-8">
-                {/* Featured Grounds Carousel */}
-                <div className="relative">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <Trophy className="w-6 h-6 text-cricket-green mr-2" />
-                    🏆 Featured Championship Grounds
-                  </h3>
-                  <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
-                    {realGrounds.slice(0, 3).map((ground, index) => (
-                      <div key={ground._id} className="flex-none w-80 group">
-                        <Card className="border-0 bg-gradient-to-br from-white via-cricket-green/5 to-emerald-50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 relative overflow-hidden">
-                          {/* Live availability pulse */}
-                          <div className="absolute top-4 right-4 z-20">
-                            <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 animate-pulse">
-                              <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
-                              <span>LIVE</span>
-                            </div>
-                          </div>
-                          
-                          {/* Enhanced ground card content */}
-                          <div className="h-48 bg-gradient-to-br from-cricket-green/20 to-emerald-100 relative overflow-hidden">
-                            {ground.images?.[0] ? (
-                              <img src={ground.images[0]} alt={ground.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cricket-green/10 to-emerald-50">
-                                <div className="text-center">
-                                  <div className="w-16 h-16 bg-cricket-green/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <span className="text-2xl">🏏</span>
-                                  </div>
-                                  <p className="text-cricket-green font-semibold">Cricket Ground</p>
-                                </div>
-                              </div>
-                            )}
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                          </div>
-                          
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <h4 className="text-lg font-bold text-gray-900 group-hover:text-cricket-green transition-colors">{ground.name}</h4>
-                              {/* Cricket star rating */}
-                              <div className="flex items-center space-x-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className="w-4 h-4 text-cricket-yellow fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                                ))}
-                                <span className="text-sm text-gray-600 ml-1">{(Math.random() * 1 + 4).toFixed(1)}</span>
-                              </div>
-                            </div>
-                            
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{ground.description || "Premium cricket ground with modern facilities and professional pitch."}</p>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="text-cricket-green font-bold text-lg">
-                                ₹{ground.pricePerHour || 1200}/hr
-                              </div>
-                              <Button 
-                                onClick={() => handleBookGround(ground._id)}
-                                className="bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-700 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 group"
-                              >
-                                <Play className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-                                Book Now
-                              </Button>
-                            </div>
-                            
-                            {/* Available slots indicator */}
-                            <div className="mt-4 flex items-center justify-between text-xs">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-green-600 font-medium">{Math.floor(Math.random() * 5) + 3} slots available today</span>
-                              </div>
-                              <span className="text-gray-500">{ground.location?.area || "Premium Location"}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* All Grounds Grid */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                    <Target className="w-6 h-6 text-cricket-green mr-2" />
-                    🎯 All Available Grounds
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                    {realGrounds.map((ground) => (
-                      <GroundCard
-                        key={ground._id}
-                        ground={ground}
-                        onBook={handleBookGround}
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {realGrounds.map((ground) => (
+                  <GroundCard
+                    key={ground._id}
+                    ground={ground}
+                    onBook={handleBookGround}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))}
               </div>
             ) : (
-              <div className="text-center py-16 sm:py-20">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-cricket-green/10 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <div className="text-3xl animate-bounce">🏏</div>
+              <div className="text-center py-12 sm:py-16">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                  No Cricket Grounds Found
+                <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2 sm:mb-3">
+                  No grounds found
                 </h3>
-                <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto leading-relaxed">
+                <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base max-w-md mx-auto">
                   {selectedCity
-                    ? `No cricket grounds found in ${selectedCity.name}. Try adjusting your filters to discover more options.`
-                    : "Select a city to discover amazing cricket grounds near you and start your cricket journey!"}
+                    ? `No cricket grounds found in ${selectedCity.name}. Try adjusting your filters.`
+                    : "Select a city to discover amazing cricket grounds near you."}
                 </p>
-                <div className="space-y-4">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleClearFilters}
-                    className="text-cricket-green border-2 border-cricket-green hover:bg-cricket-green hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105"
-                  >
-                    <Target className="w-5 h-5 mr-2" />
-                    Clear Filters & Search Again
-                  </Button>
-                  {!selectedCity && (
-                    <Button
-                      size="lg"
-                      onClick={() => setIsLocationSelectorOpen(true)}
-                      className="bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 ml-4"
-                    >
-                      <MapPin className="w-5 h-5 mr-2" />
-                      Select Your City
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleClearFilters}
+                  className="text-cricket-green border-cricket-green hover:bg-cricket-green/10 py-2 px-6 h-10 sm:h-11"
+                >
+                  Clear Filters
+                </Button>
               </div>
             )}
           </div>
         </section>
       )}
 
-      {/* How It Works - Cricket Match Progression */}
-      <section ref={howItWorksRef} className="py-16 sm:py-20 bg-gradient-to-br from-cricket-green/5 via-white to-emerald-50 relative overflow-hidden">
-        {/* Cricket Field Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 border-4 border-cricket-green rounded-full"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-1 bg-cricket-green"></div>
-        </div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center space-x-2 bg-cricket-green/10 border border-cricket-green/20 rounded-full px-6 py-3 mb-6">
-              <Trophy className="w-5 h-5 text-cricket-green animate-pulse" />
-              <span className="text-cricket-green font-semibold">Your Cricket Journey</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              From Search to <span className="text-transparent bg-gradient-to-r from-cricket-green to-emerald-600 bg-clip-text">Sixer!</span>
+      {/* How It Works */}
+      <section className="py-12 sm:py-16 bg-white">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+              How It Works
             </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto text-lg">
-              Experience the thrill of booking your perfect cricket ground in 3 exciting innings
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              Book your cricket ground in just 3 simple steps
             </p>
           </div>
           
-          {/* Progress Bar */}
-          <div className="flex justify-center mb-12">
-            <div className="flex items-center space-x-4">
-              {[1, 2, 3].map((step) => (
-                <div key={step} className="flex items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-500 ${
-                    activeStep >= step 
-                      ? 'bg-gradient-to-r from-cricket-green to-emerald-600 text-white scale-110 shadow-lg' 
-                      : 'bg-gray-200 text-gray-500'
-                  }`}>
-                    {step}
-                  </div>
-                  {step < 3 && (
-                    <div className={`w-16 h-1 mx-2 transition-all duration-500 ${
-                      activeStep > step ? 'bg-gradient-to-r from-cricket-green to-emerald-600' : 'bg-gray-200'
-                    }`}></div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-            {/* Step 1: Search & Select */}
-            <div className={`text-center transform transition-all duration-700 ${
-              isHowItWorksVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            }`}>
-              <div className="relative mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-cricket-green to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:scale-110 transition-transform duration-300">
-                  <Search className="w-10 h-10 text-white animate-pulse" />
-                </div>
-                {/* Cricket bat animation */}
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-cricket-yellow/20 rounded-full flex items-center justify-center">
-                  <span className="text-lg animate-bounce">🏏</span>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <span className="text-white font-bold text-xl sm:text-2xl">1</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">🔍 Search & Discover</h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Explore amazing cricket grounds near you. Filter by location, price, and amenities to find your perfect pitch for the ultimate match experience.
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Search & Select</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Find cricket grounds near you, filter by location, price, and amenities to find the perfect match.
               </p>
-              <div className="mt-4 inline-flex items-center text-cricket-green font-semibold text-sm">
-                <Target className="w-4 h-4 mr-2" />
-                Find Your Ground
-              </div>
             </div>
             
-            {/* Step 2: Choose Time Slot */}
-            <div className={`text-center transform transition-all duration-700 delay-300 ${
-              isHowItWorksVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            }`}>
-              <div className="relative mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-cricket-yellow to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:scale-110 transition-transform duration-300">
-                  <Clock className="w-10 h-10 text-white animate-spin" style={{ animationDuration: '3s' }} />
-                </div>
-                {/* Cricket ball animation */}
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
-                  <span className="text-lg animate-bounce" style={{ animationDelay: '0.5s' }}>⚾</span>
-                </div>
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <span className="text-white font-bold text-xl sm:text-2xl">2</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">⏰ Pick Your Slot</h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Choose your preferred date and time slot from real-time availability. Book morning practice sessions or evening matches under the lights.
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Choose Time Slot</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Pick your preferred date and time slot from the available options. Real-time availability updates.
               </p>
-              <div className="mt-4 inline-flex items-center text-cricket-yellow font-semibold text-sm">
-                <Clock className="w-4 h-4 mr-2" />
-                Live Availability
-              </div>
             </div>
             
-            {/* Step 3: Book & Play */}
-            <div className={`text-center transform transition-all duration-700 delay-600 ${
-              isHowItWorksVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            }`}>
-              <div className="relative mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-sky-blue to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:scale-110 transition-transform duration-300">
-                  <Play className="w-10 h-10 text-white animate-pulse" />
-                </div>
-                {/* Trophy animation */}
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400/20 rounded-full flex items-center justify-center">
-                  <span className="text-lg animate-bounce" style={{ animationDelay: '1s' }}>🏆</span>
-                </div>
+            <div className="text-center sm:col-span-2 lg:col-span-1">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <span className="text-white font-bold text-xl sm:text-2xl">3</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">🎯 Book & Dominate</h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Complete secure payment and get instant confirmation. Show up, warm up, and play the match of your dreams. Victory awaits!
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Book & Play</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Complete your payment securely and get instant confirmation. Show up and enjoy your game!
               </p>
-              <div className="mt-4 inline-flex items-center text-sky-blue font-semibold text-sm">
-                <Trophy className="w-4 h-4 mr-2" />
-                Game Time!
-              </div>
             </div>
-          </div>
-          
-          {/* Call to Action */}
-          <div className="text-center mt-12">
-            <Button 
-              size="lg"
-              onClick={() => {
-                const groundsSection = document.getElementById('grounds-section');
-                if (groundsSection) {
-                  groundsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                  // If no grounds section, scroll to location selector
-                  const locationSection = document.querySelector('[data-location-selector]');
-                  if (locationSection) {
-                    locationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }
-              }}
-              className="bg-gradient-to-r from-cricket-green to-emerald-600 hover:from-cricket-green/90 hover:to-emerald-700 text-white px-8 py-4 text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
-            >
-              <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />
-              Start Your Cricket Journey Now!
-            </Button>
           </div>
         </div>
       </section>
 
-      {/* Why Choose Us - Enhanced with Cricket Theme */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-cricket-green/10 via-emerald-600 to-green-700 relative overflow-hidden">
-        {/* Stadium-style background pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center space-x-2 bg-cricket-green/10 border border-cricket-green/20 rounded-full px-6 py-3 mb-6">
-              <Shield className="w-5 h-5 text-cricket-green animate-pulse" />
-              <span className="text-cricket-green font-semibold">Championship Features</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Why Choose <span className="text-transparent bg-gradient-to-r from-cricket-green to-emerald-600 bg-clip-text">BoxCric?</span>
+      {/* Why Choose Us */}
+      <section className="py-12 sm:py-16 bg-gradient-to-r from-green-50 to-blue-50">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+              Why Choose BoxCric?
             </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto text-lg">
-              We're the MVP of cricket ground booking - simple, secure, and designed for champions like you!
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              We're committed to making cricket ground booking simple, secure, and enjoyable
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <div className="bg-gradient-to-br from-white via-blue-50/50 to-sky-blue/10 rounded-2xl p-6 sm:p-8 shadow-xl text-center group hover:scale-105 transition-all duration-500 hover:shadow-2xl border border-blue-100/50 relative overflow-hidden">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent opacity-50"></div>
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Zap className="w-8 h-8 text-white group-hover:animate-pulse" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">⚡ Instant Booking</h3>
-                <p className="text-gray-600 text-sm mb-4">Book your slot instantly with real-time availability. No waiting, no delays - just pure cricket action!</p>
-                {/* Cricket stars */}
-                <div className="flex justify-center space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-blue-500 fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Instant Booking</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">Book your slot instantly with real-time availability</p>
             </div>
             
-            <div className="bg-gradient-to-br from-white via-green-50/50 to-cricket-green/10 rounded-2xl p-6 sm:p-8 shadow-xl text-center group hover:scale-105 transition-all duration-500 hover:shadow-2xl border border-green-100/50 relative overflow-hidden">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent opacity-50"></div>
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-cricket-green to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="w-8 h-8 text-white group-hover:animate-bounce" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">🛡️ Verified Grounds</h3>
-                <p className="text-gray-600 text-sm mb-4">All grounds are verified for quality and safety. Play with confidence on championship-level pitches!</p>
-                {/* Cricket stars */}
-                <div className="flex justify-center space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-cricket-green fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Verified Grounds</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">All grounds are verified for quality and safety</p>
             </div>
             
-            <div className="bg-gradient-to-br from-white via-purple-50/50 to-purple-100/10 rounded-2xl p-6 sm:p-8 shadow-xl text-center group hover:scale-105 transition-all duration-500 hover:shadow-2xl border border-purple-100/50 relative overflow-hidden">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent opacity-50"></div>
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="w-8 h-8 text-white group-hover:animate-spin" style={{ animationDuration: '2s' }} />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">🔒 Secure Payments</h3>
-                <p className="text-gray-600 text-sm mb-4">Multiple secure payment options available. Your money is as safe as a wicket-keeper's gloves!</p>
-                {/* Cricket stars */}
-                <div className="flex justify-center space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-purple-500 fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
               </div>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Secure Payments</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">Multiple secure payment options available</p>
             </div>
             
-            <div className="bg-gradient-to-br from-white via-orange-50/50 to-orange-100/10 rounded-2xl p-6 sm:p-8 shadow-xl text-center group hover:scale-105 transition-all duration-500 hover:shadow-2xl border border-orange-100/50 relative overflow-hidden">
-              {/* Textured overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent opacity-50"></div>
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Clock className="w-8 h-8 text-white group-hover:animate-pulse" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">🏆 24/7 Support</h3>
-                <p className="text-gray-600 text-sm mb-4">Round-the-clock customer support for any queries. We're always here for your cricket journey!</p>
-                {/* Cricket stars */}
-                <div className="flex justify-center space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-orange-500 fill-current animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                  ))}
-                </div>
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
+                </svg>
               </div>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">24/7 Support</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">Round-the-clock customer support for any queries</p>
             </div>
           </div>
         </div>
       </section>
+
+
 
       {/* Location Prompt */}
       {!selectedCity && (
@@ -1139,66 +826,155 @@ const Index = () => {
         </section>
       )}
 
-      {/* Stadium-Style Newsletter Signup */}
-      <section className="py-20 bg-gradient-to-br from-cricket-green via-emerald-600 to-green-700 relative overflow-hidden">
-        {/* Stadium background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        
-        {/* Stadium lights effect */}
-        <div className="absolute top-0 left-1/4 w-32 h-32 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-0 right-1/4 w-32 h-32 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-6 py-3 mb-6 backdrop-blur-sm">
-              <Trophy className="w-5 h-5 text-white animate-pulse" />
-              <span className="text-white font-semibold">Join the Championship League</span>
-            </div>
-            
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-              Stay in the Game! 🏆
+      {/* Newsletter Signup */}
+      <section className="py-16 bg-gradient-to-r from-cricket-green to-green-600">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Stay Updated
             </h2>
-            <p className="text-green-100 mb-10 text-lg leading-relaxed">
-              Get exclusive access to new grounds, championship offers, and cricket events. 
-              Be the first to know about premium pitches in your area!
+            <p className="text-green-100 mb-8">
+              Get notified about new grounds, special offers, and cricket events in your area
             </p>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
-                <input
-                  type="email"
-                  placeholder="Enter your email to join"
-                  className="flex-1 px-6 py-4 rounded-xl border-0 bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-white/50 focus:outline-none text-gray-900 placeholder-gray-500 font-medium"
-                />
-                <Button className="bg-gradient-to-r from-cricket-yellow to-orange-500 hover:from-cricket-yellow/90 hover:to-orange-600 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 hover:scale-105 shadow-lg">
-                  <Bell className="w-5 h-5 mr-2" />
-                  Subscribe
-                </Button>
-              </div>
-              <p className="text-green-100 text-sm mt-6 flex items-center justify-center">
-                <Shield className="w-4 h-4 mr-2" />
-                100% Privacy Protected • Unsubscribe anytime
-              </p>
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white/20 focus:outline-none"
+              />
+              <Button className="bg-white text-cricket-green hover:bg-gray-100">
+                Subscribe
+              </Button>
             </div>
-            
-            {/* Cricket stats */}
-            <div className="grid grid-cols-3 gap-8 mt-12 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">10K+</div>
-                <div className="text-green-100 text-sm">Active Players</div>
+            <p className="text-green-100 text-sm mt-4">
+              We respect your privacy. Unsubscribe at any time.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile App Download Section */}
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              {/* Content */}
+              <div className="text-center lg:text-left">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  Get the BoxCric App
+                </h2>
+                <p className="text-gray-600 mb-6 text-lg">
+                  Download our mobile app for the best booking experience. Get instant notifications, 
+                  manage your bookings, and discover new grounds on the go.
+                </p>
+                
+                {/* Features */}
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-cricket-green/10 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-cricket-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-gray-700">Instant booking & notifications</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-cricket-green/10 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-cricket-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-gray-700">Offline ground information</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-cricket-green/10 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-cricket-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-gray-700">GPS navigation to grounds</span>
+                  </div>
+                </div>
+
+                {/* App Store Badges */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <a href="#" className="inline-block">
+                    <div className="bg-black text-white px-6 py-3 rounded-lg flex items-center space-x-3 hover:bg-gray-800 transition-colors">
+                      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                      </svg>
+                      <div className="text-left">
+                        <div className="text-xs">Download on the</div>
+                        <div className="text-sm font-semibold">App Store</div>
+                      </div>
+                    </div>
+                  </a>
+                  <a href="#" className="inline-block">
+                    <div className="bg-black text-white px-6 py-3 rounded-lg flex items-center space-x-3 hover:bg-gray-800 transition-colors">
+                      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
+                      </svg>
+                      <div className="text-left">
+                        <div className="text-xs">GET IT ON</div>
+                        <div className="text-sm font-semibold">Google Play</div>
+                      </div>
+                    </div>
+                  </a>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">500+</div>
-                <div className="text-green-100 text-sm">Premium Grounds</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">25+</div>
-                <div className="text-green-100 text-sm">Cities Covered</div>
+
+              {/* App Mockup */}
+              <div className="relative">
+                <div className="relative mx-auto lg:mx-0 w-80 h-96 bg-gradient-to-br from-cricket-green to-green-600 rounded-3xl shadow-2xl p-8">
+                  <div className="bg-white rounded-2xl h-full p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-cricket-green rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">BC</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">BoxCric</span>
+                      </div>
+                      <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900">Marine Drive Arena</h3>
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            <span className="text-sm text-gray-600">4.8</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Premium cricket ground with floodlights</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-cricket-green font-semibold">₹1,200/hr</span>
+                          <Button size="sm" className="bg-cricket-green text-white">
+                            Book Now
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900">Andheri Sports Complex</h3>
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            <span className="text-sm text-gray-600">4.6</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Professional pitch with parking</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-cricket-green font-semibold">₹800/hr</span>
+                          <Button size="sm" className="bg-cricket-green text-white">
+                            Book Now
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1227,8 +1003,20 @@ const Index = () => {
         ground={selectedGround}
         onBookingCreated={handleBookingCreated}
       />
+
+      {/* Scroll to Top Button */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 bg-cricket-green hover:bg-cricket-green/90 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40"
+        aria-label="Scroll to top"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+      </button>
     </div>
   );
 };
 
 export default Index;
+

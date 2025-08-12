@@ -24,7 +24,6 @@ interface User {
   phone: string;
   avatar?: string;
   isVerified: boolean;
-  createdAt?: string;
   location?: {
     cityId: string;
     cityName: string;

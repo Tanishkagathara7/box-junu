@@ -79,16 +79,14 @@ const Navbar = ({
   return (
     <>
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-
-
-            {/* Logo */}
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="flex items-center space-x-1 sm:space-x-3 group">
-                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-cricket rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                  <div className="w-4 h-4 sm:w-7 sm:h-7 bg-white rounded sm:rounded-lg flex items-center justify-center">
-                    <div className="w-2 h-2 sm:w-4 sm:h-4 bg-cricket-green rounded-sm sm:rounded-md"></div>
+            {/* BoxCric Logo - Positioned at the far left */}
+            <div className="flex-shrink-0 mr-4">
+              <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-cricket rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-md">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white rounded-lg flex items-center justify-center">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-cricket-green rounded-md"></div>
                   </div>
                 </div>
                 <div className="text-left">
@@ -100,8 +98,8 @@ const Navbar = ({
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
+            {/* Desktop Navigation - Centered */}
+            <div className="hidden md:flex items-center space-x-4 lg:space-x-8 flex-1 justify-center">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -171,8 +169,8 @@ const Navbar = ({
               </div>
             </div>
 
-            {/* Search Bar and Actions */}
-            <div className="hidden md:flex items-center space-x-4">
+            {/* Search Bar and Actions - Right side */}
+            <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
               {/* Location Selector */}
               <Button
                 variant="outline"

@@ -326,18 +326,23 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
     } = req.body;
 
     const userId = req.userId;
+    console.log("🔍 Payment verification request:", { order_id, payment_session_id, bookingId, userId });
+
     if (!bookingId || bookingId === "undefined") {
+      console.log("❌ Invalid booking ID:", bookingId);
       return res.status(400).json({ success: false, message: "Invalid booking ID" });
     }
 
     // Verify payment with Cashfree using SDK
     let paymentDetails;
     try {
+      console.log("🔍 Verifying payment with Cashfree for order:", order_id);
       const response = await cashfree.PGFetchOrder(order_id);
       paymentDetails = response.data;
-      console.log("Payment verification successful:", paymentDetails.order_status);
+      console.log("✅ Payment verification successful:", paymentDetails.order_status);
+      console.log("📋 Payment details:", JSON.stringify(paymentDetails, null, 2));
     } catch (sdkError) {
-      console.error("Cashfree verification error:", sdkError.response?.data || sdkError);
+      console.error("❌ Cashfree verification error:", sdkError.response?.data || sdkError);
       throw new Error(`Failed to verify payment with Cashfree: ${sdkError.response?.data?.message || sdkError.message}`);
     }
     
@@ -364,17 +369,21 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
     }
 
     // Find the booking in MongoDB
-    const booking = await Booking.findOne({ 
-      _id: bookingId, 
-      userId 
+    console.log("🔍 Looking for booking:", bookingId, "for user:", userId);
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      userId
     }).populate("groundId", "name location price features");
 
     if (!booking) {
+      console.log("❌ Booking not found:", bookingId);
       return res.status(404).json({
         success: false,
         message: "Booking not found",
       });
     }
+
+    console.log("✅ Found booking:", booking.bookingId, "current status:", booking.status);
 
     // Check if booking is still available before confirming
     // This prevents race conditions where slot gets booked by someone else
@@ -430,12 +439,14 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
 
     // Update booking with payment details
     booking.payment = {
+      ...booking.payment,
       cashfreeOrderId: order_id,
       cashfreePaymentSessionId: payment_session_id,
       status: "completed",
       paidAt: new Date(),
       paymentDetails: paymentDetails
     };
+    console.log("💳 Updated payment details:", booking.payment);
     booking.status = "confirmed";
     booking.confirmation = {
       confirmedAt: new Date(),
@@ -444,6 +455,7 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
     };
 
     await booking.save();
+    console.log("✅ Booking saved successfully! Status:", booking.status, "Confirmation code:", booking.confirmation?.confirmationCode);
 
     res.json({
       success: true,
@@ -516,8 +528,9 @@ router.post("/payment-failed", authMiddleware, async (req, res) => {
 router.post("/webhook", async (req, res) => {
   try {
     const { order_id, order_amount, order_currency, order_status, payment_session_id } = req.body;
-    
-    console.log("Cashfree webhook received:", { order_id, order_status });
+
+    console.log("🔔 Cashfree webhook received:", { order_id, order_status, order_amount });
+    console.log("📋 Full webhook payload:", JSON.stringify(req.body, null, 2));
     
     // Find booking by order_id
     const booking = await Booking.findOne({ 
@@ -525,9 +538,11 @@ router.post("/webhook", async (req, res) => {
     });
     
     if (!booking) {
-      console.error("Booking not found for order_id:", order_id);
+      console.error("❌ Webhook: Booking not found for order_id:", order_id);
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
+
+    console.log("✅ Webhook: Found booking:", booking.bookingId, "current status:", booking.status);
     
     if (order_status === 'PAID') {
       booking.payment.status = "completed";
@@ -549,8 +564,8 @@ router.post("/webhook", async (req, res) => {
     }
     
     await booking.save();
-    console.log("Booking updated via webhook:", booking.bookingId);
-    
+    console.log("✅ Webhook: Booking updated successfully:", booking.bookingId, "new status:", booking.status);
+
     res.json({ success: true });
   } catch (error) {
     console.error("Webhook processing error:", error);

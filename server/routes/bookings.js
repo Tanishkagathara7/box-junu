@@ -219,11 +219,19 @@ router.post("/", authMiddleware, async (req, res) => {
     if (isValidObjectId) {
       try {
         // Find any booking that overlaps with the requested slot
-        // Check both confirmed and pending bookings to prevent double booking
+        // Check confirmed bookings and recent pending bookings (within last 10 minutes) to prevent double booking
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
         const existingBookings = await Booking.find({
           groundId,
           bookingDate: new Date(bookingDate),
-          status: { $in: ["pending", "confirmed"] }
+          $or: [
+            { status: "confirmed" },
+            {
+              status: "pending",
+              createdAt: { $gte: tenMinutesAgo },
+              "payment.status": { $ne: "failed" }
+            }
+          ]
         }).session(session);
 
         // Check for overlaps using JavaScript logic
@@ -627,11 +635,12 @@ router.get("/ground/:groundId/:date", async (req, res) => {
   try {
     const { groundId, date } = req.params;
 
-    // Fetch all bookings for this ground and date
+    // Fetch all confirmed bookings for this ground and date
+    // Only confirmed bookings should show as unavailable to users
     const bookings = await Booking.find({
       groundId,
       bookingDate: date,
-      status: { $in: ["pending", "confirmed"] }
+      status: "confirmed"
     }).select("timeSlot status");
 
     // Get all possible slots (24h)
@@ -707,6 +716,11 @@ router.patch("/:id/approve", authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: "Only pending bookings can be approved." });
     }
     booking.status = "confirmed";
+    booking.confirmation = {
+      confirmedAt: new Date(),
+      confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+      confirmedBy: "ground_owner"
+    };
     await booking.save();
     res.json({ success: true, message: "Booking approved.", booking });
   } catch (error) {
@@ -862,11 +876,12 @@ adminRouter.get("/ground/:groundId/:date", async (req, res) => {
     const { groundId, date } = req.params;
     console.log(`Admin availability request for ground: ${groundId}, date: ${date}`);
     
-    // Get all bookings for this ground on this date
+    // Get all confirmed bookings for this ground on this date
+    // Only confirmed bookings should show as unavailable
     const bookings = await Booking.find({
       groundId,
       bookingDate: new Date(date),
-      status: { $in: ["pending", "confirmed"] }
+      status: "confirmed"
     });
     console.log(`Found ${bookings.length} existing bookings`);
 
@@ -1107,7 +1122,12 @@ adminRouter.post("/", async (req, res) => {
         totalAmount,
         currency: "INR"
       },
-      status: "confirmed" // Admin-created bookings are automatically confirmed
+      status: "confirmed", // Admin-created bookings are automatically confirmed
+      confirmation: {
+        confirmedAt: new Date(),
+        confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+        confirmedBy: "admin"
+      }
     });
 
     try {
@@ -1165,6 +1185,16 @@ adminRouter.patch("/:id", async (req, res) => {
         updateData[key] = update[key];
       }
     }
+
+    // If status is being changed to confirmed, add confirmation details
+    if (update.status === 'confirmed') {
+      updateData.confirmation = {
+        confirmedAt: new Date(),
+        confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+        confirmedBy: "admin"
+      };
+    }
+
     const booking = await Booking.findByIdAndUpdate(bookingId, updateData, { new: true })
       .populate("userId", "name email")
       .populate("groundId", "name location");

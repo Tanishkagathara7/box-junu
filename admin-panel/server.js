@@ -299,11 +299,12 @@ app.get('/api/admin/bookings/ground/:groundId/:date', async (req, res) => {
   try {
     const { groundId, date } = req.params;
     
-    // Get all bookings for this ground on this date
+    // Get all confirmed bookings for this ground on this date
+    // Only confirmed bookings should show as unavailable
     const bookings = await Booking.find({
       groundId,
       bookingDate: new Date(date),
-      status: { $in: ["pending", "confirmed"] }
+      status: "confirmed"
     });
 
     // Generate all possible time slots (24 hours)
@@ -391,11 +392,12 @@ app.post('/api/admin/bookings', adminAuth, async (req, res) => {
     const end = new Date(`2000-01-01 ${endTime}`);
     const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
-    // Check for overlapping bookings
+    // Check for overlapping confirmed bookings
+    // Admin can override pending bookings if needed
     const existingBookings = await Booking.find({
       groundId,
       bookingDate: new Date(bookingDate),
-      status: { $in: ["pending", "confirmed"] }
+      status: "confirmed"
     });
 
     const overlappingBooking = existingBookings.find(booking => {
@@ -447,7 +449,12 @@ app.post('/api/admin/bookings', adminAuth, async (req, res) => {
         totalAmount,
         currency: "INR"
       },
-      status: "confirmed" // Admin-created bookings are automatically confirmed
+      status: "confirmed", // Admin-created bookings are automatically confirmed
+      confirmation: {
+        confirmedAt: new Date(),
+        confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+        confirmedBy: "admin"
+      }
     });
 
     await booking.save();
@@ -473,9 +480,22 @@ app.post('/api/admin/bookings', adminAuth, async (req, res) => {
 app.patch('/api/admin/bookings/:id', adminAuth, async (req, res) => {
   try {
     const { status } = req.body;
+
+    // Prepare update object
+    const updateData = { status };
+
+    // If status is being changed to confirmed, add confirmation details
+    if (status === 'confirmed') {
+      updateData.confirmation = {
+        confirmedAt: new Date(),
+        confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+        confirmedBy: "admin"
+      };
+    }
+
     const booking = await Booking.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateData,
       { new: true }
     )
       .populate('userId', 'name')

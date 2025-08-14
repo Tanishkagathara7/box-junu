@@ -29,10 +29,10 @@ export async function cleanupExpiredBookings() {
       
       // Update payment status if it exists
       if (booking.payment) {
-        booking.payment.status = 'expired';
+        booking.payment.status = 'failed';
       } else {
         booking.payment = {
-          status: 'expired'
+          status: 'failed'
         };
       }
 

@@ -35,14 +35,56 @@ const PaymentCallback = () => {
         // Get parameters from URL
         const bookingId = getQueryParam(location.search, "booking_id");
         const orderId = getQueryParam(location.search, "order_id");
+        const paymentSessionId = getQueryParam(location.search, "payment_session_id");
         const txStatus = getQueryParam(location.search, "txStatus") || getQueryParam(location.hash, "txStatus");
 
-        console.log("Payment callback params:", { bookingId, orderId, txStatus });
+        console.log("Payment callback params:", { bookingId, orderId, paymentSessionId, txStatus });
 
         if (!bookingId) {
           setError("No booking ID found in callback URL.");
           setLoading(false);
           return;
+        }
+
+        // If we have payment success parameters, verify the payment first
+        if (orderId && paymentSessionId && txStatus && txStatus.toUpperCase() === "SUCCESS") {
+          console.log("Payment success detected, verifying payment...");
+
+          try {
+            const token = localStorage.getItem("token");
+            const verifyResponse = await fetch(`${API_BASE_URL}/payments/verify-payment`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                order_id: orderId,
+                payment_session_id: paymentSessionId,
+                bookingId: bookingId
+              })
+            });
+
+            const verifyData = await verifyResponse.json();
+            console.log("Payment verification response:", verifyData);
+
+            if (verifyData.success) {
+              // Payment verified successfully, booking should be confirmed
+              setPaymentStatus({
+                status: "SUCCESS",
+                bookingId,
+                orderId,
+                amount: verifyData.booking?.pricing?.totalAmount,
+                bookingDetails: verifyData.booking
+              });
+              setLoading(false);
+              return;
+            } else {
+              console.error("Payment verification failed:", verifyData.message);
+            }
+          } catch (verifyError) {
+            console.error("Payment verification error:", verifyError);
+          }
         }
 
         // First, try to get status from URL parameters (Cashfree callback)

@@ -539,10 +539,44 @@ router.get("/:id", authMiddleware, async (req, res) => {
     const booking = await Booking.findOne({ _id: bookingId, userId });
 
     if (!booking) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Booking not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
       });
+    }
+
+    // Auto-fix: Check if payment is completed but booking is still pending
+    if (booking.status === 'pending' && booking.payment?.cashfreeOrderId) {
+      try {
+        const { Cashfree } = await import('cashfree-pg');
+        const cashfree = new Cashfree({
+          env: process.env.NODE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX',
+          appId: process.env.CASHFREE_APP_ID,
+          secretKey: process.env.CASHFREE_SECRET_KEY
+        });
+
+        const response = await cashfree.PGFetchOrder(booking.payment.cashfreeOrderId);
+        const order_status = response.data.order_status;
+
+        if (order_status === 'PAID') {
+          console.log(`🔧 Auto-fixing booking ${booking.bookingId}: Payment is PAID but booking is pending`);
+
+          booking.payment.status = "completed";
+          booking.payment.paidAt = new Date();
+          booking.payment.paymentDetails = response.data;
+          booking.status = "confirmed";
+          booking.confirmation = {
+            confirmedAt: new Date(),
+            confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+            confirmedBy: "auto_fix"
+          };
+
+          await booking.save();
+          console.log(`✅ Auto-fixed booking ${booking.bookingId} - now confirmed`);
+        }
+      } catch (cashfreeError) {
+        console.log(`⚠️ Could not check Cashfree status for booking ${booking.bookingId}:`, cashfreeError.message);
+      }
     }
 
     const bookingObj = booking.toObject();

@@ -53,6 +53,25 @@ router.get("/status/:bookingId", async (req, res) => {
       try {
         const response = await cashfree.PGFetchOrder(booking.payment.cashfreeOrderId);
         const order_status = response.data.order_status;
+
+        // Auto-fix: If payment is PAID but booking is still pending, update it
+        if (order_status === 'PAID' && booking.status === 'pending') {
+          console.log(`🔧 Auto-fixing booking ${bookingId}: Payment is PAID but booking is pending`);
+
+          booking.payment.status = "completed";
+          booking.payment.paidAt = new Date();
+          booking.payment.paymentDetails = response.data;
+          booking.status = "confirmed";
+          booking.confirmation = {
+            confirmedAt: new Date(),
+            confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+            confirmedBy: "auto_fix"
+          };
+
+          await booking.save();
+          console.log(`✅ Auto-fixed booking ${bookingId} - now confirmed`);
+        }
+
         return res.json({
           success: true,
           status: order_status,

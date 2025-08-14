@@ -260,7 +260,7 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
       return;
     }
     try {
-  const API = import.meta.env.VITE_API_URL || "https://box-cash.onrender.com/api";
+  const API = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
   const healthResponse = await fetch(`${API}/health`);
       if (!healthResponse.ok) throw new Error('Server not responding');
     } catch {

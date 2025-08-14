@@ -26,7 +26,7 @@ interface Booking {
   status: string;
 }
 
-const API = import.meta.env.VITE_API_URL || "https://box-cash.onrender.com/api";
+const API = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
 
 function getToken() {
   return localStorage.getItem("token");

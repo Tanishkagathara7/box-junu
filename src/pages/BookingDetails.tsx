@@ -118,21 +118,18 @@ const BookingDetails = () => {
     // Only show payment if:
     // 1. Booking status is pending AND
     // 2. Payment status is pending (not failed/cancelled) AND
-    // 3. Booking is not cancelled
+    // 3. Booking is not cancelled AND
+    // 4. Payment hasn't failed
     return (
       booking.status === "pending" &&
       payment.status === "pending" &&
-      !booking.cancellation
+      !booking.cancellation &&
+      payment.status !== "failed"
     );
   };
 
-  // Auto-open payment modal only if payment is actually needed
-  useEffect(() => {
-    if (booking && needsPayment()) {
-      setIsPaymentModalOpen(true);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [booking]);
+  // DO NOT auto-open payment modal - let user decide when to pay
+  // This prevents annoying popup every time they view booking details
 
   if (isLoading) {
     return (
@@ -421,18 +418,32 @@ const BookingDetails = () => {
                 <div className="space-y-3">
                   {/* Payment Action Message */}
                   {booking.status === "cancelled" && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-red-800 font-medium">❌ This booking has been cancelled.</p>
-                      {booking.cancellation?.reason && (
-                        <p className="text-red-600 text-sm mt-1">Reason: {booking.cancellation.reason}</p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                      <p className="text-red-800 font-medium">❌ Order Cancelled</p>
+                      <div className="text-sm text-red-700">
+                        <p><strong>Booking ID:</strong> {booking.bookingId || booking._id}</p>
+                        {booking.cancellation?.reason && (
+                          <p><strong>Reason:</strong> {booking.cancellation.reason}</p>
+                        )}
+                      </div>
+                      {(payment.status === "completed" || payment.paidAt) && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-2">
+                          <p className="text-yellow-800 text-sm">
+                            💰 <strong>Refund Information:</strong> If you paid for this booking,
+                            your refund will be processed within 2-3 business days to your original payment method.
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
 
                   {payment.status === "failed" && booking.status !== "cancelled" && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-red-800 font-medium">❌ Payment failed for this booking.</p>
-                      <p className="text-red-600 text-sm mt-1">You can try booking again or contact support.</p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                      <p className="text-red-800 font-medium">❌ Payment Failed</p>
+                      <div className="text-sm text-red-700">
+                        <p><strong>Booking ID:</strong> {booking.bookingId || booking._id}</p>
+                        <p>Your payment could not be processed. You can try booking again or contact support.</p>
+                      </div>
                     </div>
                   )}
 

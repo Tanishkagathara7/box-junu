@@ -40,7 +40,8 @@ const io = new Server(server, {
             'https://box-host.netlify.app',
             'https://box-9t8s1yy3n-tanishs-projects-fa8014b4.vercel.app',
             'https://box-new.vercel.app',
-            'https://box-cash.vercel.app'
+            'https://box-cash.vercel.app',
+            'https://box-junu.vercel.app'
           ]
         : [
             "http://localhost:5173",
@@ -79,7 +80,8 @@ app.use(cors({
           'https://box-host.netlify.app',
           'https://box-9t8s1yy3n-tanishs-projects-fa8014b4.vercel.app',
           'https://box-new.vercel.app',
-          'https://box-cash.vercel.app'
+          'https://box-cash.vercel.app',
+          'https://box-junu.vercel.app'
         ]
       : [
           "http://localhost:5173",

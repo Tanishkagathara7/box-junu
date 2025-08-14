@@ -120,9 +120,18 @@ const PaymentCallback = () => {
     const statusUpper = status.toUpperCase();
     if (["SUCCESS", "PAID", "COMPLETED"].includes(statusUpper)) {
       return "SUCCESS";
-    } else if (["FAILED", "CANCELLED", "EXPIRED", "TERMINATED"].includes(statusUpper)) {
+    } else if (["FAILED", "CANCELLED", "EXPIRED", "TERMINATED", "USER_DROPPED"].includes(statusUpper)) {
       return "FAILED";
-    } else if (["PENDING", "ACTIVE"].includes(statusUpper)) {
+    } else if (["PENDING"].includes(statusUpper)) {
+      return "PENDING";
+    } else if (["ACTIVE"].includes(statusUpper)) {
+      // ACTIVE means payment session is still active but user might have cancelled
+      // Check if we have URL parameters indicating cancellation
+      const urlParams = new URLSearchParams(window.location.search);
+      const txStatus = urlParams.get('txStatus');
+      if (txStatus && ["CANCELLED", "FAILED", "USER_DROPPED"].includes(txStatus.toUpperCase())) {
+        return "FAILED";
+      }
       return "PENDING";
     }
     return statusUpper;

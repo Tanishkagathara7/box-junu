@@ -2,7 +2,7 @@ import axios from "axios";
 import { isMongoObjectId } from "./utils";
 
 // Always use deployed backend, unless VITE_API_URL is explicitly set
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://box-cash.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
 
 // Log API URL for debugging
 console.log("🔗 API Base URL:", API_BASE_URL);

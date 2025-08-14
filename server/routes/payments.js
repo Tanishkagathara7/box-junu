@@ -227,7 +227,7 @@ router.post("/create-order", authMiddleware, async (req, res) => {
       },
       order_meta: {
         // Always use your real frontend and backend URLs for redirect and webhook
-        return_url: `https://box-cash.vercel.app/payment/callback?booking_id=${booking._id}`,
+        return_url: `https://box-junu.vercel.app/payment/callback?booking_id=${booking._id}`,
   notify_url: `https://box-junu.onrender.com/api/payments/webhook`,
         payment_methods: "cc,dc,nb,upi,paylater,emi"
       }
@@ -553,7 +553,7 @@ router.post("/webhook", async (req, res) => {
         confirmationCode: `BC${Date.now().toString().slice(-6)}`,
         confirmedBy: "system"
       };
-    } else if (order_status === 'EXPIRED' || order_status === 'FAILED') {
+    } else if (['EXPIRED', 'FAILED', 'CANCELLED', 'TERMINATED', 'USER_DROPPED'].includes(order_status)) {
       booking.payment.status = "failed";
       booking.status = "cancelled";
       booking.cancellation = {

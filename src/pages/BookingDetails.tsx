@@ -111,12 +111,24 @@ const BookingDetails = () => {
   const pricing = booking?.pricing || {};
   const payment = booking?.payment || { status: "pending" };
 
-  // Auto-open payment modal if payment is pending
+  // Helper function to check if payment is actually needed
+  const needsPayment = () => {
+    if (!booking) return false;
+
+    // Only show payment if:
+    // 1. Booking status is pending AND
+    // 2. Payment status is pending (not failed/cancelled) AND
+    // 3. Booking is not cancelled
+    return (
+      booking.status === "pending" &&
+      payment.status === "pending" &&
+      !booking.cancellation
+    );
+  };
+
+  // Auto-open payment modal only if payment is actually needed
   useEffect(() => {
-    if (
-      booking &&
-      (payment.status === "pending" || (!payment && booking.status === "pending"))
-    ) {
+    if (booking && needsPayment()) {
       setIsPaymentModalOpen(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -372,14 +384,33 @@ const BookingDetails = () => {
                         ? "bg-green-100 text-green-800"
                         : payment.status === "pending"
                         ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
+                        : payment.status === "failed"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
                     }
                   >
+                    {payment.status === "completed" && "✅ "}
+                    {payment.status === "failed" && "❌ "}
+                    {payment.status === "pending" && "⏳ "}
                     {payment.status
                       ? payment.status.charAt(0).toUpperCase() +
                         payment.status.slice(1)
                       : "Pending"}
                   </Badge>
+
+                  {/* Show payment method if available */}
+                  {payment.method && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      via {payment.method}
+                    </div>
+                  )}
+
+                  {/* Show transaction ID if available */}
+                  {payment.transactionId && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Transaction: {payment.transactionId}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -388,15 +419,49 @@ const BookingDetails = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-3">
-                  {booking.status === "pending" &&
-                    payment.status === "pending" && (
+                  {/* Payment Action Message */}
+                  {booking.status === "cancelled" && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-red-800 font-medium">❌ This booking has been cancelled.</p>
+                      {booking.cancellation?.reason && (
+                        <p className="text-red-600 text-sm mt-1">Reason: {booking.cancellation.reason}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {payment.status === "failed" && booking.status !== "cancelled" && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-red-800 font-medium">❌ Payment failed for this booking.</p>
+                      <p className="text-red-600 text-sm mt-1">You can try booking again or contact support.</p>
+                    </div>
+                  )}
+
+                  {booking.status === "confirmed" && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-green-800 font-medium">✅ Your booking is confirmed!</p>
+                      {booking.confirmation?.confirmationCode && (
+                        <p className="text-green-600 text-sm mt-1">
+                          Confirmation Code: <span className="font-mono font-bold">{booking.confirmation.confirmationCode}</span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Payment Button - Only show if payment is actually needed */}
+                  {needsPayment() && (
+                    <>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-yellow-800 font-medium">⏳ Payment required to confirm your booking.</p>
+                        <p className="text-yellow-600 text-sm mt-1">Complete your payment to secure your slot.</p>
+                      </div>
                       <Button
                         onClick={() => setIsPaymentModalOpen(true)}
                         className="w-full bg-cricket-green hover:bg-cricket-green/90"
                       >
                         Complete Payment
                       </Button>
-                    )}
+                    </>
+                  )}
 
                   {(booking.status === "pending" ||
                     booking.status === "confirmed") && (

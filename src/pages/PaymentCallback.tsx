@@ -4,113 +4,353 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "https://box-junu.onrender.
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, XCircle, Clock, AlertTriangle, Home, Receipt } from "lucide-react";
 
 function getQueryParam(search: string, key: string) {
   const params = new URLSearchParams(search);
   return params.get(key);
 }
 
+interface PaymentStatus {
+  status: string;
+  bookingId?: string;
+  orderId?: string;
+  amount?: number;
+  bookingDetails?: any;
+}
+
 const PaymentCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [status, setStatus] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
-    // Try to get status from query/hash (Cashfree appends txStatus)
-    let txStatus = getQueryParam(location.search, "txStatus") || getQueryParam(location.hash, "txStatus");
-    if (txStatus) {
-      setStatus(txStatus);
-      setLoading(false);
-      return;
-    }
-    // If not present, try to fetch from backend using booking_id
-    const bookingId = getQueryParam(location.search, "booking_id");
-    if (!bookingId) {
-      setError("No booking ID found in callback URL.");
-      setLoading(false);
-      return;
-    }
-  fetch(`${API_BASE_URL}/bookings/${bookingId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.booking) {
-          const paymentStatus = data.booking.payment?.status || data.booking.status;
-          setStatus(paymentStatus?.toUpperCase() || null);
+    const fetchPaymentStatus = async () => {
+      try {
+        // Get parameters from URL
+        const bookingId = getQueryParam(location.search, "booking_id");
+        const orderId = getQueryParam(location.search, "order_id");
+        const txStatus = getQueryParam(location.search, "txStatus") || getQueryParam(location.hash, "txStatus");
+
+        console.log("Payment callback params:", { bookingId, orderId, txStatus });
+
+        if (!bookingId) {
+          setError("No booking ID found in callback URL.");
           setLoading(false);
-        } else {
-          // fallback: try to fetch from Cashfree directly
-          fetch(`${API_BASE_URL}/payments/status/${bookingId}`)
-            .then(res2 => res2.json())
-            .then(data2 => {
-              if (data2.success && data2.status) {
-                setStatus(data2.status?.toUpperCase() || null);
-              } else {
-                setError("Could not fetch booking/payment status.");
-              }
-            })
-            .catch(() => setError("Could not fetch booking/payment status."))
-            .finally(() => setLoading(false));
+          return;
         }
-      })
-      .catch(() => {
-        // fallback: try to fetch from Cashfree directly
-  fetch(`${API_BASE_URL}/payments/status/${bookingId}`)
-          .then(res2 => res2.json())
-          .then(data2 => {
-            if (data2.success && data2.status) {
-              setStatus(data2.status?.toUpperCase() || null);
-            } else {
-              setError("Could not fetch booking/payment status.");
-            }
-          })
-          .catch(() => setError("Could not fetch booking/payment status."))
-          .finally(() => setLoading(false));
-      });
+
+        // First, try to get status from URL parameters (Cashfree callback)
+        if (txStatus) {
+          console.log("Using txStatus from URL:", txStatus);
+          const status = mapCashfreeStatus(txStatus);
+          setPaymentStatus({
+            status,
+            bookingId,
+            orderId
+          });
+          setLoading(false);
+          return;
+        }
+
+        // If no txStatus, fetch from backend
+        console.log("Fetching booking status from backend...");
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`);
+        const data = await response.json();
+
+        if (data.success && data.booking) {
+          const booking = data.booking;
+          const paymentStatus = booking.payment?.status || "pending";
+          const bookingStatus = booking.status;
+
+          console.log("Backend response:", { paymentStatus, bookingStatus, booking });
+
+          // Determine final status based on both payment and booking status
+          let finalStatus = "PENDING";
+          if (paymentStatus === "completed" && bookingStatus === "confirmed") {
+            finalStatus = "SUCCESS";
+          } else if (paymentStatus === "failed" || bookingStatus === "cancelled") {
+            finalStatus = "FAILED";
+          } else if (paymentStatus === "pending" && bookingStatus === "pending") {
+            finalStatus = "PENDING";
+          }
+
+          setPaymentStatus({
+            status: finalStatus,
+            bookingId,
+            orderId: booking.payment?.cashfreeOrderId,
+            amount: booking.pricing?.totalAmount,
+            bookingDetails: booking
+          });
+        } else {
+          // Fallback: try to get status from Cashfree directly
+          console.log("Trying Cashfree status endpoint...");
+          const cashfreeResponse = await fetch(`${API_BASE_URL}/payments/status/${bookingId}`);
+          const cashfreeData = await cashfreeResponse.json();
+
+          if (cashfreeData.success && cashfreeData.status) {
+            const status = mapCashfreeStatus(cashfreeData.status);
+            setPaymentStatus({
+              status,
+              bookingId,
+              orderId: cashfreeData.cashfreeOrderId
+            });
+          } else {
+            setError("Could not fetch payment status. Please check your bookings.");
+          }
+        }
+      } catch (error) {
+        console.error("Payment status fetch error:", error);
+        setError("Failed to fetch payment status. Please check your bookings.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentStatus();
   }, [location]);
 
-  useEffect(() => {
-    if (!status) return;
-    if (["SUCCESS", "COMPLETED", "PAID", "CONFIRMED"].includes(status)) {
-      toast.success("Payment successful! Your booking is confirmed.");
-      setTimeout(() => navigate("/profile/bookings"), 3500);
-    } else if (["FAILED", "CANCELLED", "EXPIRED"].includes(status)) {
-      toast.error("Payment failed or cancelled. Returning to home page.");
-      setTimeout(() => navigate("/"), 3500);
+  // Helper function to map Cashfree status to our status
+  const mapCashfreeStatus = (status: string): string => {
+    const statusUpper = status.toUpperCase();
+    if (["SUCCESS", "PAID", "COMPLETED"].includes(statusUpper)) {
+      return "SUCCESS";
+    } else if (["FAILED", "CANCELLED", "EXPIRED", "TERMINATED"].includes(statusUpper)) {
+      return "FAILED";
+    } else if (["PENDING", "ACTIVE"].includes(statusUpper)) {
+      return "PENDING";
     }
-  }, [status, navigate]);
+    return statusUpper;
+  };
+
+  // Countdown and navigation logic
+  useEffect(() => {
+    if (!paymentStatus) return;
+
+    const { status } = paymentStatus;
+
+    if (status === "SUCCESS") {
+      toast.success("Payment successful! Your booking is confirmed.");
+    } else if (status === "FAILED") {
+      toast.error("Payment failed or was cancelled.");
+    }
+
+    // Start countdown for navigation
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (status === "SUCCESS") {
+            navigate("/profile/bookings");
+          } else {
+            navigate("/");
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [paymentStatus, navigate]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "SUCCESS":
+        return <CheckCircle className="w-16 h-16 text-green-500" />;
+      case "FAILED":
+        return <XCircle className="w-16 h-16 text-red-500" />;
+      case "PENDING":
+        return <Clock className="w-16 h-16 text-yellow-500" />;
+      default:
+        return <AlertTriangle className="w-16 h-16 text-orange-500" />;
+    }
+  };
+
+  const getStatusMessage = (status: string) => {
+    switch (status) {
+      case "SUCCESS":
+        return {
+          title: "Payment Successful!",
+          description: "Your booking has been confirmed successfully.",
+          color: "text-green-600"
+        };
+      case "FAILED":
+        return {
+          title: "Payment Failed",
+          description: "Your payment could not be processed or was cancelled.",
+          color: "text-red-600"
+        };
+      case "PENDING":
+        return {
+          title: "Payment Pending",
+          description: "Your payment is still being processed. Please wait.",
+          color: "text-yellow-600"
+        };
+      default:
+        return {
+          title: "Unknown Status",
+          description: "We're checking your payment status. Please wait.",
+          color: "text-orange-600"
+        };
+    }
+  };
 
   return (
-    <div style={{ maxWidth: 480, margin: "60px auto", padding: 32, border: "1px solid #eee", borderRadius: 12, textAlign: "center", background: "#fff" }}>
-      <h2 style={{ fontSize: 28, marginBottom: 16 }}>Payment Status</h2>
-      {loading && <p>Processing payment status...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {!loading && !error && status && (
-        <>
-          {(["SUCCESS", "COMPLETED", "PAID", "CONFIRMED"].includes(status)) && (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-2xl font-bold text-gray-900">
+            Payment Status
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="text-center space-y-6">
+          {loading ? (
             <>
-              <div style={{ fontSize: 48, color: "#16a34a", marginBottom: 12 }}>✔️</div>
-              <p style={{ color: "#16a34a", fontWeight: 600, fontSize: 20 }}>Payment Successful!</p>
-              <p style={{ color: "#444", marginTop: 8 }}>Your booking is confirmed. Redirecting to your bookings...</p>
+              <div className="flex justify-center">
+                <Clock className="w-16 h-16 text-blue-500 animate-spin" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Processing Payment Status...
+                </h3>
+                <p className="text-gray-600">
+                  Please wait while we verify your payment.
+                </p>
+              </div>
             </>
-          )}
-          {(["FAILED", "CANCELLED", "EXPIRED"].includes(status)) && (
+          ) : error ? (
             <>
-              <div style={{ fontSize: 48, color: "#dc2626", marginBottom: 12 }}>❌</div>
-              <p style={{ color: "#dc2626", fontWeight: 600, fontSize: 20 }}>Payment Failed or Cancelled</p>
-              <p style={{ color: "#444", marginTop: 8 }}>Please try again. Redirecting to home...</p>
+              <div className="flex justify-center">
+                <AlertTriangle className="w-16 h-16 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-red-600 mb-2">
+                  Error
+                </h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => navigate("/profile/bookings")}
+                    className="w-full"
+                  >
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Check My Bookings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/")}
+                    className="w-full"
+                  >
+                    <Home className="w-4 h-4 mr-2" />
+                    Go Home
+                  </Button>
+                </div>
+              </div>
             </>
-          )}
-          {(!["SUCCESS", "COMPLETED", "PAID", "CONFIRMED", "FAILED", "CANCELLED", "EXPIRED"].includes(status)) && (
+          ) : paymentStatus ? (
             <>
-              <div style={{ fontSize: 48, color: "#f59e42", marginBottom: 12 }}>⏳</div>
-              <p style={{ color: "#f59e42", fontWeight: 600, fontSize: 20 }}>Payment Status: {status}</p>
-              <p style={{ color: "#444", marginTop: 8 }}>Please check your bookings for the latest status.</p>
+              <div className="flex justify-center">
+                {getStatusIcon(paymentStatus.status)}
+              </div>
+
+              <div>
+                <h3 className={`text-xl font-semibold mb-2 ${getStatusMessage(paymentStatus.status).color}`}>
+                  {getStatusMessage(paymentStatus.status).title}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {getStatusMessage(paymentStatus.status).description}
+                </p>
+              </div>
+
+              {/* Booking Details */}
+              {paymentStatus.bookingId && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Booking ID:</span>
+                    <span className="font-medium">{paymentStatus.bookingDetails?.bookingId || paymentStatus.bookingId}</span>
+                  </div>
+                  {paymentStatus.orderId && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Order ID:</span>
+                      <span className="font-medium">{paymentStatus.orderId}</span>
+                    </div>
+                  )}
+                  {paymentStatus.amount && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Amount:</span>
+                      <span className="font-medium">₹{paymentStatus.amount}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                {paymentStatus.status === "SUCCESS" ? (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      Redirecting to your bookings in {countdown} seconds...
+                    </p>
+                    <Button
+                      onClick={() => navigate("/profile/bookings")}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      <Receipt className="w-4 h-4 mr-2" />
+                      View My Bookings
+                    </Button>
+                  </>
+                ) : paymentStatus.status === "FAILED" ? (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      Redirecting to home in {countdown} seconds...
+                    </p>
+                    <Button
+                      onClick={() => navigate("/")}
+                      className="w-full"
+                    >
+                      <Home className="w-4 h-4 mr-2" />
+                      Try Booking Again
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/profile/bookings")}
+                      className="w-full"
+                    >
+                      <Receipt className="w-4 h-4 mr-2" />
+                      Check My Bookings
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => navigate("/profile/bookings")}
+                      className="w-full"
+                    >
+                      <Receipt className="w-4 h-4 mr-2" />
+                      Check My Bookings
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/")}
+                      className="w-full"
+                    >
+                      <Home className="w-4 h-4 mr-2" />
+                      Go Home
+                    </Button>
+                  </>
+                )}
+              </div>
             </>
-          )}
-        </>
-      )}
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 };

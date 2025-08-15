@@ -99,48 +99,120 @@ const PaymentModal = ({
     else {
       const groundId = booking.groundId || booking.ground;
       
-      // Define fallback ground data (matching the backend fallback structure)
-      const fallbackGroundData = {
-        _id: groundId,
-        name: "Marine Drive Cricket Arena",
-        description: "Premium cricket ground with excellent facilities for competitive matches.",
-        location: {
-          address: "Marine Drive, Mumbai, Maharashtra",
-          cityName: "Mumbai",
-          state: "Maharashtra"
-        },
-        price: {
-          perHour: 1500,
-          currency: "INR",
-          discount: 0
-        },
-        images: [
-          {
-            url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=300&fit=crop",
-            alt: "Cricket Ground - Main View",
-            isPrimary: true
+      // Define city-specific fallback ground data
+      const getFallbackGroundData = (groundId: string) => {
+        // Try to determine city from ground ID or use city-specific fallbacks
+        let cityFallback = {
+          name: "Cricket Ground",
+          cityName: "Unknown City",
+          state: "India",
+          address: "Cricket Ground Location"
+        };
+        
+        // Detect city from ground ID or common patterns
+        if (groundId && typeof groundId === 'string') {
+          const lowerId = groundId.toLowerCase();
+          if (lowerId.includes('mumbai') || lowerId.includes('marine')) {
+            cityFallback = {
+              name: "Marine Drive Cricket Arena",
+              cityName: "Mumbai",
+              state: "Maharashtra",
+              address: "Marine Drive, Mumbai, Maharashtra"
+            };
+          } else if (lowerId.includes('delhi') || lowerId.includes('cp') || lowerId.includes('dwarka')) {
+            cityFallback = {
+              name: "Delhi Cricket Arena",
+              cityName: "Delhi",
+              state: "Delhi",
+              address: "Central Delhi, New Delhi, Delhi"
+            };
+          } else if (lowerId.includes('ahmedabad') || lowerId.includes('gujarat')) {
+            cityFallback = {
+              name: "Ahmedabad Cricket Stadium",
+              cityName: "Ahmedabad",
+              state: "Gujarat",
+              address: "Ahmedabad, Gujarat"
+            };
+          } else if (lowerId.includes('bangalore') || lowerId.includes('bengaluru') || lowerId.includes('karnataka')) {
+            cityFallback = {
+              name: "Bangalore Cricket Ground",
+              cityName: "Bangalore",
+              state: "Karnataka",
+              address: "Bangalore, Karnataka"
+            };
+          } else if (lowerId.includes('chennai') || lowerId.includes('tamil')) {
+            cityFallback = {
+              name: "Chennai Cricket Ground",
+              cityName: "Chennai",
+              state: "Tamil Nadu",
+              address: "Chennai, Tamil Nadu"
+            };
+          } else if (lowerId.includes('hyderabad') || lowerId.includes('telangana')) {
+            cityFallback = {
+              name: "Hyderabad Cricket Ground",
+              cityName: "Hyderabad",
+              state: "Telangana",
+              address: "Hyderabad, Telangana"
+            };
+          } else if (lowerId.includes('kolkata') || lowerId.includes('bengal')) {
+            cityFallback = {
+              name: "Kolkata Cricket Ground",
+              cityName: "Kolkata",
+              state: "West Bengal",
+              address: "Kolkata, West Bengal"
+            };
+          } else if (lowerId.includes('pune') || lowerId.includes('maharashtra')) {
+            cityFallback = {
+              name: "Pune Cricket Ground",
+              cityName: "Pune",
+              state: "Maharashtra",
+              address: "Pune, Maharashtra"
+            };
           }
-        ],
-        amenities: ["Floodlights", "Parking", "Washroom", "Changing Room", "Drinking Water"],
-        features: {
-          pitchType: "Artificial Turf",
-          capacity: 22,
-          lighting: true,
-          parking: true
-        },
-        rating: {
-          average: 4.7,
-          count: 89
-        },
-        owner: {
-          name: "Ground Owner",
-          contact: "N/A",
-          email: "owner@example.com"
         }
+        
+        return {
+          _id: groundId,
+          name: cityFallback.name,
+          description: "Premium cricket ground with excellent facilities for competitive matches.",
+          location: {
+            address: cityFallback.address,
+            cityName: cityFallback.cityName,
+            state: cityFallback.state
+          },
+          price: {
+            perHour: 1500,
+            currency: "INR",
+            discount: 0
+          },
+          images: [
+            {
+              url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=300&fit=crop",
+              alt: `${cityFallback.name} - Main View`,
+              isPrimary: true
+            }
+          ],
+          amenities: ["Floodlights", "Parking", "Washroom", "Changing Room", "Drinking Water"],
+          features: {
+            pitchType: "Artificial Turf",
+            capacity: 22,
+            lighting: true,
+            parking: true
+          },
+          rating: {
+            average: 4.7,
+            count: 89
+          },
+          owner: {
+            name: "Ground Owner",
+            contact: "N/A",
+            email: "owner@example.com"
+          }
+        };
       };
       
-      ground = fallbackGroundData;
-      console.log("PaymentModal: Using fallback ground data for ID:", groundId);
+      ground = getFallbackGroundData(groundId);
+      console.log("PaymentModal: Using city-specific fallback ground data for ID:", groundId);
     }
     
     console.log("PaymentModal: Final selected ground data:", ground);
@@ -384,7 +456,7 @@ const PaymentModal = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {bookingData.ground?.name || "Ground"}
+                  {bookingData.ground?.name || "Cricket Ground"}
                 </h3>
                 <div className="flex items-center text-sm text-gray-600 mb-2">
                   <MapPin className="w-4 h-4 mr-1" />

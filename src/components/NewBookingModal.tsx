@@ -290,7 +290,17 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
       console.log("Booking response:", response);
       if (response && (response as any).success) {
         toast.success("Booking created! Please complete payment to confirm.");
-        setCreatedBooking((response as any).booking);
+        
+        // Manually attach the ground object to the booking for PaymentModal
+        // This ensures the PaymentModal has access to the full ground details
+        const bookingWithGroundData = {
+          ...(response as any).booking,
+          groundId: ground, // Replace the string ID with the full ground object
+          ground: ground    // Also add as 'ground' property for backwards compatibility
+        };
+        
+        console.log("Enhanced booking with ground data for PaymentModal:", bookingWithGroundData);
+        setCreatedBooking(bookingWithGroundData);
         setIsPaymentModalOpen(true);
       } else {
         throw new Error((response as any)?.message || "Failed to create booking");

@@ -72,8 +72,9 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
       <div className="relative">
         {/* Image Carousel with swipe support */}
         <div
-          className="relative h-48 xs:h-52 sm:h-56 md:h-48 lg:h-56 overflow-hidden"
+          className="relative h-48 xs:h-52 sm:h-56 md:h-48 lg:h-56 overflow-hidden cursor-pointer"
           {...swipeHandlers}
+          onClick={() => onViewDetails?.(ground._id)}
         >
           <img
             src={
@@ -89,14 +90,20 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
           {ground.images && ground.images.length > 1 && (
             <>
               <button
-                onClick={() => handleImageNavigation("prev")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleImageNavigation("prev");
+                }}
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-black/80 text-lg sm:text-xl"
                 aria-label="Previous image"
               >
                 ‹
               </button>
               <button
-                onClick={() => handleImageNavigation("next")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleImageNavigation("next");
+                }}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-black/80 text-lg sm:text-xl"
                 aria-label="Next image"
               >
@@ -107,7 +114,10 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
                 {ground.images.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentImageIndex(index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
                     className={cn(
                       "w-3 h-3 rounded-full transition-all duration-200",
                       index === currentImageIndex ? "bg-white" : "bg-white/50",
@@ -144,7 +154,10 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
         <CardContent className="p-4 sm:p-5 lg:p-6">
           {/* Header */}
           <div className="mb-3 sm:mb-4">
-            <h3 className="font-bold text-lg sm:text-xl lg:text-xl text-gray-900 group-hover:text-cricket-green transition-colors duration-200 mb-2 sm:mb-3">
+            <h3 
+              className="font-bold text-lg sm:text-xl lg:text-xl text-gray-900 group-hover:text-cricket-green transition-colors duration-200 mb-2 sm:mb-3 cursor-pointer"
+              onClick={() => onViewDetails?.(ground._id)}
+            >
               {ground.name}
             </h3>
             <div className="flex flex-col xs:flex-row items-start xs:items-center space-y-1 xs:space-y-0 xs:space-x-2 text-sm text-gray-600 mb-2">

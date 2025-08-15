@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, Calendar, MapPin, Star, Clock } from "lucide-react";
+import { User, Mail, Phone, Calendar, MapPin, Star, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -202,146 +202,134 @@ const Profile = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="bookings" className="space-y-6">
+            <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="bookings">My Bookings</TabsTrigger>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="favorites">Favorites</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
-              {/* Bookings Tab */}
-              <TabsContent value="bookings" className="space-y-4">
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    My Bookings
+                    Profile Overview
                   </h2>
-                  <Button 
-                    className="bg-cricket-green hover:bg-cricket-green/90"
-                    onClick={() => navigate("/")}
-                  >
-                    Book New Ground
-                  </Button>
                 </div>
 
-                {isLoadingBookings ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i}>
-                        <CardContent className="p-6">
-                          <div className="animate-pulse">
-                            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                            <div className="space-y-2">
-                              <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                            </div>
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/profile/bookings")}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-cricket-green/10 rounded-lg flex items-center justify-center">
+                          <BookOpen className="w-6 h-6 text-cricket-green" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">My Bookings</h3>
+                          <p className="text-gray-600 text-sm">
+                            View and manage your cricket ground bookings
+                          </p>
+                          <div className="mt-2 flex items-center space-x-4 text-sm">
+                            <span className="text-cricket-green font-medium">
+                              {bookings.length} Total
+                            </span>
+                            <span className="text-yellow-600 font-medium">
+                              {bookings.filter(b => b.status === "confirmed" || b.status === "pending").length} Active
+                            </span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : bookings.filter(b => b.groundId).length > 0 ? (
-                  <div className="space-y-4">
-                    {bookings.filter(b => b.groundId).map((booking) => (
-                      <Card key={booking._id}>
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/")}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-sky-blue/10 rounded-lg flex items-center justify-center">
+                          <Calendar className="w-6 h-6 text-sky-blue" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">Book New Ground</h3>
+                          <p className="text-gray-600 text-sm">
+                            Discover and book cricket grounds near you
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recent Bookings Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Recent Bookings</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate("/profile/bookings")}
+                      >
+                        View All
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingBookings ? (
+                      <div className="space-y-3">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : bookings.filter(b => b.groundId).length > 0 ? (
+                      <div className="space-y-3">
+                        {bookings.filter(b => b.groundId).slice(0, 3).map((booking) => (
+                          <div key={booking._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                             <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <h3 className="font-semibold text-lg">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <h4 className="font-medium">
                                   {booking.groundId ? booking.groundId.name : "Unknown Ground"}
-                                </h3>
-                                <Badge
-                                  className={getStatusColor(booking.status)}
-                                >
-                                  {booking.status.charAt(0).toUpperCase() +
-                                    booking.status.slice(1)}
+                                </h4>
+                                <Badge className={getStatusColor(booking.status)} size="sm">
+                                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                                 </Badge>
                               </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                <div className="flex items-center space-x-2">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>{formatDate(booking.bookingDate)}</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{formatTime(booking.timeSlot)}</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <User className="w-4 h-4" />
-                                  <span>{booking.playerDetails.playerCount} players</span>
-                                </div>
-                              </div>
-
-                              {booking.playerDetails.teamName && (
-                                <div className="mt-2 text-sm text-gray-600">
-                                  Team: {booking.playerDetails.teamName}
-                                </div>
-                              )}
-
-                              <div className="mt-3 text-sm text-gray-600">
-                                Booked on {formatDate(booking.createdAt)}
-                              </div>
+                              <p className="text-sm text-gray-600">
+                                {formatDate(booking.bookingDate)} • {formatTime(booking.timeSlot)}
+                              </p>
                             </div>
-
-                            <div className="text-right">
-                              <div className="text-xl font-bold text-cricket-green">
-                                ₹{booking.pricing.totalAmount}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                Total Amount
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex space-x-2 mt-4">
                             <Button 
-                              variant="outline" 
+                              variant="ghost" 
                               size="sm"
                               onClick={() => navigate(`/booking/${booking._id}`)}
                             >
-                              View Details
+                              View
                             </Button>
-                            {booking.status === "confirmed" && (
-                              <Button variant="outline" size="sm">
-                                Reschedule
-                              </Button>
-                            )}
-                            {booking.status === "pending" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 border-red-600 hover:bg-red-50"
-                              >
-                                Cancel
-                              </Button>
-                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="p-12 text-center">
-                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        No bookings yet
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        Start exploring cricket grounds and make your first
-                        booking!
-                      </p>
-                      <Button 
-                        className="bg-cricket-green hover:bg-cricket-green/90"
-                        onClick={() => navigate("/")}
-                      >
-                        Explore Grounds
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No bookings yet
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                          Start exploring cricket grounds and make your first booking!
+                        </p>
+                        <Button 
+                          className="bg-cricket-green hover:bg-cricket-green/90"
+                          onClick={() => navigate("/")}
+                        >
+                          Explore Grounds
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Favorites Tab */}
@@ -350,24 +338,50 @@ const Profile = () => {
                   <h2 className="text-2xl font-bold text-gray-900">
                     Favorite Grounds
                   </h2>
+                  <Button 
+                    className="bg-cricket-green hover:bg-cricket-green/90"
+                    onClick={() => navigate("/favorites")}
+                  >
+                    View All Favorites
+                  </Button>
                 </div>
 
-                <Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/favorites")}>
                   <CardContent className="p-12 text-center">
-                    <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No favorites yet
+                    <Star className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                      Manage Your Favorites
                     </h3>
-                    <p className="text-gray-600 mb-4">
-                      Add cricket grounds to your favorites for quick access.
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Click here to view and manage your favorite cricket grounds. Add grounds to favorites for quick access and easy booking.
                     </p>
-                    <Button
-                      variant="outline"
-                      className="text-cricket-green border-cricket-green hover:bg-cricket-green/10"
-                      onClick={() => navigate("/")}
-                    >
-                      Browse Grounds
-                    </Button>
+                    <div className="space-y-3">
+                      <Button
+                        className="bg-cricket-green hover:bg-cricket-green/90"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/favorites");
+                        }}
+                      >
+                        <Star className="w-4 h-4 mr-2" />
+                        Go to Favorites
+                      </Button>
+                      <div className="text-sm text-gray-500">
+                        Or{" "}
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 h-auto text-cricket-green"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/");
+                          }}
+                        >
+                          browse grounds
+                        </Button>
+                        {" "}to add favorites
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

@@ -352,7 +352,7 @@ const Navbar = ({
                         <BookOpen className="w-4 h-4 mr-3" />
                         My Bookings
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/favorites")}>
                         <Heart className="w-4 h-4 mr-3" />
                         Favorites
                       </DropdownMenuItem>
@@ -409,22 +409,6 @@ const Navbar = ({
           {isMenuOpen && (
             <div className="md:hidden fixed inset-0 z-[200] overflow-y-auto bg-white/95 backdrop-blur-lg shadow-xl">
               <div className="space-y-6 px-4 py-6 pt-20 max-h-screen overflow-y-auto relative">
-                <button 
-                  onClick={() => setIsMenuOpen(false)} 
-                  className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                  <X className="w-6 h-6 text-gray-700" />
-                </button>
-                {/* Mobile Search */}
-                <form onSubmit={handleSearch} className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Search grounds..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border-gray-200 focus:border-cricket-green text-base"
-                  />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                </form>
 
                 {/* Mobile Location and Filter */}
                 <div className="flex flex-col space-y-3">
@@ -486,8 +470,6 @@ const Navbar = ({
                       ))}
                     </div>
 
-                    <div className="border-t border-gray-200 my-2"></div>
-
                     {/* User-specific links */}
                     <div className="grid grid-cols-1 gap-2">
                       <Link
@@ -505,6 +487,14 @@ const Navbar = ({
                       >
                         <BookOpen className="w-5 h-5 mr-3 text-cricket-green" />
                         My Bookings
+                      </Link>
+                      <Link
+                        to="/favorites"
+                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base shadow-sm border border-gray-100"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Heart className="w-5 h-5 mr-3 text-cricket-green" />
+                        Favorites
                       </Link>
                       <Link
                         to="/settings"

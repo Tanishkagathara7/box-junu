@@ -49,6 +49,9 @@ const GroundDetails = () => {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
   useEffect(() => {
+    // Scroll to top when component mounts or ID changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     if (id && !isMongoObjectId(id)) {
       toast.error("This ground cannot be booked online.");
       navigate("/");
@@ -155,6 +158,75 @@ const GroundDetails = () => {
   const clearNotifications = () => {
     setNotifications([]);
     localStorage.removeItem('boxcric_notifications');
+  };
+
+  // Check if ground is in favorites on mount
+  useEffect(() => {
+    if (ground && isAuthenticated) {
+      checkIfFavorite();
+    }
+  }, [ground, isAuthenticated]);
+
+  const checkIfFavorite = () => {
+    try {
+      const favorites = JSON.parse(localStorage.getItem('boxcric_favorites') || '[]');
+      const isInFavorites = favorites.some((fav: any) => fav._id === ground._id);
+      setIsFavorite(isInFavorites);
+    } catch (error) {
+      console.error('Error checking favorites:', error);
+    }
+  };
+
+  const handleToggleFavorite = () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to add favorites');
+      return;
+    }
+
+    try {
+      const favorites = JSON.parse(localStorage.getItem('boxcric_favorites') || '[]');
+      
+      if (isFavorite) {
+        // Remove from favorites
+        const updatedFavorites = favorites.filter((fav: any) => fav._id !== ground._id);
+        localStorage.setItem('boxcric_favorites', JSON.stringify(updatedFavorites));
+        setIsFavorite(false);
+        toast.success('Removed from favorites');
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('favoritesChanged'));
+      } else {
+        // Add to favorites
+        const groundToSave = {
+          _id: safeGround._id,
+          name: safeGround.name,
+          location: safeGround.location,
+          price: {
+            perHour: Array.isArray(safeGround.price?.ranges) && safeGround.price.ranges.length > 0
+              ? Math.round(safeGround.price.ranges.reduce((sum: number, range: any) => sum + range.perHour, 0) / safeGround.price.ranges.length)
+              : safeGround.price?.perHour || 0
+          },
+          rating: safeGround.rating,
+          features: safeGround.features,
+          images: safeGround.images,
+          availability: {
+            isAvailable: true,
+            nextSlot: 'Available now'
+          }
+        };
+        
+        const updatedFavorites = [...favorites, groundToSave];
+        localStorage.setItem('boxcric_favorites', JSON.stringify(updatedFavorites));
+        setIsFavorite(true);
+        toast.success('Added to favorites');
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('favoritesChanged'));
+      }
+    } catch (error) {
+      console.error('Error managing favorites:', error);
+      toast.error('Failed to update favorites');
+    }
   };
 
   const handleTimeSlotSelect = (timeSlot: string) => {
@@ -278,7 +350,11 @@ const GroundDetails = () => {
           </Button>
 
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleToggleFavorite}
+            >
               <Heart
                 className={cn(
                   "w-4 h-4 mr-2",

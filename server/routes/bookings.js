@@ -402,21 +402,60 @@ router.get("/my-bookings", authMiddleware, async (req, res) => {
     // Process bookings to handle both MongoDB and fallback grounds
     const processedBookings = await Promise.all(
       bookings.map(async (booking) => {
-        const bookingObj = booking.toObject();
+        let bookingObj = booking.toObject();
         
         // Check if groundId is a valid ObjectId
         const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
         
         if (isValidObjectId) {
           // Populate from MongoDB
-          await booking.populate("groundId", "name location price features");
-          bookingObj.groundId = booking.groundId;
+          try {
+            await booking.populate("groundId", "name location price features images amenities rating owner");
+            if (booking.groundId && typeof booking.groundId === 'object') {
+              bookingObj.groundId = booking.groundId;
+              console.log("Successfully populated ground from MongoDB in my-bookings:", booking.groundId.name);
+            } else {
+              // Try fallback as a last resort
+              const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+              if (fallbackGround) {
+                bookingObj.groundId = fallbackGround;
+                console.log("Using fallback ground for failed MongoDB populate in my-bookings:", fallbackGround.name);
+              }
+            }
+          } catch (populateError) {
+            console.error("Error populating ground from MongoDB in my-bookings:", populateError);
+            // Try fallback as a last resort
+            const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+            if (fallbackGround) {
+              bookingObj.groundId = fallbackGround;
+              console.log("Using fallback ground due to populate error in my-bookings:", fallbackGround.name);
+            }
+          }
         } else {
           // Find in fallback data
           const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
           if (fallbackGround) {
             bookingObj.groundId = fallbackGround;
+            console.log("Successfully populated ground from fallback in my-bookings:", fallbackGround.name);
+          } else {
+            console.log("Ground not found in fallback data for ID in my-bookings:", bookingObj.groundId);
           }
+        }
+        
+        // Final fallback: if ground is still just an ID string, provide minimal ground object
+        if (typeof bookingObj.groundId === 'string') {
+          console.log("Ground could not be populated in my-bookings, creating minimal ground object for ID:", bookingObj.groundId);
+          bookingObj.groundId = {
+            _id: bookingObj.groundId,
+            name: "Ground details unavailable",
+            location: { address: "Address not available" },
+            price: { perHour: 0 },
+            features: { capacity: 0, pitchType: "Unknown" },
+            images: [],
+            amenities: [],
+            rating: { average: 0, count: 0 },
+            owner: { name: "Unknown", contact: "N/A", email: "N/A" }
+          };
         }
         
         return bookingObj;
@@ -579,22 +618,93 @@ router.get("/:id", authMiddleware, async (req, res) => {
       }
     }
 
-    const bookingObj = booking.toObject();
+    let bookingObj = booking.toObject();
+    
+    console.log("Backend: Processing booking details for ID:", bookingId);
+    console.log("Backend: Initial booking groundId:", bookingObj.groundId);
+    console.log("Backend: Initial booking groundId type:", typeof bookingObj.groundId);
     
     // Check if groundId is a valid ObjectId
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+    console.log("Backend: isValidObjectId:", isValidObjectId);
     
     if (isValidObjectId) {
       // Populate from MongoDB
-      await booking.populate("groundId", "name location price features");
-      bookingObj.groundId = booking.groundId;
+      try {
+        console.log("Backend: Attempting to populate from MongoDB...");
+        await booking.populate("groundId", "name location price features images amenities rating owner");
+        if (booking.groundId && typeof booking.groundId === 'object') {
+          bookingObj.groundId = booking.groundId;
+          console.log("Backend: Successfully populated ground from MongoDB:", booking.groundId.name);
+        } else {
+          console.log("Backend: MongoDB populate failed, ground not found for ID:", bookingObj.groundId);
+          // Try fallback as a last resort
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+          if (fallbackGround) {
+            bookingObj.groundId = fallbackGround;
+            console.log("Backend: Using fallback ground for failed MongoDB populate:", fallbackGround.name);
+          }
+        }
+      } catch (populateError) {
+        console.error("Backend: Error populating ground from MongoDB:", populateError);
+        // Try fallback as a last resort
+        const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+        if (fallbackGround) {
+          bookingObj.groundId = fallbackGround;
+          console.log("Backend: Using fallback ground due to populate error:", fallbackGround.name);
+        }
+      }
     } else {
       // Find in fallback data
+      console.log("Backend: Using fallback grounds for non-ObjectId:", bookingObj.groundId);
       const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
       if (fallbackGround) {
         bookingObj.groundId = fallbackGround;
+        console.log("Backend: Successfully populated ground from fallback:", fallbackGround.name);
+      } else {
+        console.log("Backend: Ground not found in fallback data for ID:", bookingObj.groundId);
       }
     }
+    
+    // Final fallback: if ground is still just an ID string, provide minimal ground object
+    if (typeof bookingObj.groundId === 'string') {
+      console.log("Backend: Ground could not be populated, creating minimal ground object for ID:", bookingObj.groundId);
+      
+      // Try to find a default fallback ground if ID doesn't match any specific ground
+      const defaultGround = fallbackGrounds[0]; // Use first fallback ground as default
+      
+      bookingObj.groundId = {
+        _id: bookingObj.groundId,
+        name: defaultGround?.name || "Ground details unavailable",
+        location: { 
+          address: defaultGround?.location?.address || "Address not available",
+          cityName: defaultGround?.location?.cityName || "Unknown City"
+        },
+        price: { 
+          perHour: defaultGround?.price?.perHour || 0,
+          currency: "INR"
+        },
+        features: { 
+          capacity: defaultGround?.features?.capacity || 0, 
+          pitchType: defaultGround?.features?.pitchType || "Unknown"
+        },
+        images: defaultGround?.images || [],
+        amenities: defaultGround?.amenities || [],
+        rating: { average: 0, count: 0 },
+        owner: { name: "Unknown", contact: "N/A", email: "N/A" }
+      };
+    }
+    
+    console.log("Backend: Final groundId type:", typeof bookingObj.groundId);
+    console.log("Backend: Final ground name:", bookingObj.groundId?.name);
+    console.log("Backend: Final ground address:", bookingObj.groundId?.location?.address);
+    console.log("Backend: Final ground object keys:", Object.keys(bookingObj.groundId || {}));
+    
+    // Also add as 'ground' property for backwards compatibility
+    bookingObj.ground = bookingObj.groundId;
+    
+    console.log("Backend: Response will include both groundId and ground properties");
+    console.log("Backend: bookingObj.ground name:", bookingObj.ground?.name);
 
     res.json({ 
       success: true, 

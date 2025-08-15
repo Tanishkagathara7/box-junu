@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, Clock, AlertTriangle, Home, Receipt } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertTriangle, Home, Receipt, MapPin } from "lucide-react";
 
 function getQueryParam(search: string, key: string) {
   const params = new URLSearchParams(search);
@@ -110,7 +110,10 @@ const PaymentCallback = () => {
           const paymentStatus = booking.payment?.status || "pending";
           const bookingStatus = booking.status;
 
-          console.log("Backend response:", { paymentStatus, bookingStatus, booking });
+          console.log("PaymentCallback: Backend response:", { paymentStatus, bookingStatus, booking });
+          console.log("PaymentCallback: booking.groundId type:", typeof booking?.groundId);
+          console.log("PaymentCallback: booking.groundId value:", booking?.groundId);
+          console.log("PaymentCallback: booking.ground value:", booking?.ground);
 
           // Determine final status based on both payment and booking status
           let finalStatus = "PENDING";
@@ -177,6 +180,62 @@ const PaymentCallback = () => {
       return "PENDING";
     }
     return statusUpper;
+  };
+
+  // Helper functions to extract ground information
+  const getGroundName = (ground: any): string => {
+    if (!ground) return "Ground";
+    
+    // Handle different ground data structures
+    if (typeof ground === "string") {
+      return "Ground"; // Just the ID was provided
+    }
+    
+    if (typeof ground === "object") {
+      return ground.name || "Ground";
+    }
+    
+    return "Ground";
+  };
+  
+  const getGroundImage = (ground: any): string => {
+    if (!ground) return "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+    
+    // Handle different ground data structures
+    if (typeof ground === "string") {
+      return "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+    }
+    
+    if (typeof ground === "object") {
+      // Check if images array exists and has items
+      if (ground.images && Array.isArray(ground.images) && ground.images.length > 0) {
+        const imgItem = ground.images[0];
+        if (typeof imgItem === "string") {
+          return imgItem.startsWith('http') ? imgItem : "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+        } else if (imgItem && typeof imgItem === "object" && "url" in imgItem) {
+          return imgItem.url && imgItem.url.startsWith('http') ? imgItem.url : "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+        }
+      }
+    }
+    
+    return "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+  };
+  
+  const getGroundAddress = (ground: any): string => {
+    if (!ground) return "No address available";
+    
+    // Handle different ground data structures
+    if (typeof ground === "string") {
+      return "No address available";
+    }
+    
+    if (typeof ground === "object") {
+      return ground.location?.address ||
+        (ground.location ? ground.location : "") ||
+        "No address available";
+    }
+    
+    return "No address available";
   };
 
   // Countdown and navigation logic
@@ -322,23 +381,53 @@ const PaymentCallback = () => {
 
               {/* Booking Details */}
               {paymentStatus.bookingId && (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Booking ID:</span>
-                    <span className="font-medium">{paymentStatus.bookingDetails?.bookingId || paymentStatus.bookingId}</span>
+                <div className="space-y-4">
+                  {/* Ground Information */}
+                  {paymentStatus.bookingDetails?.groundId && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                          <img
+                            src={getGroundImage(paymentStatus.bookingDetails.groundId)}
+                            alt={getGroundName(paymentStatus.bookingDetails.groundId)}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            {getGroundName(paymentStatus.bookingDetails.groundId)}
+                          </h3>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            <span className="truncate">{getGroundAddress(paymentStatus.bookingDetails.groundId)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Payment Details */}
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Booking ID:</span>
+                      <span className="font-medium">{paymentStatus.bookingDetails?.bookingId || paymentStatus.bookingId}</span>
+                    </div>
+                    {paymentStatus.orderId && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Order ID:</span>
+                        <span className="font-medium">{paymentStatus.orderId}</span>
+                      </div>
+                    )}
+                    {paymentStatus.amount && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Amount:</span>
+                        <span className="font-medium">₹{paymentStatus.amount}</span>
+                      </div>
+                    )}
                   </div>
-                  {paymentStatus.orderId && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Order ID:</span>
-                      <span className="font-medium">{paymentStatus.orderId}</span>
-                    </div>
-                  )}
-                  {paymentStatus.amount && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Amount:</span>
-                      <span className="font-medium">₹{paymentStatus.amount}</span>
-                    </div>
-                  )}
                 </div>
               )}
 

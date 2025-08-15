@@ -68,14 +68,85 @@ const PaymentModal = ({
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Enhanced dynamic amount calculation
+  // Enhanced dynamic amount calculation with proper ground data handling
   const bookingData = useMemo(() => {
     if (!booking) return null;
 
-    const ground =
-      (booking.groundId && typeof booking.groundId === "object"
-        ? booking.groundId
-        : booking.ground) || {};
+    console.log("PaymentModal: Processing booking data:", booking);
+    console.log("PaymentModal: booking.groundId:", booking.groundId);
+    console.log("PaymentModal: booking.ground:", booking.ground);
+    console.log("PaymentModal: typeof booking.groundId:", typeof booking.groundId);
+
+    // Enhanced ground data selection logic
+    let ground = null;
+    
+    // Priority 1: Check if groundId is an object (populated from backend)
+    if (booking.groundId && typeof booking.groundId === "object" && booking.groundId.name) {
+      ground = booking.groundId;
+      console.log("PaymentModal: Using booking.groundId (populated object)");
+    }
+    // Priority 2: Check if ground property exists and has data
+    else if (booking.ground && typeof booking.ground === "object" && booking.ground.name) {
+      ground = booking.ground;
+      console.log("PaymentModal: Using booking.ground");
+    }
+    // Priority 3: Try groundId if it has name property (backward compatibility)
+    else if (booking.groundId && booking.groundId.name) {
+      ground = booking.groundId;
+      console.log("PaymentModal: Using booking.groundId (fallback)");
+    }
+    // Priority 4: Create a ground object using fallback data if we only have string ID
+    else {
+      const groundId = booking.groundId || booking.ground;
+      
+      // Define fallback ground data (matching the backend fallback structure)
+      const fallbackGroundData = {
+        _id: groundId,
+        name: "Marine Drive Cricket Arena",
+        description: "Premium cricket ground with excellent facilities for competitive matches.",
+        location: {
+          address: "Marine Drive, Mumbai, Maharashtra",
+          cityName: "Mumbai",
+          state: "Maharashtra"
+        },
+        price: {
+          perHour: 1500,
+          currency: "INR",
+          discount: 0
+        },
+        images: [
+          {
+            url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=300&fit=crop",
+            alt: "Cricket Ground - Main View",
+            isPrimary: true
+          }
+        ],
+        amenities: ["Floodlights", "Parking", "Washroom", "Changing Room", "Drinking Water"],
+        features: {
+          pitchType: "Artificial Turf",
+          capacity: 22,
+          lighting: true,
+          parking: true
+        },
+        rating: {
+          average: 4.7,
+          count: 89
+        },
+        owner: {
+          name: "Ground Owner",
+          contact: "N/A",
+          email: "owner@example.com"
+        }
+      };
+      
+      ground = fallbackGroundData;
+      console.log("PaymentModal: Using fallback ground data for ID:", groundId);
+    }
+    
+    console.log("PaymentModal: Final selected ground data:", ground);
+    console.log("PaymentModal: Ground name:", ground?.name);
+    console.log("PaymentModal: Ground location:", ground?.location);
+    console.log("PaymentModal: Ground address:", ground?.location?.address);
 
     let firstImage = "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
     if (

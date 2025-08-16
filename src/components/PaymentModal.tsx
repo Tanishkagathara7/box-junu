@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreditCard, Shield, Clock, MapPin, Calendar, Users, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,38 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { paymentsApi } from "@/lib/api";
+import { paymentsApi, bookingsApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { startHoldTimer, confirmBookingAfterPayment } from "@/utils/bookingUtils";
+
+// Utility functions
+const formatDate = (dateString: string): string => {
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  };
+  return new Date(dateString).toLocaleDateString('en-US', options);
+};
+
+const formatTime = (timeString: string): string => {
+  const [hours, minutes] = timeString.split(':');
+  const hour = parseInt(hours, 10);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${period}`;
+};
+
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 // Declare Cashfree types
 declare global {
@@ -49,6 +78,29 @@ interface Booking {
     duration?: number;
   };
   amount?: number;
+  status?: string;
+}
+
+interface BookingData {
+  ground?: {
+    name?: string;
+    location?: string;
+    images?: string[];
+  };
+  firstImage?: string;
+  address?: string;
+  baseAmount: number;
+  discount: number;
+  taxes: number;
+  totalAmount: number;
+  duration: number;
+  pricing?: {
+    baseAmount?: number;
+    discount?: number;
+    taxes?: number;
+    totalAmount?: number;
+    duration?: number;
+  };
 }
 
 interface PaymentModalProps {
@@ -56,6 +108,7 @@ interface PaymentModalProps {
   onClose: () => void;
   booking: Booking | null;
   onPaymentSuccess: (booking: Booking) => void;
+  bookingData?: BookingData;
 }
 
 const PaymentModal = ({
@@ -67,23 +120,27 @@ const PaymentModal = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const holdTimerRef = useRef<() => void>();
 
-  // Enhanced dynamic amount calculation with proper ground data handling
+  // Clean up hold timer on unmount
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) {
+        holdTimerRef.current();
+      }
+    };
+  }, []);
+
   const bookingData = useMemo(() => {
     if (!booking) return null;
 
-    console.log("PaymentModal: Processing booking data:", booking);
-    console.log("PaymentModal: booking.groundId:", booking.groundId);
-    console.log("PaymentModal: booking.ground:", booking.ground);
-    console.log("PaymentModal: typeof booking.groundId:", typeof booking.groundId);
-
     // Enhanced ground data selection logic
     let ground = null;
-    
+
     // Priority 1: Check if groundId is an object (populated from backend)
     if (booking.groundId && typeof booking.groundId === "object" && booking.groundId.name) {
       ground = booking.groundId;
-      console.log("PaymentModal: Using booking.groundId (populated object)");
     }
     // Priority 2: Check if ground property exists and has data
     else if (booking.ground && typeof booking.ground === "object" && booking.ground.name) {
@@ -98,7 +155,7 @@ const PaymentModal = ({
     // Priority 4: Create a ground object using fallback data if we only have string ID
     else {
       const groundId = booking.groundId || booking.ground;
-      
+
       // Define city-specific fallback ground data
       const getFallbackGroundData = (groundId: string) => {
         // Try to determine city from ground ID or use city-specific fallbacks
@@ -106,71 +163,97 @@ const PaymentModal = ({
           name: "Cricket Ground",
           cityName: "Unknown City",
           state: "India",
-          address: "Cricket Ground Location"
+          address: "Cricket Ground Location",
         };
-        
+
         // Detect city from ground ID or common patterns
-        if (groundId && typeof groundId === 'string') {
+        if (groundId && typeof groundId === "string") {
           const lowerId = groundId.toLowerCase();
-          if (lowerId.includes('mumbai') || lowerId.includes('marine')) {
+          if (
+            lowerId.includes("mumbai") ||
+            lowerId.includes("marine")
+          ) {
             cityFallback = {
               name: "Marine Drive Cricket Arena",
               cityName: "Mumbai",
               state: "Maharashtra",
-              address: "Marine Drive, Mumbai, Maharashtra"
+              address: "Marine Drive, Mumbai, Maharashtra",
             };
-          } else if (lowerId.includes('delhi') || lowerId.includes('cp') || lowerId.includes('dwarka')) {
+          } else if (
+            lowerId.includes("delhi") ||
+            lowerId.includes("cp") ||
+            lowerId.includes("dwarka")
+          ) {
             cityFallback = {
               name: "Delhi Cricket Arena",
               cityName: "Delhi",
               state: "Delhi",
-              address: "Central Delhi, New Delhi, Delhi"
+              address: "Central Delhi, New Delhi, Delhi",
             };
-          } else if (lowerId.includes('ahmedabad') || lowerId.includes('gujarat')) {
+          } else if (
+            lowerId.includes("ahmedabad") ||
+            lowerId.includes("gujarat")
+          ) {
             cityFallback = {
               name: "Ahmedabad Cricket Stadium",
               cityName: "Ahmedabad",
               state: "Gujarat",
-              address: "Ahmedabad, Gujarat"
+              address: "Ahmedabad, Gujarat",
             };
-          } else if (lowerId.includes('bangalore') || lowerId.includes('bengaluru') || lowerId.includes('karnataka')) {
+          } else if (
+            lowerId.includes("bangalore") ||
+            lowerId.includes("bengaluru") ||
+            lowerId.includes("karnataka")
+          ) {
             cityFallback = {
               name: "Bangalore Cricket Ground",
               cityName: "Bangalore",
               state: "Karnataka",
-              address: "Bangalore, Karnataka"
+              address: "Bangalore, Karnataka",
             };
-          } else if (lowerId.includes('chennai') || lowerId.includes('tamil')) {
+          } else if (
+            lowerId.includes("chennai") ||
+            lowerId.includes("tamil")
+          ) {
             cityFallback = {
               name: "Chennai Cricket Ground",
               cityName: "Chennai",
               state: "Tamil Nadu",
-              address: "Chennai, Tamil Nadu"
+              address: "Chennai, Tamil Nadu",
             };
-          } else if (lowerId.includes('hyderabad') || lowerId.includes('telangana')) {
+          } else if (
+            lowerId.includes("hyderabad") ||
+            lowerId.includes("telangana")
+          ) {
             cityFallback = {
               name: "Hyderabad Cricket Ground",
               cityName: "Hyderabad",
               state: "Telangana",
-              address: "Hyderabad, Telangana"
+              address: "Hyderabad, Telangana",
             };
-          } else if (lowerId.includes('kolkata') || lowerId.includes('bengal')) {
+          } else if (
+            lowerId.includes("kolkata") ||
+            lowerId.includes("bengal")
+          ) {
             cityFallback = {
               name: "Kolkata Cricket Ground",
               cityName: "Kolkata",
               state: "West Bengal",
-              address: "Kolkata, West Bengal"
+              address: "Kolkata, West Bengal",
             };
-          } else if (lowerId.includes('pune') || lowerId.includes('maharashtra')) {
+          } else if (
+            lowerId.includes("pune") ||
+            lowerId.includes("maharashtra")
+          ) {
             cityFallback = {
               name: "Pune Cricket Ground",
               cityName: "Pune",
               state: "Maharashtra",
-              address: "Pune, Maharashtra"
+              address: "Pune, Maharashtra",
             };
           }
         }
-        
+
         return {
           _id: groundId,
           name: cityFallback.name,
@@ -178,43 +261,43 @@ const PaymentModal = ({
           location: {
             address: cityFallback.address,
             cityName: cityFallback.cityName,
-            state: cityFallback.state
+            state: cityFallback.state,
           },
           price: {
             perHour: 1500,
             currency: "INR",
-            discount: 0
+            discount: 0,
           },
           images: [
             {
               url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=300&fit=crop",
               alt: `${cityFallback.name} - Main View`,
-              isPrimary: true
-            }
+              isPrimary: true,
+            },
           ],
           amenities: ["Floodlights", "Parking", "Washroom", "Changing Room", "Drinking Water"],
           features: {
             pitchType: "Artificial Turf",
             capacity: 22,
             lighting: true,
-            parking: true
+            parking: true,
           },
           rating: {
             average: 4.7,
-            count: 89
+            count: 89,
           },
           owner: {
             name: "Ground Owner",
             contact: "N/A",
-            email: "owner@example.com"
-          }
+            email: "owner@example.com",
+          },
         };
       };
-      
+
       ground = getFallbackGroundData(groundId);
       console.log("PaymentModal: Using city-specific fallback ground data for ID:", groundId);
     }
-    
+
     console.log("PaymentModal: Final selected ground data:", ground);
     console.log("PaymentModal: Ground name:", ground?.name);
     console.log("PaymentModal: Ground location:", ground?.location);
@@ -228,9 +311,9 @@ const PaymentModal = ({
     ) {
       const imgItem = ground.images[0];
       if (typeof imgItem === "string") {
-        firstImage = imgItem.startsWith('http') ? imgItem : "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+        firstImage = imgItem.startsWith("http") ? imgItem : "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
       } else if (imgItem && typeof imgItem === "object" && "url" in imgItem) {
-        firstImage = imgItem.url && imgItem.url.startsWith('http') ? imgItem.url : "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+        firstImage = imgItem.url && imgItem.url.startsWith("http") ? imgItem.url : "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
       }
     }
 
@@ -244,8 +327,14 @@ const PaymentModal = ({
     let perHour = ground?.price?.perHour || 0;
     let duration = booking?.timeSlot?.duration || 1;
     // If price ranges exist, pick the correct perHour based on startTime
-    if (Array.isArray(ground?.price?.ranges) && ground.price.ranges.length > 0 && booking?.timeSlot?.startTime) {
-      const slot = ground.price.ranges.find(r => r.start === booking.timeSlot.startTime);
+    if (
+      Array.isArray(ground?.price?.ranges) &&
+      ground.price.ranges.length > 0 &&
+      booking?.timeSlot?.startTime
+    ) {
+      const slot = ground.price.ranges.find(
+        (r) => r.start === booking.timeSlot.startTime
+      );
       if (slot) {
         perHour = slot.perHour;
       } else {
@@ -289,12 +378,22 @@ const PaymentModal = ({
   }, []);
 
   const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup hold timer on unmount
+      if (holdTimerRef.current) {
+        holdTimerRef.current();
+        holdTimerRef.current = undefined;
+      }
+    };
   }, []);
 
   const handlePayment = useCallback(async () => {
@@ -302,131 +401,168 @@ const PaymentModal = ({
 
     try {
       setIsProcessing(true);
+      setPaymentStatus('processing');
 
-      // Create order on backend
-      const orderResponse = await paymentsApi.createOrder({
+      // Start the hold timer when payment is initiated
+      const bookingId = booking._id || booking.id;
+      if (bookingId) {
+        // Release any existing timer
+        if (holdTimerRef.current) {
+          holdTimerRef.current();
+        }
+        // Start new hold timer (15 minutes)
+        holdTimerRef.current = startHoldTimer(bookingId, () => {
+          // This callback runs if the hold expires
+          if (paymentStatus === 'processing') {
+            setPaymentStatus('failed');
+            toast.error('Payment session expired. Please try again.');
+            onClose();
+          }
+        });
+      }
+
+      // Create payment order
+      const response = await paymentsApi.createOrder({
         bookingId: booking._id || booking.id,
       });
 
-      console.log("Order response:", orderResponse);
-
-      if (!(orderResponse as any)?.success) {
-        throw new Error((orderResponse as any)?.message || "Failed to create order");
+      if (!response?.data?.paymentSessionId) {
+        throw new Error('Failed to initialize payment');
       }
 
-      const { order, appId } = orderResponse as any;
-      console.log("Order details:", order);
-      console.log("Payment URL:", order.payment_url);
-
-      if (!appId) {
-        throw new Error("Payment app ID missing from server response.");
+      // Initialize Cashfree
+      if (!window.Cashfree) {
+        throw new Error('Payment processor not available');
       }
 
-      // Use Cashfree SDK for checkout
-      if (typeof window.Cashfree !== 'undefined') {
-        const cashfree = window.Cashfree({
-          mode: order.mode || "production"
-        });
-        
-        const checkoutOptions = {
-          paymentSessionId: order.payment_session_id,
-          redirectTarget: "_self"
-        };
-        
-        console.log("Opening Cashfree checkout with:", checkoutOptions);
-        cashfree.checkout(checkoutOptions);
-      } else {
-        // Fallback to direct redirect if SDK not loaded
-        const cashfreeUrl = order.payment_url || `https://payments.cashfree.com/pg/view/${order.payment_session_id}`;
-        window.location.href = cashfreeUrl;
-      }
+      const cashfree = window.Cashfree({
+        mode: 'production',
+      });
 
-      // Poll for payment completion
-      const checkPaymentStatus = async () => {
+      // Set up payment success handler
+      const handlePaymentSuccess = async (data: any) => {
         try {
-          const verifyResponse = await paymentsApi.verifyPayment({
-            order_id: order.id,
-            payment_session_id: order.payment_session_id,
+          // Verify payment with backend
+          await paymentsApi.verifyPayment({
+            order_id: data.orderId,
+            payment_session_id: data.paymentSessionId,
             bookingId: booking._id || booking.id,
           });
 
-          if ((verifyResponse as any)?.success) {
-            toast.success("Payment successful! Booking confirmed.");
-            onPaymentSuccess(booking);
-            setTimeout(() => {
-              navigate("/profile/bookings");
-            }, 500);
-            onClose();
-            return true;
-          } else if ((verifyResponse as any)?.requiresRefund) {
-            // Handle the case where slot was taken by someone else
-            toast.error((verifyResponse as any)?.message || "This time slot is no longer available. Your payment will be refunded.");
-            setIsProcessing(false);
-            setTimeout(() => {
-              navigate("/grounds"); // Redirect to grounds to book again
-            }, 3000);
-            onClose();
-            return true; // Stop checking
-          }
-        } catch (error: any) {
-          // Check if it's a conflict error (409 status)
-          if (error.response?.status === 409) {
-            const errorData = error.response?.data;
-            toast.error(errorData?.message || "This time slot is no longer available. Your payment will be refunded.");
-            setIsProcessing(false);
-            setTimeout(() => {
-              navigate("/grounds"); // Redirect to grounds to book again
-            }, 3000);
-            onClose();
-            return true; // Stop checking
-          }
-          // Don't log errors for pending payments - this is normal
-          return false;
+          // Confirm booking after successful payment
+          await confirmBookingAfterPayment(
+            booking._id || booking.id,
+            () => {
+              setPaymentStatus('success');
+              onPaymentSuccess(booking);
+              toast.success('Payment successful! Your booking is confirmed.');
+              
+              // Clear the hold timer on success
+              if (holdTimerRef.current) {
+                holdTimerRef.current();
+                holdTimerRef.current = undefined;
+              }
+              
+              // Close the modal after a short delay
+              setTimeout(() => {
+                onClose();
+              }, 2000);
+            },
+            (error) => {
+              console.error('Booking confirmation failed:', error);
+              setPaymentStatus('failed');
+              toast.error('Booking confirmation failed. Please contact support.');
+            }
+          );
+        } catch (error) {
+          console.error('Payment verification failed:', error);
+          setPaymentStatus('failed');
+          toast.error('Payment verification failed. Please contact support.');
+        } finally {
+          setIsProcessing(false);
         }
-        return false;
       };
 
-      // Wait 5 seconds before starting to check payment status
-      setTimeout(() => {
-        // Check payment status every 5 seconds
-        const interval = setInterval(async () => {
-          const isCompleted = await checkPaymentStatus();
-          if (isCompleted) {
-            clearInterval(interval);
-            setIsProcessing(false);
-          }
-        }, 5000);
+      // Set up payment failure handler
+      const handlePaymentFailure = (error: any) => {
+        console.error('Payment failed:', error);
+        setPaymentStatus('failed');
+        toast.error('Payment failed. Please try again or contact support.');
+        setIsProcessing(false);
+      };
 
-        // Stop checking after 15 minutes
-        setTimeout(() => {
-          clearInterval(interval);
-          setIsProcessing(false);
-          toast.error("Payment timeout or failed. Redirecting to home page.");
-          setTimeout(() => {
-            navigate("/");
-          }, 1000);
-        }, 900000); // 15 minutes
-      }, 5000); // Wait 5 seconds before first check
+      // Set up payment handlers
+      window.Cashfree.on('paymentSuccess', handlePaymentSuccess);
+      window.Cashfree.on('paymentFailure', handlePaymentFailure);
 
-    } catch (error: any) {
-      console.error("Payment initiation error:", error);
-      toast.error("Payment failed or cancelled. Redirecting to home page.");
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+      // Start checkout
+      const checkoutOptions = {
+        paymentSessionId: response.data.paymentSessionId,
+        redirectTarget: '_self',
+      };
+
+      console.log('Opening Cashfree checkout with:', checkoutOptions);
+      cashfree.checkout(checkoutOptions);
+
+    } catch (error) {
+      console.error('Payment initialization failed:', error);
+      setPaymentStatus('failed');
+      toast.error('Failed to initialize payment. Please try again.');
       setIsProcessing(false);
     }
-  }, [booking, user, bookingData, onPaymentSuccess, onClose]);
+
+  }, [booking, user, bookingData, onPaymentSuccess, onClose, paymentStatus]);
+
+  // Clean up event listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (window.Cashfree) {
+        window.Cashfree.off('paymentSuccess');
+        window.Cashfree.off('paymentFailure');
+      }
+    };
+  }, []);
 
   if (!booking || !bookingData) return null;
+
+  // Safely extract values from bookingData with proper type checking
+  const getSafeValue = <T,>(value: T | undefined, defaultValue: T): T => {
+    return value !== undefined ? value : defaultValue;
+  };
+
+  // Calculate pricing details with fallbacks
+  const baseAmount = getSafeValue(
+    (bookingData as any)?.pricing?.baseAmount ?? bookingData.baseAmount,
+    0
+  );
+  const discount = getSafeValue(
+    (bookingData as any)?.pricing?.discount ?? bookingData.discount,
+    0
+  );
+  const taxes = getSafeValue(
+    (bookingData as any)?.pricing?.taxes ?? bookingData.taxes,
+    0
+  );
+  const totalAmount = getSafeValue(
+    (bookingData as any)?.pricing?.totalAmount ?? bookingData.totalAmount,
+    0
+  );
+
+  // Get ground details with fallbacks
+  const firstImage = bookingData.firstImage || 
+                    (Array.isArray(bookingData.ground?.images) && bookingData.ground.images[0]) || 
+                    "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+  
+  const groundName = bookingData.ground?.name || "Sports Ground";
+  const address = bookingData.address || bookingData.ground?.location || "Location not specified";
+  
+  // Get player count safely
+  const playerCount = booking.playerDetails?.playerCount || 1;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
-        toast.error("Payment was not completed. Redirecting to home page.");
-        setTimeout(() => {
-          navigate("/");
-        }, 1000);
+        toast.error("Payment was not completed. Please try again.");
       }
       onClose();
     }}>
@@ -446,8 +582,8 @@ const PaymentModal = ({
             <div className="flex items-start space-x-4">
               <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                 <img
-                  src={bookingData.firstImage}
-                  alt={bookingData.ground?.name || "Ground"}
+                  src={firstImage}
+                  alt={groundName}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.src = "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
@@ -456,24 +592,24 @@ const PaymentModal = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {bookingData.ground?.name || "Cricket Ground"}
+                  {groundName}
                 </h3>
                 <div className="flex items-center text-sm text-gray-600 mb-2">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  <span className="truncate">{bookingData.address}</span>
+                  <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">{address}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 text-sm">
                   <div className="flex items-center text-gray-600">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {formatDate(booking.bookingDate)}
+                    <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span>{formatDate(booking.bookingDate)}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {booking.timeSlot.startTime} - {booking.timeSlot.endTime}
+                    <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span>{formatTime(booking.timeSlot.startTime)} - {formatTime(booking.timeSlot.endTime)}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <Users className="w-4 h-4 mr-1" />
-                    {booking.playerDetails.playerCount} players
+                    <Users className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span>{playerCount} player{playerCount !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
               </div>
@@ -486,33 +622,62 @@ const PaymentModal = ({
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span>Base Amount</span>
-                <span>{formatCurrency(bookingData.baseAmount)}</span>
+                <span>{formatCurrency(baseAmount)}</span>
               </div>
-              {bookingData.discount > 0 && (
+              {discount > 0 && (
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Discount</span>
-                  <span>-{formatCurrency(bookingData.discount)}</span>
+                  <span>-{formatCurrency(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span>Convenience Fee (2%)</span>
-                <span>{formatCurrency(bookingData.taxes)}</span>
+                <span>Taxes & Fees</span>
+                <span>{formatCurrency(taxes)}</span>
               </div>
-              <Separator />
+              <Separator className="my-2" />
               <div className="flex justify-between text-lg font-semibold text-cricket-green">
                 <span>Total Amount</span>
-                <span>{formatCurrency(bookingData.totalAmount)}</span>
+                <span>{formatCurrency(totalAmount)}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Payment Button */}
+          <div className="space-y-4">
+            <Button
+              onClick={handlePayment}
+              disabled={isProcessing || totalAmount <= 0}
+              className="w-full bg-gradient-to-r from-cricket-green to-green-600 hover:from-cricket-green/90 hover:to-green-600/90 h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              {isProcessing ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Pay {formatCurrency(totalAmount)}
+                </>
+              )}
+            </Button>
+            
+            <div className="flex items-center justify-center text-xs text-gray-500">
+              <Shield className="w-4 h-4 mr-1 text-green-500" />
+              <span>Secure payment powered by Cashfree</span>
             </div>
           </div>
 
           {/* Security Notice */}
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
             <div className="flex items-start space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
+              <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
                 <Shield className="w-5 h-5 text-green-600" />
               </div>
-              <div>
+              <div className="text-sm text-gray-600">
                 <div className="font-semibold text-green-800 mb-1">Secure Payment</div>
                 <div className="text-sm text-green-700">
                   Your payment is protected by 256-bit SSL encryption and processed securely through Cashfree.

@@ -38,7 +38,13 @@ const AuthModal = ({
     emailOrPhone: "",
     password: "",
   });
+  const [loginErrors, setLoginErrors] = useState<{
+    emailOrPhone?: string;
+    password?: string;
+    general?: string;
+  }>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Register states
   const [registerData, setRegisterData] = useState({
@@ -62,21 +68,67 @@ const AuthModal = ({
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const validateLogin = () => {
+    const errors: typeof loginErrors = {};
+    let isValid = true;
+
+    if (!loginData.emailOrPhone.trim()) {
+      errors.emailOrPhone = 'Email or phone number is required';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginData.emailOrPhone) && 
+              !/^\d{10}$/.test(loginData.emailOrPhone)) {
+      errors.emailOrPhone = 'Please enter a valid email or 10-digit phone number';
+      isValid = false;
+    }
+
+    if (!loginData.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    } else if (loginData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+      isValid = false;
+    }
+
+    setLoginErrors(errors);
+    return isValid;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginData.emailOrPhone || !loginData.password) {
-      toast.error("Please fill in all fields");
+    
+    if (!validateLogin()) {
       return;
     }
 
+    setIsLoggingIn(true);
+    setLoginErrors(prev => ({ ...prev, general: '' }));
+
     try {
-      setIsLoading(true);
       await login(loginData.emailOrPhone, loginData.password);
+      toast.success('Login successful!');
       onClose();
-    } catch (error) {
-      // Error is handled by the auth context
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setLoginErrors({
+        general: error.message || 'Login failed. Please try again.'
+      });
     } finally {
-      setIsLoading(false);
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error for the field being edited
+    if (loginErrors[name as keyof typeof loginErrors]) {
+      setLoginErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 

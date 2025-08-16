@@ -93,90 +93,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (emailOrPhone: string, password: string) => {
-    console.log('[Auth] Login attempt for:', emailOrPhone);
-    
     try {
       setIsLoading(true);
-      console.log('[Auth] Sending login request...');
-      
       const response = await authApi.login({ emailOrPhone, password });
-      console.log('[Auth] Login response:', response);
-      
-      // Handle different response formats
-      const responseData = response?.data || response;
-      
-      if (!responseData) {
-        console.error('[Auth] No response data received');
-        throw new Error('No response from server');
+      const data: AuthResponse = response.data || response;
+      if (data.success) {
+        setAuthToken(data.token!);
+        setUser(data.user!);
+        setUserState(data.user!);
+        toast.success("Login successful!");
       }
-      
-      console.log('[Auth] Response data:', responseData);
-      
-      if (!responseData.success) {
-        console.error('[Auth] Login failed:', responseData.message || 'No error message provided');
-        throw new Error(responseData.message || 'Authentication failed');
-      }
-      
-      if (!responseData.token) {
-        console.error('[Auth] No token in response');
-        throw new Error('Authentication token missing');
-      }
-      
-      if (!responseData.user) {
-        console.error('[Auth] No user data in response');
-        throw new Error('User data missing from response');
-      }
-      
-      console.log('[Auth] Setting auth token and user data');
-      setAuthToken(responseData.token);
-      setUser(responseData.user);
-      setUserState(responseData.user);
-      
-      console.log('[Auth] Login successful, user:', responseData.user);
-      toast.success('Login successful!');
-      
     } catch (error: any) {
-      console.error('[Auth] Login error:', {
-        name: error.name,
-        message: error.message,
-        response: error.response?.data || 'No response data',
-        stack: error.stack
-      });
-      
-      let errorMessage = 'Login failed. Please try again.';
-      
-      // Handle different types of errors
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        const status = error.response.status;
-        const data = error.response.data || {};
-        
-        if (status === 401) {
-          errorMessage = data.message || 'Invalid email/phone or password';
-        } else if (status === 429) {
-          errorMessage = 'Too many attempts. Please try again later.';
-        } else if (status >= 500) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (data.message) {
-          errorMessage = data.message;
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error('[Auth] No response received:', error.request);
-        errorMessage = 'No response from server. Please check your connection.';
-      } else if (error.message === 'Network Error') {
-        // Network error
-        errorMessage = 'Network error. Please check your internet connection.';
-      } else if (error.message) {
-        // Other errors
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
+      toast.error(error.message || "Login failed");
+      throw error;
     } finally {
-      console.log('[Auth] Login process completed');
       setIsLoading(false);
     }
   };

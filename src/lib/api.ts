@@ -122,10 +122,11 @@ export const bookingsApi = {
     if (!isMongoObjectId(data.groundId)) {
       throw new Error("This ground cannot be booked online.");
     }
-    // Add status: 'hold' to put the booking in a temporary hold state
-    return api.post("/bookings", { ...data, status: 'hold' });
+    
+    // The frontend now sends timeSlot in the correct format, so we don't need to construct it
+    return api.post("/bookings", data);
   },
-  
+
   getMyBookings: (params?: {
     status?: string;
     page?: number;
@@ -138,13 +139,7 @@ export const bookingsApi = {
     id: string,
     data: { status: string; reason?: string },
   ) => api.patch(`/bookings/${id}/status`, data),
-  
-  // New method to release a held booking
-  releaseHold: (id: string) => api.post(`/bookings/${id}/release-hold`),
-  
-  // New method to confirm a booking after successful payment
-  confirmBooking: (id: string) => api.post(`/bookings/${id}/confirm`),
-  
+
   addFeedback: (id: string, data: { rating: number; comment?: string }) =>
     api.post(`/bookings/${id}/feedback`, data),
 

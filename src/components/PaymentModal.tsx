@@ -397,23 +397,33 @@ const PaymentModal = ({
   }, []);
 
   const handlePayment = useCallback(async () => {
-    if (!booking || !user || !bookingData) return;
+    if (!booking || !user || !bookingData) {
+      console.error('Missing required data for payment:', { booking, user, bookingData });
+      return;
+    }
 
     try {
+      console.log('Starting payment process...');
       setIsProcessing(true);
       setPaymentStatus('processing');
 
       // Start the hold timer when payment is initiated
       const bookingId = booking._id || booking.id;
+      console.log('Booking ID for payment:', bookingId);
+      
       if (bookingId) {
         // Release any existing timer
         if (holdTimerRef.current) {
+          console.log('Clearing existing hold timer');
           holdTimerRef.current();
         }
         // Start new hold timer (15 minutes)
+        console.log('Starting new hold timer');
         holdTimerRef.current = startHoldTimer(bookingId, () => {
           // This callback runs if the hold expires
+          console.log('Hold timer expired');
           if (paymentStatus === 'processing') {
+            console.log('Payment still processing, marking as failed');
             setPaymentStatus('failed');
             toast.error('Payment session expired. Please try again.');
             onClose();
@@ -422,22 +432,44 @@ const PaymentModal = ({
       }
 
       // Create payment order
-      const response = await paymentsApi.createOrder({
-        bookingId: booking._id || booking.id,
-      });
+      console.log('Creating payment order...');
+      let response;
+      try {
+        response = await paymentsApi.createOrder({
+          bookingId: booking._id || booking.id,
+        });
+        console.log('Payment order response:', response);
+      } catch (apiError) {
+        console.error('Error creating payment order:', {
+          message: apiError.message,
+          response: apiError.response?.data,
+          status: apiError.response?.status,
+          config: {
+            url: apiError.config?.url,
+            method: apiError.config?.method,
+            data: apiError.config?.data
+          }
+        });
+        throw new Error(`Failed to create payment order: ${apiError.message}`);
+      }
 
       if (!response?.data?.paymentSessionId) {
-        throw new Error('Failed to initialize payment');
+        console.error('Invalid payment order response:', response);
+        throw new Error('Failed to initialize payment: Invalid response from server');
       }
 
       // Initialize Cashfree
+      console.log('Initializing Cashfree...');
       if (!window.Cashfree) {
-        throw new Error('Payment processor not available');
+        console.error('Cashfree SDK not loaded');
+        throw new Error('Payment processor not available. Please refresh the page and try again.');
       }
 
+      console.log('Creating Cashfree instance...');
       const cashfree = window.Cashfree({
-        mode: 'production',
+        mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
       });
+      console.log('Cashfree instance created:', !!cashfree);
 
       // Set up payment success handler
       const handlePaymentSuccess = async (data: any) => {

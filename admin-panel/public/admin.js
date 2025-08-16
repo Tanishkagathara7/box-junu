@@ -5,7 +5,7 @@ let bookingsCache = [];
 let selectedBookingId = null;
 
 
-const BASE_API_URL = 'http://localhost:4000';
+const BASE_API_URL = 'http://localhost:4002';
 
 // Check if already logged in
 if (token) {
@@ -760,7 +760,7 @@ async function loadBookings() {
   }
   try {
     console.log('Fetching bookings from admin endpoint...');
-    const response = await fetch('http://localhost:3001/api/admin/bookings', {
+  const response = await fetch('http://localhost:4002/api/admin/bookings', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     console.log('Response status:', response.status);
@@ -805,7 +805,7 @@ function renderBookingsTable(bookings) {
     btn.onclick = async function() {
       const id = btn.getAttribute('data-confirm-id');
       try {
-        const response = await fetch(`http://localhost:3001/api/admin/bookings/${id}`, {
+  const response = await fetch(`http://localhost:4002/api/admin/bookings/${id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -1020,7 +1020,7 @@ async function updateBookingTimeSlots() {
   
   try {
     // Get available slots from server - use admin endpoint for individual time slots
-    const url = `http://localhost:3001/api/admin/bookings/ground/${groundId}/${date}`;
+  const url = `http://localhost:4002/api/admin/bookings/ground/${groundId}/${date}`;
     console.log('Calling admin availability endpoint:', url);
     const response = await fetch(url);
     
@@ -1178,7 +1178,7 @@ async function handleBookingFormSubmit(e) {
     console.log('Booking date being sent:', formData.bookingDate);
     console.log('Current date:', new Date().toISOString().split('T')[0]);
     
-    const response = await fetch('http://localhost:3001/api/admin/bookings', {
+  const response = await fetch('http://localhost:4002/api/admin/bookings', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

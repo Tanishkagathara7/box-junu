@@ -17,6 +17,7 @@ const __dirname = dirname(__filename);
 // --- CONFIG ---
 const MONGO_URI = 'mongodb+srv://rag123456:rag123456@cluster0.qipvo.mongodb.net/boxcricket?retryWrites=true&w=majority'; // Atlas URI, using boxcricket DB
 const JWT_SECRET = 'adminpanel_secret';
+const MAIN_API_URL = process.env.MAIN_API_URL || 'https://box-junu.onrender.com/api';
 
 // --- MODELS ---
 // Define schemas inline since we can't import from main server
@@ -168,7 +169,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/grounds', adminAuth, async (req, res) => {
   try {
     // Forward the request to the main server with authorization header
-    const response = await fetch('http://localhost:3001/api/admin/grounds', {
+    const response = await fetch(`${MAIN_API_URL}/admin/grounds`, {
       headers: {
         'Authorization': req.headers.authorization
       }
@@ -184,7 +185,7 @@ app.get('/api/admin/grounds', adminAuth, async (req, res) => {
 app.post('/api/admin/grounds', adminAuth, async (req, res) => {
   try {
     // Forward the request to the main server
-    const response = await fetch('http://localhost:3001/api/admin/grounds', {
+    const response = await fetch(`${MAIN_API_URL}/admin/grounds`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -203,7 +204,7 @@ app.post('/api/admin/grounds', adminAuth, async (req, res) => {
 app.put('/api/admin/grounds/:id', adminAuth, async (req, res) => {
   try {
     // Forward the request to the main server
-    const response = await fetch(`http://localhost:3001/api/admin/grounds/${req.params.id}`, {
+    const response = await fetch(`${MAIN_API_URL}/admin/grounds/${req.params.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -222,7 +223,7 @@ app.put('/api/admin/grounds/:id', adminAuth, async (req, res) => {
 app.delete('/api/admin/grounds/:id', adminAuth, async (req, res) => {
   try {
     // Forward the request to the main server
-    const response = await fetch(`http://localhost:3001/api/admin/grounds/${req.params.id}`, {
+    const response = await fetch(`${MAIN_API_URL}/admin/grounds/${req.params.id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': req.headers.authorization
@@ -556,8 +557,8 @@ mongoose.connect(MONGO_URI)
   .then(async () => {
     console.log('✅ Connected to MongoDB Atlas');
     await autoPopulateCities();
-    app.listen(4000, () => {
-      console.log('✅ Admin panel running at http://localhost:4000');
+    app.listen(4002, () => {
+      console.log('✅ Admin panel running at http://localhost:4002');
     });
   })
   .catch(err => {

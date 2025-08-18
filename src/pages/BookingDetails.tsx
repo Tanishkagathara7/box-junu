@@ -183,21 +183,46 @@ const BookingDetails = () => {
       const htmlContent = await response.text();
 
       try {
-        // Import libraries dynamically with better error handling
+        // Import libraries dynamically with better error handling for production
         console.log('Importing PDF libraries...');
 
-        const jsPDFModule = await import('jspdf');
-        const html2canvasModule = await import('html2canvas');
+        // Try multiple import strategies for better compatibility
+        let jsPDF, html2canvas;
 
-        console.log('jsPDF module:', jsPDFModule);
-        console.log('html2canvas module:', html2canvasModule);
+        try {
+          // Strategy 1: Standard dynamic import
+          const [jsPDFModule, html2canvasModule] = await Promise.all([
+            import('jspdf'),
+            import('html2canvas')
+          ]);
 
-        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
-        const html2canvas = html2canvasModule.default;
+          console.log('jsPDF module:', jsPDFModule);
+          console.log('html2canvas module:', html2canvasModule);
+
+          jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
+          html2canvas = html2canvasModule.default || html2canvasModule;
+
+        } catch (importError) {
+          console.log('Standard import failed, trying alternative approach:', importError);
+
+          // Strategy 2: Check if libraries are globally available
+          if (typeof window !== 'undefined') {
+            // @ts-ignore
+            jsPDF = window.jsPDF;
+            // @ts-ignore
+            html2canvas = window.html2canvas;
+          }
+
+          if (!jsPDF || !html2canvas) {
+            throw new Error('PDF libraries not available in this environment');
+          }
+        }
 
         if (!jsPDF || !html2canvas) {
           throw new Error('Failed to load PDF generation libraries');
         }
+
+        console.log('PDF libraries loaded successfully');
 
         // Create a temporary div to render the receipt
         const tempDiv = document.createElement('div');
@@ -211,11 +236,13 @@ const BookingDetails = () => {
           font-family: Arial, sans-serif;
           line-height: 1.5;
           color: #000;
+          padding: 20px;
+          box-sizing: border-box;
         `;
         document.body.appendChild(tempDiv);
 
         // Wait for fonts and images to load
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         try {
           console.log('Converting HTML to canvas...');
@@ -276,8 +303,17 @@ const BookingDetails = () => {
           }
         }
       } catch (importError) {
-        console.error("Error importing PDF libraries:", importError);
-        toast.error("Failed to load PDF generation libraries. Please try again.");
+        console.error("Error with PDF generation:", importError);
+
+        // Provide fallback option
+        toast.error("PDF generation failed. Opening receipt in new tab for manual save.");
+
+        // Fallback: Open receipt in new window for manual save
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(htmlContent);
+          newWindow.document.close();
+        }
       }
     } catch (error) {
       console.error("Error downloading receipt:", error);

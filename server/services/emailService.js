@@ -44,10 +44,17 @@ export const sendBookingReceiptEmail = async (booking, user) => {
   try {
     console.log(`📧 Sending booking receipt email to: ${user.email}`);
     console.log(`📋 Booking ID: ${booking.bookingId}`);
-    
-    // Generate HTML content
-    const htmlContent = generateBookingReceiptHTML(booking, user);
-    
+
+    // Generate HTML content with error handling
+    let htmlContent;
+    try {
+      htmlContent = generateBookingReceiptHTML(booking, user);
+      console.log('✅ Email template generated successfully');
+    } catch (templateError) {
+      console.error('❌ Error generating email template:', templateError);
+      throw new Error(`Template generation failed: ${templateError.message}`);
+    }
+
     // Email subject
     const subject = `BoxCric - Booking Receipt #${booking.bookingId}`;
     

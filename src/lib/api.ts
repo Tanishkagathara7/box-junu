@@ -11,7 +11,7 @@ console.log("🔗 API Base URL:", API_BASE_URL);
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // Increased from 10s to 30s
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,12 +35,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out. Please try again.');
+      return Promise.reject({ message: 'Request timed out. The server is taking too long to respond.' });
+    }
+    
     if (error.response?.status === 401) {
       // Clear token and redirect to login
       localStorage.removeItem("boxcric_token");
       localStorage.removeItem("boxcric_user");
       window.location.href = "/login";
     }
+    
     return Promise.reject(error.response?.data || error);
   },
 );

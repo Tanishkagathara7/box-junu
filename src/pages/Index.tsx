@@ -293,21 +293,24 @@ const Index = () => {
     localStorage.removeItem('boxcric_notifications');
   };
 
-  const fetchGrounds = async () => {
+  const MAX_RETRIES = 2;
+  const RETRY_DELAY = 2000; // 2 seconds
+
+  const fetchGrounds = async (retryCount = 0) => {
     if (!selectedCity) return;
 
     try {
       setIsLoadingGrounds(true);
       console.log(
-        "🔍 Fetching grounds for city:",
-        selectedCity.name,
-        selectedCity.id,
+        `🔍 Fetching grounds for city: ${selectedCity.name} (${selectedCity.id})`,
+        `Attempt ${retryCount + 1}/${MAX_RETRIES + 1}`
       );
 
       const params: any = {
         cityId: selectedCity.id,
         page: 1,
         limit: 20,
+        _t: new Date().getTime(), // Cache buster
       };
 
       if (searchQuery) {
@@ -347,6 +350,7 @@ const Index = () => {
 
       console.log("📡 API Request params:", params);
       const response = await groundsApi.getGrounds(params) as any;
+      
       console.log("📥 API Response:", response);
 
       if (response.success) {

@@ -54,14 +54,15 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
     return iconMap[amenity] || <span className="text-gray-400">✨</span>;
   };
 
-  const availableSlots = ground.availability?.availableSlots?.length || 0;
-  const totalSlots = ground.availability?.timeSlots?.length || 0;
-  const availabilityPercentage = totalSlots > 0 ? (availableSlots / totalSlots) * 100 : 0;
+  // Removed slot-related calculations as per request
 
   // Calculate average price
   const averagePrice = Array.isArray(ground.price?.ranges) && ground.price.ranges.length > 0
     ? Math.round(ground.price.ranges.reduce((sum: number, range: any) => sum + range.perHour, 0) / ground.price.ranges.length)
     : ground.price?.perHour || 0;
+    
+  // Get available slots or default to 1 if not available
+  const availableSlots = ground.availableSlots ?? 1;
 
   return (
     <Card
@@ -128,21 +129,7 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
               </div>
             </>
           )}
-          {/* Enhanced Badges */}
-          {/* Availability Status */}
-          <div className="absolute top-3 right-3">
-            <div className="bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
-              <div className="font-bold text-cricket-green text-right text-sm">
-                {availableSlots === 0 ? (
-                  <div className="text-red-500">Fully Booked</div>
-                ) : availableSlots <= 2 ? (
-                  <div className="text-orange-500">Few slots left</div>
-                ) : (
-                  <div className="text-cricket-green">{availableSlots} slots</div>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Availability Status - Removed as per request */}
           {/* Price Display */}
           <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
             <div className="text-gray-600 text-right">
@@ -186,10 +173,7 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
                 <Users className="w-4 h-4" />
                 <span>{ground.features.capacity}</span>
               </div>
-              <div className="flex items-center space-x-1">
-                <Calendar className="w-4 h-4" />
-                <span>{availableSlots}/{totalSlots}</span>
-              </div>
+
             </div>
           </div>
           {/* Enhanced Amenities */}

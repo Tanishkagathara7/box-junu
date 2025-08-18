@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PDF Imports</title>
+</head>
+<body>
+    <h1>Testing PDF Library Imports</h1>
+    <button id="testBtn">Test PDF Generation</button>
+    <div id="result"></div>
+
+    <script type="module">
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing imports...';
+            
+            try {
+                // Test dynamic imports
+                console.log('Testing jsPDF import...');
+                const jsPDFModule = await import('./node_modules/jspdf/dist/jspdf.es.min.js');
+                console.log('jsPDF imported:', jsPDFModule);
+                
+                console.log('Testing html2canvas import...');
+                const html2canvasModule = await import('./node_modules/html2canvas/dist/html2canvas.esm.js');
+                console.log('html2canvas imported:', html2canvasModule);
+                
+                resultDiv.innerHTML = '✅ Both libraries imported successfully!';
+                
+                // Test basic functionality
+                const jsPDF = jsPDFModule.default;
+                const html2canvas = html2canvasModule.default;
+                
+                if (jsPDF && html2canvas) {
+                    resultDiv.innerHTML += '<br>✅ Libraries are functional!';
+                } else {
+                    resultDiv.innerHTML += '<br>❌ Libraries not properly loaded!';
+                }
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                resultDiv.innerHTML = `❌ Import failed: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

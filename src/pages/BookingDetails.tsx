@@ -166,10 +166,7 @@ const BookingDetails = () => {
     try {
       setIsDownloadingReceipt(true);
 
-      // Import jsPDF and html2canvas dynamically
-      const { default: jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
-
+      // First get the receipt HTML
       const response = await fetch(`/api/bookings/${booking._id}/receipt`, {
         method: 'GET',
         headers: {
@@ -177,38 +174,95 @@ const BookingDetails = () => {
         },
       });
 
-      if (response.ok) {
-        const htmlContent = await response.text();
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to generate receipt");
+        return;
+      }
+
+      const htmlContent = await response.text();
+
+      try {
+        // Import libraries dynamically with better error handling
+        console.log('Importing PDF libraries...');
+
+        const jsPDFModule = await import('jspdf');
+        const html2canvasModule = await import('html2canvas');
+
+        console.log('jsPDF module:', jsPDFModule);
+        console.log('html2canvas module:', html2canvasModule);
+
+        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+        const html2canvas = html2canvasModule.default;
+
+        if (!jsPDF || !html2canvas) {
+          throw new Error('Failed to load PDF generation libraries');
+        }
 
         // Create a temporary div to render the receipt
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlContent;
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        tempDiv.style.top = '-9999px';
-        tempDiv.style.width = '800px';
-        tempDiv.style.backgroundColor = 'white';
+        tempDiv.style.cssText = `
+          position: absolute;
+          left: -9999px;
+          top: 0;
+          width: 800px;
+          background-color: #ffffff;
+          font-family: Arial, sans-serif;
+          line-height: 1.5;
+          color: #000;
+        `;
         document.body.appendChild(tempDiv);
 
+        // Wait for fonts and images to load
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         try {
-          // Convert HTML to canvas
+          console.log('Converting HTML to canvas...');
+          // Convert HTML to canvas with improved settings
           const canvas = await html2canvas(tempDiv, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
             width: 800,
-            height: tempDiv.scrollHeight
+            height: tempDiv.scrollHeight,
+            logging: true,
+            removeContainer: false,
+            onclone: (clonedDoc) => {
+              console.log('Document cloned for canvas rendering');
+              return clonedDoc;
+            }
           });
 
+          console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
+
           // Create PDF
+          console.log('Creating PDF...');
           const pdf = new jsPDF('p', 'mm', 'a4');
-          const imgData = canvas.toDataURL('image/png');
+          const imgData = canvas.toDataURL('image/png', 1.0);
+
+          console.log('Image data generated, length:', imgData.length);
 
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          console.log('PDF dimensions:', pdfWidth, 'x', pdfHeight);
+
+          // Handle multi-page PDFs if content is too long
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          let heightLeft = pdfHeight;
+          let position = 0;
+
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+
+          while (heightLeft >= 0) {
+            position = heightLeft - pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+          }
 
           // Download the PDF
           const fileName = `BoxCric_Receipt_${booking.bookingId || booking._id}.pdf`;
@@ -217,15 +271,17 @@ const BookingDetails = () => {
           toast.success("Receipt PDF downloaded successfully!");
         } finally {
           // Clean up
-          document.body.removeChild(tempDiv);
+          if (document.body.contains(tempDiv)) {
+            document.body.removeChild(tempDiv);
+          }
         }
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Failed to generate receipt");
+      } catch (importError) {
+        console.error("Error importing PDF libraries:", importError);
+        toast.error("Failed to load PDF generation libraries. Please try again.");
       }
     } catch (error) {
       console.error("Error downloading receipt:", error);
-      toast.error("Failed to download receipt");
+      toast.error("Failed to download receipt. Please try again.");
     } finally {
       setIsDownloadingReceipt(false);
     }

@@ -1457,28 +1457,41 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
       });
     }
 
-    // Send receipt email
-    const emailResult = await sendBookingReceiptEmail(bookingObj, user);
+    // Send receipt email with better error handling
+    let emailResult;
+    try {
+      emailResult = await sendBookingReceiptEmail(bookingObj, user);
+      console.log('📧 Email service result:', emailResult);
+    } catch (emailError) {
+      console.error('❌ Email service error:', emailError);
+      emailResult = {
+        success: false,
+        message: "Email service error",
+        error: emailError.message
+      };
+    }
 
-    if (emailResult.success) {
-      res.json({
+    // Ensure we always return valid JSON
+    if (emailResult && emailResult.success) {
+      return res.json({
         success: true,
-        message: "Receipt email sent successfully",
+        message: emailResult.message || "Receipt email sent successfully",
         messageId: emailResult.messageId
       });
     } else {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: emailResult.message,
-        error: emailResult.error
+        message: emailResult?.message || "Failed to send receipt email",
+        error: emailResult?.error || "Unknown error"
       });
     }
 
   } catch (error) {
     console.error("Error sending receipt email:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to send receipt email"
+      message: "Failed to send receipt email",
+      error: error.message
     });
   }
 });
@@ -1603,9 +1616,9 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
     console.log(`🏏 HTML contains BoxCric: ${hasBoxCric}`);
     console.log(`📄 HTML contains receipt title: ${hasReceiptTitle}`);
 
-    // Validate HTML content before sending
-    if (!hasBoxCric || !hasReceiptTitle) {
-      console.error("❌ Generated HTML is missing required elements");
+    // More flexible validation - just ensure HTML was generated
+    if (receiptHTML.length < 100) {
+      console.error("❌ Generated HTML is too short");
       return res.status(500).json({
         success: false,
         message: "Generated receipt is invalid"

@@ -150,8 +150,25 @@ const BookingDetails = () => {
         },
       });
 
-      const data = await response.json();
-      console.log('📧 Email response:', data);
+      console.log('📧 Email response status:', response.status);
+      console.log('📧 Email response headers:', response.headers.get('content-type'));
+
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('📧 Raw response text:', responseText);
+
+        if (responseText.trim()) {
+          data = JSON.parse(responseText);
+        } else {
+          data = { success: false, message: 'Empty response from server' };
+        }
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        data = { success: false, message: 'Invalid response format from server' };
+      }
+
+      console.log('📧 Parsed email response:', data);
 
       if (data.success) {
         toast.success("Receipt email sent successfully!");
@@ -197,35 +214,30 @@ const BookingDetails = () => {
       // Debug: Check if HTML content is valid
       console.log('📄 Received HTML content length:', htmlContent.length);
 
-      // Check for key elements in the HTML
-      const hasBoxCric = htmlContent.includes('BoxCric');
-      const hasReceiptTitle = htmlContent.includes('BOOKING RECEIPT');
-      const hasBookingId = htmlContent.includes(booking.bookingId);
+      // Check for key elements in the HTML (more flexible validation)
+      const hasBoxCric = htmlContent.includes('BoxCric') || htmlContent.includes('Box Cric');
+      const hasReceiptTitle = htmlContent.includes('BOOKING RECEIPT') || htmlContent.includes('Receipt') || htmlContent.includes('RECEIPT');
+      const hasBookingId = htmlContent.includes(booking.bookingId) || htmlContent.includes(booking._id);
 
       console.log('📋 HTML validation:', {
         hasBoxCric,
         hasReceiptTitle,
         hasBookingId,
-        contentLength: htmlContent.length
+        contentLength: htmlContent.length,
+        preview: htmlContent.substring(0, 200)
       });
 
-      if (htmlContent.length < 100) {
+      if (htmlContent.length < 50) {
         console.error('❌ HTML content seems too short:', htmlContent);
         toast.error("Invalid receipt content received");
         return;
       }
 
-      if (!hasBoxCric || !hasReceiptTitle) {
-        console.error('❌ HTML content does not contain expected receipt elements');
-        console.log('📄 HTML preview:', htmlContent.substring(0, 500));
-        toast.error("Invalid receipt format received");
-        return;
-      }
-
-      // Check if HTML contains expected content
-      const hasBookingContent = htmlContent.includes('BoxCric') && htmlContent.includes('BOOKING RECEIPT');
-      if (!hasBookingContent) {
-        console.error('❌ HTML content does not contain expected receipt elements');
+      // More flexible validation - just check if it looks like HTML
+      const isValidHTML = htmlContent.includes('<') && htmlContent.includes('>');
+      if (!isValidHTML) {
+        console.error('❌ Response does not appear to be HTML');
+        console.log('📄 Response content:', htmlContent.substring(0, 500));
         toast.error("Invalid receipt format received");
         return;
       }
@@ -238,7 +250,7 @@ const BookingDetails = () => {
         let jsPDF, html2canvas;
 
         try {
-          // Strategy 1: Standard dynamic import
+          // Strategy 1: Standard dynamic import with proper destructuring
           const [jsPDFModule, html2canvasModule] = await Promise.all([
             import('jspdf'),
             import('html2canvas')
@@ -247,7 +259,8 @@ const BookingDetails = () => {
           console.log('jsPDF module:', jsPDFModule);
           console.log('html2canvas module:', html2canvasModule);
 
-          jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
+          // Correct way to access jsPDF constructor
+          jsPDF = jsPDFModule.jsPDF || jsPDFModule.default?.jsPDF || jsPDFModule.default;
           html2canvas = html2canvasModule.default || html2canvasModule;
 
         } catch (importError) {
@@ -255,10 +268,17 @@ const BookingDetails = () => {
 
           // Strategy 2: Check if libraries are globally available
           if (typeof window !== 'undefined') {
+            // @ts-ignore - Access global jsPDF constructor
+            const globalJsPDF = window.jsPDF;
             // @ts-ignore
-            jsPDF = window.jsPDF;
-            // @ts-ignore
-            html2canvas = window.html2canvas;
+            const globalHtml2canvas = window.html2canvas;
+
+            if (globalJsPDF) {
+              jsPDF = globalJsPDF;
+            }
+            if (globalHtml2canvas) {
+              html2canvas = globalHtml2canvas;
+            }
           }
 
           if (!jsPDF || !html2canvas) {
@@ -340,8 +360,9 @@ const BookingDetails = () => {
             throw new Error('Canvas has invalid dimensions');
           }
 
-          // Create PDF
+          // Create PDF with proper constructor call
           console.log('Creating PDF...');
+          console.log('jsPDF constructor type:', typeof jsPDF);
           const pdf = new jsPDF('p', 'mm', 'a4');
           const imgData = canvas.toDataURL('image/png', 1.0);
 

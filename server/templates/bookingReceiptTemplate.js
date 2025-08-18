@@ -32,72 +32,84 @@ export const generateBookingReceiptHTML = (booking, user) => {
       <title>BoxCric - Booking Receipt</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-          line-height: 1.6; 
-          color: #333; 
-          background-color: #f8fafc;
-        }
-        .container { 
-          max-width: 650px; 
-          margin: 20px auto; 
-          background: white; 
-          border-radius: 12px; 
-          overflow: hidden;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .header { 
-          background: linear-gradient(135deg, #22c55e 0%, #0ea5e9 100%); 
-          padding: 30px; 
-          text-align: center; 
-          color: white;
-        }
-        .logo { 
-          font-size: 32px; 
-          font-weight: bold; 
-          margin-bottom: 8px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .tagline { 
-          font-size: 16px; 
-          opacity: 0.9; 
-          margin-bottom: 20px;
-        }
-        .receipt-title {
-          background: rgba(255,255,255,0.2);
-          padding: 15px 25px;
-          border-radius: 8px;
-          font-size: 20px;
-          font-weight: 600;
-        }
-        .content { padding: 30px; }
-        .booking-id {
-          text-align: center;
-          background: #f0fdf4;
-          border: 2px solid #22c55e;
-          border-radius: 10px;
-          padding: 20px;
-          margin-bottom: 30px;
-        }
-        .booking-id-label {
+        body {
+          font-family: 'Arial', 'Helvetica', sans-serif;
+          line-height: 1.5;
+          color: #000;
+          background-color: #fff;
           font-size: 14px;
-          color: #6b7280;
+        }
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
+          background: white;
+          padding: 20px;
+        }
+        .header {
+          border-bottom: 3px solid #22c55e;
+          padding-bottom: 20px;
+          margin-bottom: 30px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .logo-section {
+          flex: 1;
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: bold;
+          color: #22c55e;
           margin-bottom: 5px;
         }
-        .booking-id-value {
+        .tagline {
+          font-size: 14px;
+          color: #666;
+        }
+        .receipt-info {
+          text-align: right;
+          flex: 1;
+        }
+        .receipt-title {
           font-size: 24px;
+          font-weight: bold;
+          color: #000;
+          margin-bottom: 5px;
+        }
+        .receipt-date {
+          color: #666;
+          font-size: 12px;
+        }
+        .booking-id {
+          text-align: center;
+          background: #f8f9fa;
+          border: 2px solid #22c55e;
+          border-radius: 8px;
+          padding: 15px;
+          margin: 20px 0;
+        }
+        .booking-id-label {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 5px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .booking-id-value {
+          font-size: 20px;
           font-weight: bold;
           color: #22c55e;
           letter-spacing: 2px;
+          font-family: 'Courier New', monospace;
         }
         .section {
-          margin-bottom: 25px;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 20px;
+          margin-bottom: 20px;
+          border-bottom: 1px solid #ddd;
+          padding-bottom: 15px;
         }
         .section:last-child { border-bottom: none; }
         .section-title {
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 600;
           color: #1f2937;
           margin-bottom: 15px;
@@ -109,27 +121,32 @@ export const generateBookingReceiptHTML = (booking, user) => {
           font-size: 20px;
         }
         .info-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
+          display: table;
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .info-row {
+          display: table-row;
         }
         .info-item {
-          background: #f9fafb;
-          padding: 15px;
-          border-radius: 8px;
-          border-left: 4px solid #22c55e;
+          display: table-cell;
+          padding: 10px;
+          border: 1px solid #ddd;
+          vertical-align: top;
+          width: 50%;
         }
         .info-label {
-          font-size: 12px;
-          color: #6b7280;
+          font-size: 11px;
+          color: #666;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          margin-bottom: 5px;
+          margin-bottom: 3px;
+          font-weight: bold;
         }
         .info-value {
-          font-size: 16px;
-          font-weight: 600;
-          color: #1f2937;
+          font-size: 14px;
+          font-weight: normal;
+          color: #000;
         }
         .full-width { grid-column: 1 / -1; }
         .status-badge {
@@ -196,58 +213,91 @@ export const generateBookingReceiptHTML = (booking, user) => {
           color: #6b7280;
           font-size: 12px;
         }
+        @media print {
+          body {
+            margin: 0;
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+          }
+          .container {
+            margin: 0;
+            box-shadow: none;
+            border-radius: 0;
+          }
+          .header {
+            border-bottom: 2px solid #000 !important;
+          }
+          .info-item {
+            border: 1px solid #000 !important;
+          }
+        }
         @media (max-width: 600px) {
           .container { margin: 10px; }
-          .content { padding: 20px; }
-          .info-grid { grid-template-columns: 1fr; }
+          .info-grid { display: block; }
+          .info-row { display: block; }
+          .info-item {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+          }
         }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">🏏 BoxCric</div>
-          <div class="tagline">Book. Play. Win.</div>
-          <div class="receipt-title">✅ Booking Confirmed</div>
-        </div>
-        
-        <div class="content">
-          <div class="booking-id">
-            <div class="booking-id-label">Booking ID</div>
-            <div class="booking-id-value">${booking.bookingId || 'N/A'}</div>
+          <div class="logo-section">
+            <div class="logo">🏏 BoxCric</div>
+            <div class="tagline">Book. Play. Win.</div>
           </div>
+          <div class="receipt-info">
+            <div class="receipt-title">BOOKING RECEIPT</div>
+            <div class="receipt-date">${formatDate(new Date())}</div>
+          </div>
+        </div>
 
-          <div class="section">
-            <div class="section-title">
-              <span class="section-icon">🏟️</span>
-              Venue Details
-            </div>
-            <div class="info-grid">
-              <div class="info-item full-width">
+        <div class="booking-id">
+          <div class="booking-id-label">Booking ID</div>
+          <div class="booking-id-value">${booking.bookingId || 'N/A'}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">🏟️</span>
+            Venue Details
+          </div>
+          <div class="info-grid">
+            <div class="info-row">
+              <div class="info-item">
                 <div class="info-label">Ground Name</div>
                 <div class="info-value">${ground.name || 'Ground details unavailable'}</div>
               </div>
-              <div class="info-item full-width">
+              <div class="info-item">
+                <div class="info-label">Location</div>
+                <div class="info-value">${ground.location?.city || 'N/A'}</div>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-item" style="border-top: none;">
                 <div class="info-label">Address</div>
                 <div class="info-value">${ground.location?.address || 'Address not available'}</div>
               </div>
-              <div class="info-item">
-                <div class="info-label">City</div>
-                <div class="info-value">${ground.location?.cityName || 'N/A'}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Pitch Type</div>
-                <div class="info-value">${ground.features?.pitchType || 'N/A'}</div>
+              <div class="info-item" style="border-top: none;">
+                <div class="info-label">Contact</div>
+                <div class="info-value">${ground.contact?.phone || 'N/A'}</div>
               </div>
             </div>
           </div>
+        </div>
+        </div>
 
-          <div class="section">
-            <div class="section-title">
-              <span class="section-icon">📅</span>
-              Booking Details
-            </div>
-            <div class="info-grid">
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">📅</span>
+            Booking Details
+          </div>
+          <div class="info-grid">
+            <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Date</div>
                 <div class="info-value">${formatDate(booking.bookingDate)}</div>
@@ -256,27 +306,29 @@ export const generateBookingReceiptHTML = (booking, user) => {
                 <div class="info-label">Time Slot</div>
                 <div class="info-value">${timeSlot.startTime && timeSlot.endTime ? `${formatTime(timeSlot.startTime)} - ${formatTime(timeSlot.endTime)}` : 'N/A'}</div>
               </div>
-              <div class="info-item">
+            </div>
+            <div class="info-row">
+              <div class="info-item" style="border-top: none;">
                 <div class="info-label">Duration</div>
                 <div class="info-value">${timeSlot.duration || 'N/A'} hour(s)</div>
               </div>
-              <div class="info-item">
+              <div class="info-item" style="border-top: none;">
                 <div class="info-label">Status</div>
                 <div class="info-value">
-                  <span class="status-badge ${booking.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
-                    ${booking.status || 'Pending'}
-                  </span>
+                  <strong style="color: #22c55e;">${booking.status === 'confirmed' ? '✅ CONFIRMED' : '⏳ PENDING'}</strong>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="section">
-            <div class="section-title">
-              <span class="section-icon">👥</span>
-              Team Details
-            </div>
-            <div class="info-grid">
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">👥</span>
+            Team Details
+          </div>
+          <div class="info-grid">
+            <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Team Name</div>
                 <div class="info-value">${playerDetails.teamName || 'N/A'}</div>
@@ -285,51 +337,58 @@ export const generateBookingReceiptHTML = (booking, user) => {
                 <div class="info-label">Players</div>
                 <div class="info-value">${playerDetails.playerCount || 'N/A'}</div>
               </div>
-              <div class="info-item">
+            </div>
+            <div class="info-row">
+              <div class="info-item" style="border-top: none;">
                 <div class="info-label">Contact Person</div>
                 <div class="info-value">${contactPerson.name || 'N/A'}</div>
               </div>
-              <div class="info-item">
+              <div class="info-item" style="border-top: none;">
                 <div class="info-label">Phone</div>
                 <div class="info-value">${contactPerson.phone || 'N/A'}</div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="section">
-            <div class="section-title">
-              <span class="section-icon">💰</span>
-              Payment Summary
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">💰</span>
+            Payment Summary
+          </div>
+          <div class="info-grid">
+            <div class="info-row">
+              <div class="info-item">
+                <div class="info-label">Base Amount</div>
+                <div class="info-value">₹${pricing.baseAmount || 0}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Discount</div>
+                <div class="info-value">-₹${pricing.discount || 0}</div>
+              </div>
             </div>
-            <div class="pricing-summary">
-              <div class="pricing-row">
-                <span>Base Amount:</span>
-                <span>₹${pricing.baseAmount || 0}</span>
+            <div class="info-row">
+              <div class="info-item" style="border-top: none;">
+                <div class="info-label">Taxes & Fees</div>
+                <div class="info-value">₹${pricing.taxes || 0}</div>
               </div>
-              <div class="pricing-row">
-                <span>Discount:</span>
-                <span>-₹${pricing.discount || 0}</span>
-              </div>
-              <div class="pricing-row">
-                <span>Taxes & Fees:</span>
-                <span>₹${pricing.taxes || 0}</span>
-              </div>
-              <div class="pricing-row pricing-total">
-                <span>Total Amount:</span>
-                <span>₹${pricing.totalAmount || 0}</span>
+              <div class="info-item" style="border-top: none; background: #f0fdf4;">
+                <div class="info-label">Total Amount</div>
+                <div class="info-value" style="font-size: 18px; font-weight: bold; color: #22c55e;">₹${pricing.totalAmount || 0}</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="footer">
-          <div class="qr-placeholder">QR Code</div>
-          <div class="footer-text">
-            Thank you for choosing BoxCric! Show this receipt at the venue.
+        <div style="text-align: center; margin-top: 30px; padding: 20px; border-top: 2px solid #22c55e;">
+          <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">
+            Thank you for choosing BoxCric!
           </div>
-          <div class="contact-info">
-            📧 support@boxcric.com | 📞 +91-XXXX-XXXX-XX<br>
-            🌐 www.boxcric.com
+          <div style="font-size: 14px; color: #666; margin-bottom: 15px;">
+            Show this receipt at the venue for entry
+          </div>
+          <div style="font-size: 12px; color: #666;">
+            📧 support@boxcric.com | 📞 +91-XXXX-XXXX-XX | 🌐 www.boxcric.com
           </div>
         </div>
       </div>

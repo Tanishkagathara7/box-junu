@@ -165,6 +165,11 @@ const BookingDetails = () => {
   const handleDownloadReceipt = async () => {
     try {
       setIsDownloadingReceipt(true);
+
+      // Import jsPDF and html2canvas dynamically
+      const { default: jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
       const response = await fetch(`/api/bookings/${booking._id}/receipt`, {
         method: 'GET',
         headers: {
@@ -175,33 +180,44 @@ const BookingDetails = () => {
       if (response.ok) {
         const htmlContent = await response.text();
 
-        // Create a new window/tab for the receipt
-        const receiptWindow = window.open('', '_blank', 'width=800,height=900,scrollbars=yes,resizable=yes');
-        if (receiptWindow) {
-          receiptWindow.document.write(htmlContent);
-          receiptWindow.document.close();
+        // Create a temporary div to render the receipt
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.width = '800px';
+        tempDiv.style.backgroundColor = 'white';
+        document.body.appendChild(tempDiv);
 
-          // Add print styles and functionality
-          receiptWindow.document.head.insertAdjacentHTML('beforeend', `
-            <style>
-              @media print {
-                body { margin: 0; }
-                .no-print { display: none !important; }
-              }
-            </style>
-          `);
+        try {
+          // Convert HTML to canvas
+          const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: 800,
+            height: tempDiv.scrollHeight
+          });
 
-          // Add a print button to the receipt
-          receiptWindow.document.body.insertAdjacentHTML('afterbegin', `
-            <div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 10px;" class="no-print">
-              <button onclick="window.print()" style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Print</button>
-              <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">✕ Close</button>
-            </div>
-          `);
+          // Create PDF
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const imgData = canvas.toDataURL('image/png');
 
-          toast.success("Receipt opened in new window. You can print or save as PDF from there.");
-        } else {
-          toast.error("Please allow popups to view the receipt");
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+          // Download the PDF
+          const fileName = `BoxCric_Receipt_${booking.bookingId || booking._id}.pdf`;
+          pdf.save(fileName);
+
+          toast.success("Receipt PDF downloaded successfully!");
+        } finally {
+          // Clean up
+          document.body.removeChild(tempDiv);
         }
       } else {
         const errorData = await response.json();
@@ -543,25 +559,29 @@ const BookingDetails = () => {
                       </div>
 
                       {/* Receipt Actions */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <Button
                           onClick={handleDownloadReceipt}
                           disabled={isDownloadingReceipt}
                           variant="outline"
-                          className="flex items-center justify-center gap-2 border-cricket-green text-cricket-green hover:bg-cricket-green hover:text-white"
+                          className="flex items-center justify-center gap-2 border-cricket-green text-cricket-green hover:bg-cricket-green hover:text-white text-sm px-3 py-2 min-w-0 flex-1"
                         >
-                          <Download className="w-4 h-4" />
-                          {isDownloadingReceipt ? "Generating..." : "Download Receipt"}
+                          <Download className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {isDownloadingReceipt ? "Generating..." : "Download PDF"}
+                          </span>
                         </Button>
 
                         <Button
                           onClick={handleEmailReceipt}
                           disabled={isEmailingReceipt}
                           variant="outline"
-                          className="flex items-center justify-center gap-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                          className="flex items-center justify-center gap-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white text-sm px-3 py-2 min-w-0 flex-1"
                         >
-                          <Send className="w-4 h-4" />
-                          {isEmailingReceipt ? "Sending..." : "Email Receipt"}
+                          <Send className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {isEmailingReceipt ? "Sending..." : "Email Receipt"}
+                          </span>
                         </Button>
                       </div>
                     </>

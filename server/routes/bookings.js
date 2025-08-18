@@ -5,6 +5,7 @@ import Booking from "../models/Booking.js";
 import Ground from "../models/Ground.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
+import { sendBookingReceiptEmail } from "../services/emailService.js";
 import { 
   doTimeRangesOverlap, 
   validateTimeSlot, 
@@ -1378,6 +1379,183 @@ adminRouter.patch("/:id", async (req, res) => {
   } catch (error) {
     console.error("Error updating booking:", error);
     res.status(500).json({ success: false, message: "Failed to update booking" });
+  }
+});
+
+// Send booking receipt email
+router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.userId;
+
+    console.log(`📧 Receipt email request for booking: ${bookingId} by user: ${userId}`);
+
+    // Find the booking
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    // Check if user owns this booking
+    if (booking.userId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
+      });
+    }
+
+    // Check if booking is confirmed
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: "Receipt can only be sent for confirmed bookings"
+      });
+    }
+
+    // Get user details
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Populate ground details for the receipt
+    let bookingObj = booking.toObject();
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+
+    if (isValidObjectId) {
+      try {
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner");
+        if (mongoGround) {
+          bookingObj.groundId = mongoGround.toObject();
+        } else {
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+          if (fallbackGround) {
+            bookingObj.groundId = fallbackGround;
+          }
+        }
+      } catch (error) {
+        console.error("Error populating ground for receipt:", error);
+      }
+    } else {
+      const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+      if (fallbackGround) {
+        bookingObj.groundId = fallbackGround;
+      }
+    }
+
+    // Send receipt email
+    const emailResult = await sendBookingReceiptEmail(bookingObj, user);
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: "Receipt email sent successfully",
+        messageId: emailResult.messageId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: emailResult.message,
+        error: emailResult.error
+      });
+    }
+
+  } catch (error) {
+    console.error("Error sending receipt email:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send receipt email"
+    });
+  }
+});
+
+// Generate receipt HTML (for preview or download)
+router.get("/:id/receipt", authMiddleware, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.userId;
+
+    console.log(`📄 Receipt generation request for booking: ${bookingId} by user: ${userId}`);
+
+    // Find the booking
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    // Check if user owns this booking
+    if (booking.userId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
+      });
+    }
+
+    // Check if booking is confirmed
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: "Receipt can only be generated for confirmed bookings"
+      });
+    }
+
+    // Get user details
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Populate ground details for the receipt
+    let bookingObj = booking.toObject();
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+
+    if (isValidObjectId) {
+      try {
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner");
+        if (mongoGround) {
+          bookingObj.groundId = mongoGround.toObject();
+        } else {
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+          if (fallbackGround) {
+            bookingObj.groundId = fallbackGround;
+          }
+        }
+      } catch (error) {
+        console.error("Error populating ground for receipt:", error);
+      }
+    } else {
+      const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+      if (fallbackGround) {
+        bookingObj.groundId = fallbackGround;
+      }
+    }
+
+    // Import the template function
+    const { generateBookingReceiptHTML } = await import("../templates/bookingReceiptTemplate.js");
+    const receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+
+    // Return HTML for preview or download
+    res.setHeader('Content-Type', 'text/html');
+    res.send(receiptHTML);
+
+  } catch (error) {
+    console.error("Error generating receipt:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate receipt"
+    });
   }
 });
 

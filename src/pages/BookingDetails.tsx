@@ -12,6 +12,8 @@ import {
   Shield,
   CreditCard,
   User,
+  Download,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +32,8 @@ const BookingDetails = () => {
   const [booking, setBooking] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isEmailingReceipt, setIsEmailingReceipt] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -130,6 +134,86 @@ const BookingDetails = () => {
 
   // DO NOT auto-open payment modal - let user decide when to pay
   // This prevents annoying popup every time they view booking details
+
+  // Receipt functions
+  const handleEmailReceipt = async () => {
+    try {
+      setIsEmailingReceipt(true);
+      const response = await fetch(`/api/bookings/${booking._id}/send-receipt`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Receipt email sent successfully!");
+      } else {
+        toast.error(data.message || "Failed to send receipt email");
+      }
+    } catch (error) {
+      console.error("Error sending receipt email:", error);
+      toast.error("Failed to send receipt email");
+    } finally {
+      setIsEmailingReceipt(false);
+    }
+  };
+
+  const handleDownloadReceipt = async () => {
+    try {
+      setIsDownloadingReceipt(true);
+      const response = await fetch(`/api/bookings/${booking._id}/receipt`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const htmlContent = await response.text();
+
+        // Create a new window/tab for the receipt
+        const receiptWindow = window.open('', '_blank', 'width=800,height=900,scrollbars=yes,resizable=yes');
+        if (receiptWindow) {
+          receiptWindow.document.write(htmlContent);
+          receiptWindow.document.close();
+
+          // Add print styles and functionality
+          receiptWindow.document.head.insertAdjacentHTML('beforeend', `
+            <style>
+              @media print {
+                body { margin: 0; }
+                .no-print { display: none !important; }
+              }
+            </style>
+          `);
+
+          // Add a print button to the receipt
+          receiptWindow.document.body.insertAdjacentHTML('afterbegin', `
+            <div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 10px;" class="no-print">
+              <button onclick="window.print()" style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Print</button>
+              <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">✕ Close</button>
+            </div>
+          `);
+
+          toast.success("Receipt opened in new window. You can print or save as PDF from there.");
+        } else {
+          toast.error("Please allow popups to view the receipt");
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to generate receipt");
+      }
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      toast.error("Failed to download receipt");
+    } finally {
+      setIsDownloadingReceipt(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -448,14 +532,39 @@ const BookingDetails = () => {
                   )}
 
                   {booking.status === "confirmed" && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <p className="text-green-800 font-medium">✅ Your booking is confirmed!</p>
-                      {booking.confirmation?.confirmationCode && (
-                        <p className="text-green-600 text-sm mt-1">
-                          Confirmation Code: <span className="font-mono font-bold">{booking.confirmation.confirmationCode}</span>
-                        </p>
-                      )}
-                    </div>
+                    <>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-green-800 font-medium">✅ Your booking is confirmed!</p>
+                        {booking.confirmation?.confirmationCode && (
+                          <p className="text-green-600 text-sm mt-1">
+                            Confirmation Code: <span className="font-mono font-bold">{booking.confirmation.confirmationCode}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Receipt Actions */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={handleDownloadReceipt}
+                          disabled={isDownloadingReceipt}
+                          variant="outline"
+                          className="flex items-center justify-center gap-2 border-cricket-green text-cricket-green hover:bg-cricket-green hover:text-white"
+                        >
+                          <Download className="w-4 h-4" />
+                          {isDownloadingReceipt ? "Generating..." : "Download Receipt"}
+                        </Button>
+
+                        <Button
+                          onClick={handleEmailReceipt}
+                          disabled={isEmailingReceipt}
+                          variant="outline"
+                          className="flex items-center justify-center gap-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                        >
+                          <Send className="w-4 h-4" />
+                          {isEmailingReceipt ? "Sending..." : "Email Receipt"}
+                        </Button>
+                      </div>
+                    </>
                   )}
 
                   {/* Payment Button - Only show if payment is actually needed */}

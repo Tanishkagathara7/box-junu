@@ -1544,7 +1544,21 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 
     // Import the template function
     const { generateBookingReceiptHTML } = await import("../templates/bookingReceiptTemplate.js");
+
+    // Debug: Log the booking object to see what data we have
+    console.log("📋 Booking object for receipt:", JSON.stringify(bookingObj, null, 2));
+    console.log("👤 User object for receipt:", JSON.stringify(user, null, 2));
+
     const receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+
+    // Debug: Log HTML length to ensure content is generated
+    console.log(`📄 Generated HTML length: ${receiptHTML.length} characters`);
+
+    // Check if HTML contains key content
+    const hasBookingId = receiptHTML.includes(bookingObj.bookingId || 'N/A');
+    const hasGroundName = receiptHTML.includes(bookingObj.groundId?.name || 'N/A');
+    console.log(`📋 HTML contains booking ID: ${hasBookingId}`);
+    console.log(`🏟️ HTML contains ground name: ${hasGroundName}`);
 
     // Return HTML for preview or download
     res.setHeader('Content-Type', 'text/html');

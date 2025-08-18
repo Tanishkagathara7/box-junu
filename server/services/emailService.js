@@ -1,13 +1,30 @@
 import nodemailer from "nodemailer";
 import { generateBookingReceiptHTML } from "../templates/bookingReceiptTemplate.js";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 // Email transporter configuration (reusing the same config as auth)
 const createTransporter = () => {
   // Check if email environment variables are configured
   if (!process.env.EMAIL_HOST || !process.env.EMAIL_PORT || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.log("⚠️  Email configuration not found. Using development mode - emails will be logged to console.");
+    console.log("📧 Missing email config:", {
+      host: !!process.env.EMAIL_HOST,
+      port: !!process.env.EMAIL_PORT,
+      user: !!process.env.EMAIL_USER,
+      pass: !!process.env.EMAIL_PASS
+    });
     return null;
   }
+
+  console.log("📧 Email configuration found:", {
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    user: process.env.EMAIL_USER,
+    from: process.env.EMAIL_FROM
+  });
 
   console.log("📧 Email service configuration:");
   console.log("EMAIL_HOST:", process.env.EMAIL_HOST);
@@ -28,11 +45,21 @@ const createTransporter = () => {
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 10000,
       socketTimeout: 15000,
+      // Add additional options for better compatibility
+      tls: {
+        rejectUnauthorized: false
+      },
+      debug: true, // Enable debug logging
+      logger: true // Enable logger
     });
-    
+
+    // Test the connection (don't await here, do it when sending)
+    console.log("📧 Email transporter created successfully");
+
     return transport;
   } catch (error) {
-    console.error("❌ Failed to create email transport:", error);
+    console.error("❌ Failed to create or verify email transport:", error);
+    console.error("❌ Error details:", error.message);
     return null;
   }
 };
@@ -70,7 +97,21 @@ export const sendBookingReceiptEmail = async (booking, user) => {
     if (!transporter) {
       console.log(`⚠️ Email transporter not available - receipt will only be logged to console`);
       console.log(`📧 Receipt HTML content generated for ${user.email}`);
-      return { success: true, message: "Receipt generated (development mode)" };
+      console.log(`📧 Would send email with subject: BoxCric - Booking Receipt #${booking.bookingId}`);
+      return { success: false, message: "Email transporter not configured - check email settings" };
+    }
+
+    // Verify transporter before sending
+    try {
+      await transporter.verify();
+      console.log("✅ Email transporter verified before sending");
+    } catch (verifyError) {
+      console.error("❌ Email transporter verification failed:", verifyError);
+      return {
+        success: false,
+        message: "Email service not available",
+        error: verifyError.message
+      };
     }
 
     // Try to send email with retry mechanism

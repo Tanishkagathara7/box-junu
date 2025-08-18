@@ -139,6 +139,9 @@ const BookingDetails = () => {
   const handleEmailReceipt = async () => {
     try {
       setIsEmailingReceipt(true);
+
+      console.log('📧 Sending receipt email for booking:', booking._id);
+
       const response = await fetch(`/api/bookings/${booking._id}/send-receipt`, {
         method: 'POST',
         headers: {
@@ -148,15 +151,24 @@ const BookingDetails = () => {
       });
 
       const data = await response.json();
+      console.log('📧 Email response:', data);
 
       if (data.success) {
         toast.success("Receipt email sent successfully!");
+        console.log('✅ Receipt email sent successfully');
       } else {
+        console.error('❌ Email sending failed:', data);
         toast.error(data.message || "Failed to send receipt email");
+
+        // Show more specific error if available
+        if (data.error) {
+          console.error('❌ Email error details:', data.error);
+          toast.error(`Email error: ${data.error}`);
+        }
       }
     } catch (error) {
-      console.error("Error sending receipt email:", error);
-      toast.error("Failed to send receipt email");
+      console.error("❌ Error sending receipt email:", error);
+      toast.error("Failed to send receipt email. Please check your internet connection and try again.");
     } finally {
       setIsEmailingReceipt(false);
     }
@@ -181,6 +193,22 @@ const BookingDetails = () => {
       }
 
       const htmlContent = await response.text();
+
+      // Debug: Check if HTML content is valid
+      console.log('📄 Received HTML content length:', htmlContent.length);
+      if (htmlContent.length < 100) {
+        console.error('❌ HTML content seems too short:', htmlContent);
+        toast.error("Invalid receipt content received");
+        return;
+      }
+
+      // Check if HTML contains expected content
+      const hasBookingContent = htmlContent.includes('BoxCric') && htmlContent.includes('BOOKING RECEIPT');
+      if (!hasBookingContent) {
+        console.error('❌ HTML content does not contain expected receipt elements');
+        toast.error("Invalid receipt format received");
+        return;
+      }
 
       try {
         // Import libraries dynamically with better error handling for production
@@ -232,20 +260,36 @@ const BookingDetails = () => {
           left: -9999px;
           top: 0;
           width: 800px;
+          min-height: 600px;
           background-color: #ffffff;
           font-family: Arial, sans-serif;
           line-height: 1.5;
           color: #000;
           padding: 20px;
           box-sizing: border-box;
+          visibility: hidden;
         `;
         document.body.appendChild(tempDiv);
 
-        // Wait for fonts and images to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Debug: Check if content was added to DOM
+        console.log('📄 Temp div content length:', tempDiv.innerHTML.length);
+        console.log('📄 Temp div scroll height:', tempDiv.scrollHeight);
+        console.log('📄 Temp div children count:', tempDiv.children.length);
+
+        // Wait for fonts and images to load, and ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Force a reflow to ensure styles are applied
+        tempDiv.offsetHeight;
 
         try {
           console.log('Converting HTML to canvas...');
+
+          // Ensure the element has content before converting
+          if (tempDiv.scrollHeight < 100) {
+            throw new Error('Content too small to render properly');
+          }
+
           // Convert HTML to canvas with improved settings
           const canvas = await html2canvas(tempDiv, {
             scale: 2,
@@ -253,16 +297,28 @@ const BookingDetails = () => {
             allowTaint: true,
             backgroundColor: '#ffffff',
             width: 800,
-            height: tempDiv.scrollHeight,
+            height: Math.max(tempDiv.scrollHeight, 600),
             logging: true,
             removeContainer: false,
+            foreignObjectRendering: true,
             onclone: (clonedDoc) => {
               console.log('Document cloned for canvas rendering');
+              // Ensure styles are preserved in cloned document
+              const clonedDiv = clonedDoc.querySelector('div');
+              if (clonedDiv) {
+                clonedDiv.style.visibility = 'visible';
+                clonedDiv.style.position = 'static';
+              }
               return clonedDoc;
             }
           });
 
           console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
+
+          // Validate canvas has content
+          if (canvas.width === 0 || canvas.height === 0) {
+            throw new Error('Canvas has invalid dimensions');
+          }
 
           // Create PDF
           console.log('Creating PDF...');

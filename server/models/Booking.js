@@ -15,6 +15,8 @@ const bookingSchema = new mongoose.Schema(
     groundId: {
       type: mongoose.Schema.Types.Mixed, // Allow both ObjectId and String
       required: true,
+      // Note: For ObjectId values, they should reference the Ground model
+      // but we keep Mixed type to support fallback ground string IDs
     },
     bookingDate: {
       type: Date,

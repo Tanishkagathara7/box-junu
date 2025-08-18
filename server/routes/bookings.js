@@ -656,29 +656,31 @@ router.get("/:id", authMiddleware, async (req, res) => {
     console.log("Backend: isValidObjectId:", isValidObjectId);
     
     if (isValidObjectId) {
-      // Populate from MongoDB
+      // Manual population from MongoDB (since groundId is Mixed type, we can't use populate())
       try {
-        console.log("Backend: Attempting to populate from MongoDB...");
-        await booking.populate("groundId", "name location price features images amenities rating owner");
-        if (booking.groundId && typeof booking.groundId === 'object') {
-          bookingObj.groundId = booking.groundId;
-          console.log("Backend: Successfully populated ground from MongoDB:", booking.groundId.name);
+        console.log("Backend: Attempting to find ground in MongoDB...");
+        // Import Ground model at the top of the file instead of dynamic import
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner");
+
+        if (mongoGround) {
+          bookingObj.groundId = mongoGround.toObject();
+          console.log("Backend: Successfully found ground in MongoDB:", mongoGround.name);
         } else {
-          console.log("Backend: MongoDB populate failed, ground not found for ID:", bookingObj.groundId);
+          console.log("Backend: MongoDB ground not found for ID:", bookingObj.groundId);
           // Try fallback as a last resort
           const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
           if (fallbackGround) {
             bookingObj.groundId = fallbackGround;
-            console.log("Backend: Using fallback ground for failed MongoDB populate:", fallbackGround.name);
+            console.log("Backend: Using fallback ground for failed MongoDB lookup:", fallbackGround.name);
           }
         }
-      } catch (populateError) {
-        console.error("Backend: Error populating ground from MongoDB:", populateError);
+      } catch (mongoError) {
+        console.error("Backend: Error finding ground in MongoDB:", mongoError);
         // Try fallback as a last resort
         const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
         if (fallbackGround) {
           bookingObj.groundId = fallbackGround;
-          console.log("Backend: Using fallback ground due to populate error:", fallbackGround.name);
+          console.log("Backend: Using fallback ground due to MongoDB error:", fallbackGround.name);
         }
       }
     } else {

@@ -196,9 +196,29 @@ const BookingDetails = () => {
 
       // Debug: Check if HTML content is valid
       console.log('📄 Received HTML content length:', htmlContent.length);
+
+      // Check for key elements in the HTML
+      const hasBoxCric = htmlContent.includes('BoxCric');
+      const hasReceiptTitle = htmlContent.includes('BOOKING RECEIPT');
+      const hasBookingId = htmlContent.includes(booking.bookingId);
+
+      console.log('📋 HTML validation:', {
+        hasBoxCric,
+        hasReceiptTitle,
+        hasBookingId,
+        contentLength: htmlContent.length
+      });
+
       if (htmlContent.length < 100) {
         console.error('❌ HTML content seems too short:', htmlContent);
         toast.error("Invalid receipt content received");
+        return;
+      }
+
+      if (!hasBoxCric || !hasReceiptTitle) {
+        console.error('❌ HTML content does not contain expected receipt elements');
+        console.log('📄 HTML preview:', htmlContent.substring(0, 500));
+        toast.error("Invalid receipt format received");
         return;
       }
 

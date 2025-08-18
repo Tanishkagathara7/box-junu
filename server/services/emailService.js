@@ -75,11 +75,34 @@ export const sendBookingReceiptEmail = async (booking, user) => {
     // Generate HTML content with error handling
     let htmlContent;
     try {
+      // Validate booking data before generating template
+      if (!booking || !booking.bookingId) {
+        throw new Error('Invalid booking data - missing booking ID');
+      }
+      if (!user || !user.email) {
+        throw new Error('Invalid user data - missing email');
+      }
+
       htmlContent = generateBookingReceiptHTML(booking, user);
       console.log('✅ Email template generated successfully');
+      console.log(`📄 Generated email HTML length: ${htmlContent.length} characters`);
+
+      // Validate generated content
+      if (!htmlContent || htmlContent.length < 100) {
+        throw new Error('Generated HTML content is too short or empty');
+      }
+
+      if (!htmlContent.includes('BoxCric') || !htmlContent.includes('BOOKING RECEIPT')) {
+        throw new Error('Generated HTML is missing required elements');
+      }
+
     } catch (templateError) {
       console.error('❌ Error generating email template:', templateError);
-      throw new Error(`Template generation failed: ${templateError.message}`);
+      return {
+        success: false,
+        message: `Template generation failed: ${templateError.message}`,
+        error: templateError.message
+      };
     }
 
     // Email subject

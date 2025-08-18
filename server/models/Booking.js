@@ -117,7 +117,7 @@ bookingSchema.index({ userId: 1, bookingDate: -1 });
 bookingSchema.index({ groundId: 1, bookingDate: 1 });
 bookingSchema.index({ status: 1 });
 bookingSchema.index({ "payment.status": 1 });
-bookingSchema.index({ bookingId: 1 });
+// Note: bookingId already has unique index from schema definition, no need for separate index
 
 // Compound index for overlap checking
 bookingSchema.index({ 

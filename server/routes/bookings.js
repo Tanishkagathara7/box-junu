@@ -1449,6 +1449,14 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
       }
     }
 
+    // Validate booking data before sending email
+    if (!bookingObj.bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking data - missing booking ID"
+      });
+    }
+
     // Send receipt email
     const emailResult = await sendBookingReceiptEmail(bookingObj, user);
 
@@ -1542,14 +1550,44 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
       }
     }
 
-    // Import the template function
-    const { generateBookingReceiptHTML } = await import("../templates/bookingReceiptTemplate.js");
+    // Import the template function with better error handling
+    let generateBookingReceiptHTML;
+    try {
+      const templateModule = await import("../templates/bookingReceiptTemplate.js");
+      generateBookingReceiptHTML = templateModule.generateBookingReceiptHTML;
+      console.log("✅ Template module imported successfully");
+    } catch (importError) {
+      console.error("❌ Error importing template:", importError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to load receipt template"
+      });
+    }
+
+    // Ensure booking has all required fields
+    if (!bookingObj.bookingId) {
+      console.error("❌ Missing booking ID");
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking data - missing booking ID"
+      });
+    }
 
     // Debug: Log the booking object to see what data we have
     console.log("📋 Booking object for receipt:", JSON.stringify(bookingObj, null, 2));
     console.log("👤 User object for receipt:", JSON.stringify(user, null, 2));
 
-    const receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+    let receiptHTML;
+    try {
+      receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+      console.log("✅ Receipt HTML generated successfully");
+    } catch (templateError) {
+      console.error("❌ Error generating receipt HTML:", templateError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate receipt content"
+      });
+    }
 
     // Debug: Log HTML length to ensure content is generated
     console.log(`📄 Generated HTML length: ${receiptHTML.length} characters`);
@@ -1557,8 +1595,22 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
     // Check if HTML contains key content
     const hasBookingId = receiptHTML.includes(bookingObj.bookingId || 'N/A');
     const hasGroundName = receiptHTML.includes(bookingObj.groundId?.name || 'N/A');
+    const hasBoxCric = receiptHTML.includes('BoxCric');
+    const hasReceiptTitle = receiptHTML.includes('BOOKING RECEIPT');
+
     console.log(`📋 HTML contains booking ID: ${hasBookingId}`);
     console.log(`🏟️ HTML contains ground name: ${hasGroundName}`);
+    console.log(`🏏 HTML contains BoxCric: ${hasBoxCric}`);
+    console.log(`📄 HTML contains receipt title: ${hasReceiptTitle}`);
+
+    // Validate HTML content before sending
+    if (!hasBoxCric || !hasReceiptTitle) {
+      console.error("❌ Generated HTML is missing required elements");
+      return res.status(500).json({
+        success: false,
+        message: "Generated receipt is invalid"
+      });
+    }
 
     // Return HTML for preview or download
     res.setHeader('Content-Type', 'text/html');

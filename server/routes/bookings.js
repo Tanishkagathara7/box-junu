@@ -696,27 +696,27 @@ router.get("/:id", authMiddleware, async (req, res) => {
     // Final fallback: if ground is still just an ID string, provide minimal ground object
     if (typeof bookingObj.groundId === 'string') {
       console.log("Backend: Ground could not be populated, creating minimal ground object for ID:", bookingObj.groundId);
-      
-      // Try to find a default fallback ground if ID doesn't match any specific ground
-      const defaultGround = fallbackGrounds[0]; // Use first fallback ground as default
-      
+
+      // Don't use a default fallback ground - instead create a proper "not found" ground object
+      // This prevents showing wrong ground information in booking details
+
       bookingObj.groundId = {
         _id: bookingObj.groundId,
-        name: defaultGround?.name || "Ground details unavailable",
-        location: { 
-          address: defaultGround?.location?.address || "Address not available",
-          cityName: defaultGround?.location?.cityName || "Unknown City"
+        name: "Ground details unavailable",
+        location: {
+          address: "Address not available",
+          cityName: "Unknown City"
         },
-        price: { 
-          perHour: defaultGround?.price?.perHour || 0,
+        price: {
+          perHour: 0,
           currency: "INR"
         },
-        features: { 
-          capacity: defaultGround?.features?.capacity || 0, 
-          pitchType: defaultGround?.features?.pitchType || "Unknown"
+        features: {
+          capacity: 0,
+          pitchType: "Unknown"
         },
-        images: defaultGround?.images || [],
-        amenities: defaultGround?.amenities || [],
+        images: [],
+        amenities: [],
         rating: { average: 0, count: 0 },
         owner: { name: "Unknown", contact: "N/A", email: "N/A" }
       };

@@ -223,6 +223,8 @@ export const sendBookingConfirmationEmail = async (booking, user) => {
       <!DOCTYPE html>
       <html>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=3.0">
+        <meta name="format-detection" content="telephone=no">
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
           .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -235,6 +237,14 @@ export const sendBookingConfirmationEmail = async (booking, user) => {
           .label { font-weight: bold; color: #374151; }
           .value { color: #6b7280; }
           .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 12px; }
+          @media (max-width: 600px) {
+            .container { margin: 5px; padding: 10px; }
+            .content { padding: 15px; }
+            .booking-box { padding: 15px; margin: 10px 0; }
+            .booking-id { font-size: 20px; }
+            .logo { font-size: 20px; }
+            .details { margin: 10px 0; font-size: 14px; }
+          }
         </style>
       </head>
       <body>
@@ -251,6 +261,7 @@ export const sendBookingConfirmationEmail = async (booking, user) => {
               <div class="booking-id">${booking.bookingId}</div>
               <div class="details">
                 <div><span class="label">Ground:</span> <span class="value">${ground.name || 'N/A'}</span></div>
+                <div><span class="label">Location:</span> <span class="value">${ground?.location?.address || ground?.location?.city || 'N/A'}</span></div>
                 <div><span class="label">Date:</span> <span class="value">${new Date(booking.bookingDate).toLocaleDateString('en-IN')}</span></div>
                 <div><span class="label">Time:</span> <span class="value">${timeSlot.startTime || 'N/A'} - ${timeSlot.endTime || 'N/A'}</span></div>
                 <div><span class="label">Amount:</span> <span class="value">₹${booking.pricing?.totalAmount || 0}</span></div>

@@ -307,86 +307,52 @@ const BookingDetails = () => {
 
         console.log('PDF libraries loaded successfully');
 
-        // Create a temporary div to render the receipt
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = htmlContent;
-        tempDiv.style.cssText = `
-          position: absolute;
-          left: -9999px;
+        // Alternative approach: Use a visible iframe for better rendering
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = `
+          position: fixed;
           top: 0;
+          left: 0;
           width: 800px;
-          min-height: 600px;
-          background-color: #ffffff;
-          font-family: Arial, sans-serif;
-          line-height: 1.5;
-          color: #000 !important;
-          padding: 20px;
-          box-sizing: border-box;
-          visibility: visible;
-          opacity: 1;
+          height: 1200px;
+          border: none;
+          background: white;
+          z-index: 9999;
         `;
-        document.body.appendChild(tempDiv);
-
-        // Force all text to be visible
-        const allElements = tempDiv.querySelectorAll('*');
-        allElements.forEach(el => {
-          if (el instanceof HTMLElement) {
-            el.style.color = '#000';
-            el.style.visibility = 'visible';
-            el.style.opacity = '1';
-          }
+        
+        document.body.appendChild(iframe);
+        
+        // Write content to iframe
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(htmlContent);
+        iframe.contentDocument.close();
+        
+        // Wait for iframe to load
+        await new Promise(resolve => {
+          iframe.onload = resolve;
+          setTimeout(resolve, 2000); // fallback timeout
         });
-
-        // Debug: Check if content was added to DOM
-        console.log('📄 Temp div content length:', tempDiv.innerHTML.length);
-        console.log('📄 Temp div scroll height:', tempDiv.scrollHeight);
-        console.log('📄 Temp div children count:', tempDiv.children.length);
-
-        // Wait for fonts and images to load, and ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Force a reflow to ensure styles are applied
-        tempDiv.offsetHeight;
+        
+        const iframeBody = iframe.contentDocument.body;
+        console.log('📄 Iframe body content:', iframeBody.innerHTML.length);
+        console.log('📄 Iframe scroll height:', iframeBody.scrollHeight);
 
         try {
           console.log('Converting HTML to canvas...');
 
-          // Ensure the element has content before converting
-          if (tempDiv.scrollHeight < 100) {
+          // Ensure the iframe has content before converting
+          if (iframeBody.scrollHeight < 100) {
             throw new Error('Content too small to render properly');
           }
 
-          const jsPDF = (await import('jspdf')).default;
-          const html2canvas = (await import('html2canvas')).default;
-
-          // Create PDF
-          const pdfDoc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-          });
-
-          // Convert HTML to canvas with improved settings
-          const canvas = await html2canvas(tempDiv, {
+          // Convert iframe content to canvas
+          const canvas = await html2canvas(iframeBody, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            width: 800,
-            height: Math.max(tempDiv.scrollHeight, 600),
             logging: true,
-            removeContainer: false,
-            foreignObjectRendering: true,
-            onclone: (clonedDoc) => {
-              console.log('Document cloned for canvas rendering');
-              // Ensure styles are preserved in cloned document
-              const clonedDiv = clonedDoc.querySelector('div');
-              if (clonedDiv) {
-                clonedDiv.style.visibility = 'visible';
-                clonedDiv.style.position = 'static';
-              }
-              return clonedDoc;
-            }
+            removeContainer: false
           });
 
           console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
@@ -398,7 +364,6 @@ const BookingDetails = () => {
 
           // Create PDF with proper constructor call
           console.log('Creating PDF...');
-          console.log('jsPDF constructor type:', typeof jsPDF);
           const pdf = new jsPDF('p', 'mm', 'a4');
           const imgData = canvas.toDataURL('image/png', 1.0);
 
@@ -409,20 +374,38 @@ const BookingDetails = () => {
 
           console.log('PDF dimensions:', pdfWidth, 'x', pdfHeight);
 
-          // Handle multi-page PDFs if content is too long
-          const pageHeight = pdf.internal.pageSize.getHeight();
-          let heightLeft = pdfHeight;
-          let position = 0;
-
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-          heightLeft -= pageHeight;
-
-          while (heightLeft >= 0) {
-            position = heightLeft - pdfHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pageHeight;
+          // Check if canvas captured content
+          const context = canvas.getContext('2d');
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          let hasContent = false;
+          
+          // Check if canvas has any non-white pixels
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
+              hasContent = true;
+              break;
+            }
           }
+          
+          if (!hasContent) {
+            console.warn('⚠️ Canvas appears to be blank, trying alternative approach');
+            // Show the receipt in a new window as fallback
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+              newWindow.document.write(htmlContent);
+              newWindow.document.close();
+            }
+            toast.error("PDF generation issue - receipt opened in new tab for manual save");
+            // Clean up iframe before returning
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+            return;
+          }
+
+          // Add image to PDF
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
 
           // Save the PDF
           const fileName = `BoxCric-Receipt-${booking.bookingId || booking._id}.pdf`;
@@ -434,9 +417,9 @@ const BookingDetails = () => {
           console.error("Error generating PDF:", pdfError);
           toast.error("PDF generation failed. Please try again.");
         } finally {
-          // Clean up
-          if (document.body.contains(tempDiv)) {
-            document.body.removeChild(tempDiv);
+          // Clean up iframe
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
           }
         }
       } catch (importError) {

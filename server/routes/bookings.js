@@ -1582,7 +1582,7 @@ router.get("/:id/receipt-test", async (req, res) => {
       }
     }
 
-    // Ensure all required fields exist
+    // Ensure all required fields exist with proper venue details
     if (!bookingObj.pricing) {
       bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
     }
@@ -1596,6 +1596,31 @@ router.get("/:id/receipt-test", async (req, res) => {
         contactPerson: { name: 'N/A', phone: 'N/A' }
       };
     }
+
+    // Ensure ground details are properly populated for venue section
+    if (!bookingObj.groundId || typeof bookingObj.groundId === 'string') {
+      console.log('⚠️ Ground details missing, using fallback');
+      bookingObj.groundId = {
+        name: 'Ground details unavailable',
+        location: {
+          address: 'Address not available',
+          city: 'N/A',
+          state: 'N/A'
+        },
+        contact: {
+          phone: 'N/A',
+          email: 'N/A'
+        }
+      };
+    }
+
+    console.log('📋 Final booking object for receipt:', {
+      bookingId: bookingObj.bookingId,
+      groundName: bookingObj.groundId?.name,
+      groundLocation: bookingObj.groundId?.location?.address,
+      timeSlot: bookingObj.timeSlot,
+      pricing: bookingObj.pricing
+    });
 
     const receiptHTML = generateBookingReceiptHTML(bookingObj, user);
     res.setHeader('Content-Type', 'text/html');

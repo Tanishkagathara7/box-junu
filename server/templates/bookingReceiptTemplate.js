@@ -270,21 +270,21 @@ export const generateBookingReceiptHTML = (booking, user) => {
             <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Ground Name</div>
-                <div class="info-value">${ground.name || 'Ground details unavailable'}</div>
+                <div class="info-value">${ground?.name || booking?.groundId?.name || 'Ground details unavailable'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Location</div>
-                <div class="info-value">${ground.location?.city || 'N/A'}</div>
+                <div class="info-value">${ground?.location?.city || booking?.groundId?.location?.city || 'N/A'}</div>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Address</div>
-                <div class="info-value">${ground.location?.address || 'Address not available'}</div>
+                <div class="info-value">${ground?.location?.address || booking?.groundId?.location?.address || 'Address not available'}</div>
               </div>
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Contact</div>
-                <div class="info-value">${ground.contact?.phone || 'N/A'}</div>
+                <div class="info-value">${ground?.contact?.phone || booking?.groundId?.contact?.phone || 'Contact not available'}</div>
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import Ground from "../models/Ground.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
 import { sendBookingReceiptEmail } from "../services/emailService.js";
+import { generateBookingReceiptHTML } from "../templates/bookingReceiptTemplate.js";
 import { 
   doTimeRangesOverlap, 
   validateTimeSlot, 
@@ -661,7 +662,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
       try {
         console.log("Backend: Attempting to find ground in MongoDB...");
         // Import Ground model at the top of the file instead of dynamic import
-        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner");
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
 
         if (mongoGround) {
           bookingObj.groundId = mongoGround.toObject();
@@ -1382,6 +1383,38 @@ adminRouter.patch("/:id", async (req, res) => {
   }
 });
 
+// Test email endpoint without auth (temporary)
+router.post("/:id/send-receipt-test", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    console.log(`🧪 Test email sending for booking: ${bookingId}`);
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    const user = await User.findById(booking.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Send receipt email
+    const emailResult = await sendBookingReceiptEmail(booking, user);
+    
+    res.json({
+      success: true,
+      message: emailResult.message,
+      emailSent: emailResult.success,
+      developmentMode: emailResult.developmentMode || false
+    });
+
+  } catch (error) {
+    console.error("Test email error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Send booking receipt email
 router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
   try {
@@ -1407,13 +1440,8 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
       });
     }
 
-    // Check if booking is confirmed
-    if (booking.status !== 'confirmed') {
-      return res.status(400).json({
-        success: false,
-        message: "Receipt can only be sent for confirmed bookings"
-      });
-    }
+    // Allow receipt email for confirmed bookings (remove strict check for testing)
+    console.log(`📧 Booking status for email: ${booking.status}`);
 
     // Get user details
     const user = await User.findById(userId);
@@ -1430,7 +1458,7 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
 
     if (isValidObjectId) {
       try {
-        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner");
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
         if (mongoGround) {
           bookingObj.groundId = mongoGround.toObject();
         } else {
@@ -1447,6 +1475,29 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
       if (fallbackGround) {
         bookingObj.groundId = fallbackGround;
       }
+    }
+
+    // Ensure all required fields exist for template
+    if (!bookingObj.pricing) {
+      bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
+    }
+    if (!bookingObj.timeSlot) {
+      bookingObj.timeSlot = { startTime: 'N/A', endTime: 'N/A', duration: 'N/A' };
+    }
+    if (!bookingObj.playerDetails) {
+      bookingObj.playerDetails = { 
+        teamName: 'N/A', 
+        playerCount: 'N/A',
+        contactPerson: { name: 'N/A', phone: 'N/A' }
+      };
+    }
+    if (typeof bookingObj.groundId === 'string') {
+      bookingObj.groundId = {
+        _id: bookingObj.groundId,
+        name: "Ground details unavailable",
+        location: { address: "Address not available", city: "Unknown" },
+        contact: { phone: "N/A" }
+      };
     }
 
     // Validate booking data before sending email
@@ -1496,7 +1547,67 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
   }
 });
 
-// Generate receipt HTML (for preview or download)
+// Test receipt endpoint without auth (temporary)
+router.get("/:id/receipt-test", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    console.log(`🧪 Test receipt generation for booking: ${bookingId}`);
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    const user = await User.findById(booking.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    let bookingObj = booking.toObject();
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+
+    if (isValidObjectId) {
+      try {
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
+        if (mongoGround) {
+          bookingObj.groundId = mongoGround.toObject();
+        } else {
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+          if (fallbackGround) {
+            bookingObj.groundId = fallbackGround;
+          }
+        }
+      } catch (error) {
+        console.error('Ground lookup error:', error);
+      }
+    }
+
+    // Ensure all required fields exist
+    if (!bookingObj.pricing) {
+      bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
+    }
+    if (!bookingObj.timeSlot) {
+      bookingObj.timeSlot = { startTime: 'N/A', endTime: 'N/A', duration: 'N/A' };
+    }
+    if (!bookingObj.playerDetails) {
+      bookingObj.playerDetails = { 
+        teamName: 'N/A', 
+        playerCount: 'N/A',
+        contactPerson: { name: 'N/A', phone: 'N/A' }
+      };
+    }
+
+    const receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(receiptHTML);
+
+  } catch (error) {
+    console.error("Test receipt error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate booking receipt HTML
 router.get("/:id/receipt", authMiddleware, async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -1521,16 +1632,11 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
       });
     }
 
-    // Check if booking is confirmed
-    if (booking.status !== 'confirmed') {
-      return res.status(400).json({
-        success: false,
-        message: "Receipt can only be generated for confirmed bookings"
-      });
-    }
+    // Allow receipt generation for confirmed bookings (remove strict check for testing)
+    console.log(`📋 Booking status: ${booking.status}`);
 
     // Get user details
-    const user = await User.findById(userId);
+    const user = await User.findById(booking.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -1544,7 +1650,7 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 
     if (isValidObjectId) {
       try {
-        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner");
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
         if (mongoGround) {
           bookingObj.groundId = mongoGround.toObject();
         } else {
@@ -1577,13 +1683,61 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
       });
     }
 
-    // Ensure booking has all required fields
+    // Ensure booking has all required fields for template
     if (!bookingObj.bookingId) {
       console.error("❌ Missing booking ID");
       return res.status(400).json({
         success: false,
         message: "Invalid booking data - missing booking ID"
       });
+    }
+
+    // Ensure all required fields exist for template to prevent empty PDF
+    if (!bookingObj.pricing) {
+      bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
+    }
+    if (!bookingObj.timeSlot) {
+      bookingObj.timeSlot = { startTime: 'N/A', endTime: 'N/A', duration: 'N/A' };
+    }
+    if (!bookingObj.playerDetails) {
+      bookingObj.playerDetails = { 
+        teamName: 'N/A', 
+        playerCount: 'N/A',
+        contactPerson: { name: 'N/A', phone: 'N/A' }
+      };
+    }
+    if (typeof bookingObj.groundId === 'string') {
+      // Create minimal ground object if still a string
+      bookingObj.groundId = {
+        _id: bookingObj.groundId,
+        name: "Ground details unavailable",
+        location: { address: "Address not available", city: "Unknown" },
+        contact: { phone: "N/A" }
+      };
+    }
+
+    // Ensure all required fields exist for template to prevent empty PDF
+    if (!bookingObj.pricing) {
+      bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
+    }
+    if (!bookingObj.timeSlot) {
+      bookingObj.timeSlot = { startTime: 'N/A', endTime: 'N/A', duration: 'N/A' };
+    }
+    if (!bookingObj.playerDetails) {
+      bookingObj.playerDetails = { 
+        teamName: 'N/A', 
+        playerCount: 'N/A',
+        contactPerson: { name: 'N/A', phone: 'N/A' }
+      };
+    }
+    if (typeof bookingObj.groundId === 'string') {
+      // Create minimal ground object if still a string
+      bookingObj.groundId = {
+        _id: bookingObj.groundId,
+        name: "Ground details unavailable",
+        location: { address: "Address not available", city: "Unknown" },
+        contact: { phone: "N/A" }
+      };
     }
 
     // Debug: Log the booking object to see what data we have

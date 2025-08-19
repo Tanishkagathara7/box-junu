@@ -242,8 +242,7 @@ app.use(errorHandler);
 
 // Server Listener
 const PORT = process.env.PORT || 3001;
-// Always use 0.0.0.0 on Render or in production to accept connections from any IP
-// Force 0.0.0.0 for all deployments to ensure proper binding
+// Use 0.0.0.0 to bind to all interfaces
 const HOST = '0.0.0.0';
 
 // Debug environment variables

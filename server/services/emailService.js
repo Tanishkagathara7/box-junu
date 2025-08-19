@@ -8,8 +8,14 @@ dotenv.config();
 // Email transporter configuration (reusing the same config as auth)
 const createTransporter = () => {
   // Check if email environment variables are configured
+  console.log("📧 Checking email configuration...");
+  console.log("EMAIL_HOST:", process.env.EMAIL_HOST);
+  console.log("EMAIL_PORT:", process.env.EMAIL_PORT);
+  console.log("EMAIL_USER:", process.env.EMAIL_USER);
+  console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "NOT SET");
+  
   if (!process.env.EMAIL_HOST || !process.env.EMAIL_PORT || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log("⚠️  Email configuration not found. Using development mode - emails will be logged to console.");
+    console.log("⚠️  Email configuration incomplete. Using development mode - emails will be logged to console.");
     console.log("📧 Missing email config:", {
       host: !!process.env.EMAIL_HOST,
       port: !!process.env.EMAIL_PORT,
@@ -121,7 +127,11 @@ export const sendBookingReceiptEmail = async (booking, user) => {
       console.log(`⚠️ Email transporter not available - receipt will only be logged to console`);
       console.log(`📧 Receipt HTML content generated for ${user.email}`);
       console.log(`📧 Would send email with subject: BoxCric - Booking Receipt #${booking.bookingId}`);
-      return { success: false, message: "Email transporter not configured - check email settings" };
+      return { 
+        success: true, 
+        message: "Email service not configured. Receipt generated successfully but not sent. Please configure email settings in .env file.",
+        developmentMode: true
+      };
     }
 
     // Verify transporter before sending

@@ -1,29 +1,4 @@
-// Booking receipt email template
-export const generateBookingReceiptHTML = (booking, user) => {
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
-  const formatTime = (time) => {
-    return new Date(`2000-01-01 ${time}`).toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const ground = booking.groundId || booking.ground || {};
-  const playerDetails = booking.playerDetails || {};
-  const contactPerson = playerDetails.contactPerson || {};
-  const pricing = booking.pricing || {};
-  const timeSlot = booking.timeSlot || {};
-
-  return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -252,13 +227,13 @@ export const generateBookingReceiptHTML = (booking, user) => {
           </div>
           <div class="receipt-info">
             <div class="receipt-title">BOOKING RECEIPT</div>
-            <div class="receipt-date">${formatDate(new Date())}</div>
+            <div class="receipt-date">Tuesday 19 August, 2025</div>
           </div>
         </div>
 
         <div class="booking-id">
           <div class="booking-id-label">Booking ID</div>
-          <div class="booking-id-value">${booking.bookingId || 'N/A'}</div>
+          <div class="booking-id-value">BCMEGZ679S7RFMK</div>
         </div>
 
         <div class="section">
@@ -270,21 +245,21 @@ export const generateBookingReceiptHTML = (booking, user) => {
             <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Ground Name</div>
-                <div class="info-value">${ground.name || 'Ground details unavailable'}</div>
+                <div class="info-value">try</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Location</div>
-                <div class="info-value">${ground.location?.city || 'N/A'}</div>
+                <div class="info-value">N/A</div>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Address</div>
-                <div class="info-value">${ground.location?.address || 'Address not available'}</div>
+                <div class="info-value">as</div>
               </div>
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Contact</div>
-                <div class="info-value">${ground.contact?.phone || 'N/A'}</div>
+                <div class="info-value">N/A</div>
               </div>
             </div>
           </div>
@@ -299,22 +274,22 @@ export const generateBookingReceiptHTML = (booking, user) => {
             <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Date</div>
-                <div class="info-value">${formatDate(booking.bookingDate)}</div>
+                <div class="info-value">Monday 18 August, 2025</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Time Slot</div>
-                <div class="info-value">${timeSlot.startTime && timeSlot.endTime ? `${formatTime(timeSlot.startTime)} - ${formatTime(timeSlot.endTime)}` : 'N/A'}</div>
+                <div class="info-value">06:00 pm - 07:00 pm</div>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Duration</div>
-                <div class="info-value">${timeSlot.duration || 'N/A'} hour(s)</div>
+                <div class="info-value">1 hour(s)</div>
               </div>
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Status</div>
                 <div class="info-value">
-                  <strong style="color: #22c55e;">${booking.status === 'confirmed' ? '✅ CONFIRMED' : '⏳ PENDING'}</strong>
+                  <strong style="color: #22c55e;">✅ CONFIRMED</strong>
                 </div>
               </div>
             </div>
@@ -330,21 +305,21 @@ export const generateBookingReceiptHTML = (booking, user) => {
             <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Team Name</div>
-                <div class="info-value">${playerDetails.teamName || 'N/A'}</div>
+                <div class="info-value">N/A</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Players</div>
-                <div class="info-value">${playerDetails.playerCount || 'N/A'}</div>
+                <div class="info-value">5</div>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Contact Person</div>
-                <div class="info-value">${contactPerson.name || 'N/A'}</div>
+                <div class="info-value">Rag Raichurea</div>
               </div>
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Phone</div>
-                <div class="info-value">${contactPerson.phone || 'N/A'}</div>
+                <div class="info-value">4565412345</div>
               </div>
             </div>
           </div>
@@ -359,21 +334,21 @@ export const generateBookingReceiptHTML = (booking, user) => {
             <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Base Amount</div>
-                <div class="info-value">₹${pricing.baseAmount || 0}</div>
+                <div class="info-value">₹1</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Discount</div>
-                <div class="info-value">-₹${pricing.discount || 0}</div>
+                <div class="info-value">-₹0</div>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Taxes & Fees</div>
-                <div class="info-value">₹${pricing.taxes || 0}</div>
+                <div class="info-value">₹0</div>
               </div>
               <div class="info-item" style="border-top: none; background: #f0fdf4;">
                 <div class="info-label">Total Amount</div>
-                <div class="info-value" style="font-size: 18px; font-weight: bold; color: #22c55e;">₹${pricing.totalAmount || 0}</div>
+                <div class="info-value" style="font-size: 18px; font-weight: bold; color: #22c55e;">₹1</div>
               </div>
             </div>
           </div>
@@ -393,5 +368,4 @@ export const generateBookingReceiptHTML = (booking, user) => {
       </div>
     </body>
     </html>
-  `;
-};
+  

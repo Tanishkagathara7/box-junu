@@ -337,51 +337,51 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-2xl w-full rounded-3xl p-0 overflow-hidden shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50"
+        className="max-w-4xl w-[95vw] sm:w-full rounded-2xl sm:rounded-2xl p-0 overflow-hidden shadow-2xl border-0 bg-white max-h-[95vh] sm:max-h-[90vh]"
       >
         <DialogDescription className="sr-only">
           Book a cricket ground slot by selecting date, time, and providing contact details.
         </DialogDescription>
-        <div className="relative bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 px-8 py-6 text-white">
+        <div className="relative bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 px-6 sm:px-8 py-4 sm:py-6 text-white">
           <div className="absolute inset-0 bg-black/10"></div>
           <DialogHeader className="relative z-10">
-            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <MapPin className="w-5 h-5" />
+            <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              Book {ground.name}
+              <span className="line-clamp-1">Book {ground.name}</span>
             </DialogTitle>
-            <div className="text-green-100 mt-2 flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {ground.location.address}
+            <div className="text-green-100 mt-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <span className="flex items-center gap-1 text-sm">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="line-clamp-1">{ground.location.address}</span>
               </span>
-              <span className="flex items-center gap-1">
-                <DollarSign className="w-4 h-4" />
+              <span className="flex items-center gap-1 text-sm flex-wrap">
+                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
                 {Array.isArray(ground?.price?.ranges) && ground.price.ranges.length > 0
                   ? ground.price.ranges.map((r, i) => (
-                      <span key={i} className="mr-2">{r.start}-{r.end}: ₹{r.perHour}/hr</span>
+                      <span key={i} className="text-xs sm:text-sm whitespace-nowrap">{r.start}-{r.end}: ₹{r.perHour}/hr</span>
                     ))
-                  : 'No price ranges set'}
+                  : <span className="text-xs sm:text-sm">No price ranges set</span>}
               </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                Max {ground.features.capacity}
+              <span className="flex items-center gap-1 text-sm">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="whitespace-nowrap">Max {ground.features.capacity}</span>
               </span>
             </div>
           </DialogHeader>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-4 -translate-x-4"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 sm:w-24 sm:h-24 bg-white/10 rounded-full translate-y-4 -translate-x-4"></div>
         </div>
 
-        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-h-[75vh] overflow-y-auto">
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-800">Select Date</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Select Date</h3>
             </div>
             
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
               {getQuickDates().map((date, index) => (
                 <button
                   key={index}
@@ -390,14 +390,14 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
                     setSelectedStartSlotObj(null);
                     setSelectedEndTime("");
                   }}
-                  className={`p-3 rounded-xl text-center transition-all duration-200 ${
+                  className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-200 min-h-[70px] sm:min-h-[80px] touch-target border-2 ${
                     selectedDate && isSameDay(date, selectedDate)
-                      ? "bg-green-600 text-white shadow-lg scale-105"
-                      : "bg-white hover:bg-green-50 border border-gray-200 hover:border-green-300 text-gray-700"
+                      ? "bg-green-600 text-white shadow-lg scale-105 border-green-600"
+                      : "bg-white hover:bg-green-50 border-gray-200 hover:border-green-300 text-gray-700 hover:shadow-md"
                   }`}
                 >
                   <div className="text-xs font-medium">{getDateLabel(date)}</div>
-                  <div className="text-lg font-bold">{format(date, "d")}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{format(date, "d")}</div>
                   <div className="text-xs opacity-75">{format(date, "MMM")}</div>
                 </button>
               ))}
@@ -407,7 +407,7 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-800">Select Time Range</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Select Time Range</h3>
             </div>
             
             {isLoadingSlots ? (
@@ -421,111 +421,126 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
                 <p className="text-gray-600">No available slots for this day</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
-                  <select
-                    className="p-3 rounded-xl border border-gray-200 text-gray-700"
-                    value={selectedStartSlotObj ? selectedStartSlotObj.slot : ""}
-                    onChange={e => {
-                      const slotObj = availableSlots.find(s => s.slot === e.target.value);
-                      setSelectedStartSlotObj(slotObj || null);
-                      setSelectedEndTime("");
-                    }}
-                  >
-                    <option value="">Select Start Time</option>
-                    {availableSlots.filter(s => s.isAvailable).map(slot => (
-                      <option key={slot.slot} value={slot.slot}>
-                        {slot.label.split(' - ')[0]}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="p-3 rounded-xl border border-gray-200 text-gray-700"
-                    value={selectedEndTime}
-                    onChange={e => setSelectedEndTime(e.target.value)}
-                    disabled={!selectedStartSlotObj}
-                  >
-                    <option value="">Select End Time</option>
-                    {getAvailableEndTimes(selectedStartSlotObj).map(end => (
-                      <option key={end.value} value={end.value}>
-                        {end.label} ({end.duration} hr{end.duration > 1 ? 's' : ''})
-                      </option>
-                    ))}
-                  </select>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Start Time</Label>
+                    <select
+                      className="w-full p-3 sm:p-4 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none text-gray-700 text-base bg-white min-h-[50px] transition-colors"
+                      value={selectedStartSlotObj ? selectedStartSlotObj.slot : ""}
+                      onChange={e => {
+                        const slotObj = availableSlots.find(s => s.slot === e.target.value);
+                        setSelectedStartSlotObj(slotObj || null);
+                        setSelectedEndTime("");
+                      }}
+                    >
+                      <option value="">Select Start Time</option>
+                      {availableSlots.filter(s => s.isAvailable).map(slot => (
+                        <option key={slot.slot} value={slot.slot}>
+                          {slot.label.split(' - ')[0]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">End Time</Label>
+                    <select
+                      className="w-full p-3 sm:p-4 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none text-gray-700 text-base bg-white min-h-[50px] transition-colors disabled:bg-gray-100 disabled:text-gray-400"
+                      value={selectedEndTime}
+                      onChange={e => setSelectedEndTime(e.target.value)}
+                      disabled={!selectedStartSlotObj}
+                    >
+                      <option value="">Select End Time</option>
+                      {getAvailableEndTimes(selectedStartSlotObj).map(end => (
+                        <option key={end.value} value={end.value}>
+                          {end.label} ({end.duration} hr{end.duration > 1 ? 's' : ''})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 {selectedStartSlotObj && selectedEndTime && (
-                  <div className="text-sm text-gray-600">
-                    Duration: {((parseInt(selectedEndTime.split(':')[0], 10) - parseInt(selectedStartSlotObj.slot.split(':')[0], 10) + 24) % 24)} hour(s)
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="text-sm text-green-700 font-medium">
+                      Duration: {((parseInt(selectedEndTime.split(':')[0], 10) - parseInt(selectedStartSlotObj.slot.split(':')[0], 10) + 24) % 24)} hour(s)
+                    </div>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Users className="w-4 h-4 text-green-600" />
-                Team Name (Optional)
-              </Label>
-              <Input
-                placeholder="Enter your team name"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Users className="w-4 h-4 text-green-600" />
-                Number of Players *
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={ground.features.capacity}
-                placeholder="Enter number of players"
-                value={playerCount}
-                onChange={(e) => setPlayerCount(e.target.value)}
-                className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12"
-              />
+          <div className="bg-gray-50 rounded-xl p-4 sm:p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Users className="w-5 h-5 text-green-600" />
+              Team Details
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  Team Name (Optional)
+                </Label>
+                <Input
+                  placeholder="Enter your team name"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 sm:h-14 text-base bg-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  Number of Players *
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={ground.features.capacity}
+                  placeholder="Enter number of players"
+                  value={playerCount}
+                  onChange={(e) => setPlayerCount(e.target.value)}
+                  className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 sm:h-14 text-base bg-white"
+                />
+                <p className="text-xs text-gray-500">Maximum {ground.features.capacity} players allowed</p>
+              </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-green-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-green-600" />
               Contact Person Details
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Full Name *
-                </Label>
-                <Input
-                  placeholder="Contact person name"
-                  value={contactName}
-                  onChange={e => setContactName(e.target.value)}
-                  className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 bg-white"
-                />
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Full Name *
+                  </Label>
+                  <Input
+                    placeholder="Contact person name"
+                    value={contactName}
+                    onChange={e => setContactName(e.target.value)}
+                    className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 sm:h-14 text-base bg-white"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Phone Number *
+                  </Label>
+                  <Input
+                    type="tel"
+                    placeholder="Contact phone number"
+                    value={contactPhone}
+                    onChange={e => setContactPhone(e.target.value)}
+                    className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 sm:h-14 text-base bg-white"
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Phone Number *
-                </Label>
-                <Input
-                  type="tel"
-                  placeholder="Contact phone number"
-                  value={contactPhone}
-                  onChange={e => setContactPhone(e.target.value)}
-                  className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 bg-white"
-                />
-              </div>
-              
-              <div className="md:col-span-2 space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
                   Email Address (Optional)
                 </Label>
@@ -534,83 +549,88 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
                   placeholder="Contact email address"
                   value={contactEmail}
                   onChange={e => setContactEmail(e.target.value)}
-                  className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 bg-white"
+                  className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-xl h-12 sm:h-14 text-base bg-white"
                 />
               </div>
             </div>
           </div>
 
           {selectedDate && selectedStartSlotObj && selectedEndTime && playerCount && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <Star className="w-5 h-5 text-blue-600" />
                 Booking Summary
               </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Date:</span>
-                  <span className="font-medium">{format(selectedDate, "EEEE, MMMM d, yyyy")}</span>
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-gray-600 text-sm font-medium">Date:</span>
+                    <span className="font-semibold text-sm">{format(selectedDate, "EEEE, MMMM d, yyyy")}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-gray-600 text-sm font-medium">Time:</span>
+                    <span className="font-semibold text-sm">{selectedStartSlotObj.slot.split('-')[0]} - {selectedEndTime}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-gray-600 text-sm font-medium">Players:</span>
+                    <span className="font-semibold text-sm">{playerCount} players</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-gray-600 text-sm font-medium">Rate:</span>
+                    <div className="font-semibold text-sm text-right">
+                      {Array.isArray(ground?.price?.ranges) && ground.price.ranges.length > 0
+                        ? ground.price.ranges.map((r, i) => (
+                            <div key={i} className="">{r.start}-{r.end}: ₹{r.perHour}/hr</div>
+                          ))
+                        : 'No price ranges set'}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Time:</span>
-                  <span className="font-medium">{selectedStartSlotObj.slot.split('-')[0]} - {selectedEndTime}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Players:</span>
-                  <span className="font-medium">{playerCount} players</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Rate:</span>
-                  <span className="font-medium">
-                    {Array.isArray(ground?.price?.ranges) && ground.price.ranges.length > 0
-                      ? ground.price.ranges.map((r, i) => (
-                          <span key={i} className="mr-2">{r.start}-{r.end}: ₹{r.perHour}/hr</span>
-                        ))
-                      : 'No price ranges set'}
-                  </span>
-                </div>
+                
                 {/* Price breakdown */}
-                <div className="mt-2">
-                  <div className="font-semibold mb-1">Breakdown:</div>
-                  <ul className="text-xs bg-white rounded-lg p-2 border border-blue-100">
+                <div className="space-y-2">
+                  <div className="font-semibold text-sm">Price Breakdown:</div>
+                  <div className="bg-white rounded-lg p-3 border border-blue-100 space-y-2">
                     {calculateTotalPriceAndBreakdown().breakdown.length === 0 ? (
-                      <li>No hours selected.</li>
+                      <div className="text-sm text-gray-500">No hours selected.</div>
                     ) : (
                       calculateTotalPriceAndBreakdown().breakdown.map((b, i) => (
-                        <li key={i} className="flex justify-between">
-                          <span>{b.hour} ({b.type})</span>
-                          <span>{typeof b.rate === 'number' ? `₹${b.rate}` : b.rate}</span>
-                        </li>
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="flex-1">{b.hour}</span>
+                          <span className="font-medium ml-2">{typeof b.rate === 'number' ? `₹${b.rate}` : b.rate}</span>
+                        </div>
                       ))
                     )}
-                  </ul>
-                </div>
-                <div className="border-t border-blue-200 pt-3 flex justify-between text-lg font-bold">
-                  <span>Total:</span>
-                  <span className="text-green-600">₹{calculateTotalPriceAndBreakdown().total}</span>
+                    <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-green-600">₹{calculateTotalPriceAndBreakdown().total}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="flex gap-4 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={onClose} 
-              className="flex-1 h-12 rounded-xl border-gray-300 hover:bg-gray-50 text-gray-700"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleBook}
-              disabled={!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone}
-              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              {!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone 
-                ? "Complete Details to Book" 
-                : "Proceed to Payment"
-              }
-            </Button>
+          <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-100">
+            <div className="flex gap-3 sm:gap-4">
+              <Button 
+                variant="outline" 
+                onClick={onClose} 
+                className="flex-1 h-12 sm:h-14 rounded-xl border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBook}
+                disabled={!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone}
+                className="flex-1 h-12 sm:h-14 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone 
+                  ? "Complete Details" 
+                  : "Proceed to Payment"
+                }
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -22,8 +22,13 @@ app.get('/test-receipt/:bookingId', async (req, res) => {
     const { generateBookingReceiptHTML } = await import('./server/templates/bookingReceiptTemplate.js');
     const { fallbackGrounds } = await import('./server/data/fallbackGrounds.js');
     
-    // Find booking
-    const booking = await Booking.findById(bookingId);
+    // Find booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }

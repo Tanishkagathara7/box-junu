@@ -197,16 +197,11 @@ const BookingDetails = () => {
   const handleDownloadReceipt = async () => {
       try {
         setIsDownloadingReceipt(true);
-<<<<<<< HEAD
         const token = localStorage.getItem('boxcric_token');
-=======
-    const token = localStorage.getItem('boxcric_token');
->>>>>>> 370759e95e9f65c50e7b7ca04539761f8d476be5
         const bookingId = booking.bookingId || booking._id;
         let pdfUrl = `/api/bookings/${bookingId}/receipt-pdf`;
         if (window.location.hostname === 'localhost') {
           pdfUrl = `http://localhost:3002/api/bookings/${bookingId}/receipt-pdf`;
-<<<<<<< HEAD
         }
         if (!token) {
           toast.error("You must be logged in to download the PDF receipt.");
@@ -226,30 +221,12 @@ const BookingDetails = () => {
             // Do NOT set 'Content-Type' for GET; it can break downloads on some browsers
           },
         });
-
-=======
-        }
-        console.log('[PDF] Token before request:', token);
-        if (!token) {
-          toast.error("You must be logged in to download the PDF receipt.");
-          setIsDownloadingReceipt(false);
-          return;
-        }
-        const response = await fetch(pdfUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/pdf',
-          },
-        });
->>>>>>> 370759e95e9f65c50e7b7ca04539761f8d476be5
         if (!response.ok) {
           if (response.status === 401) {
             toast.error("Unauthorized. Please log in again to download your receipt.");
           } else {
             toast.error("Failed to generate PDF receipt.");
           }
-<<<<<<< HEAD
           return;
         }
 
@@ -282,27 +259,6 @@ const BookingDetails = () => {
 
         window.URL.revokeObjectURL(url);
         toast.success("Receipt PDF ready.");
-=======
-          setIsDownloadingReceipt(false);
-          return;
-        }
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/pdf')) {
-          toast.error("Server did not return a PDF. Please contact support.");
-          setIsDownloadingReceipt(false);
-          return;
-        }
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `BoxCric-Receipt-${bookingId}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        toast.success("Receipt PDF downloaded successfully!");
->>>>>>> 370759e95e9f65c50e7b7ca04539761f8d476be5
       } catch (error) {
         console.error("Error downloading receipt:", error);
         toast.error("Failed to download receipt. Please try again.");

@@ -1839,22 +1839,12 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
       booking = await Booking.findOne({ bookingId });
     }
     if (!booking) {
-<<<<<<< HEAD
       return res.status(404).json({ success: false, message: 'Booking not found' });
-=======
-      res.status(404).set('Content-Type', 'application/pdf');
-      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Booking not found) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
->>>>>>> 370759e95e9f65c50e7b7ca04539761f8d476be5
     }
     // Get user details
     const user = await User.findById(booking.userId);
     if (!user) {
-<<<<<<< HEAD
       return res.status(404).json({ success: false, message: 'User not found' });
-=======
-      res.status(404).set('Content-Type', 'application/pdf');
-      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (User not found) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
->>>>>>> 370759e95e9f65c50e7b7ca04539761f8d476be5
     }
     // Populate ground details for the receipt
     let bookingObj = booking.toObject();
@@ -1919,7 +1909,6 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
     }
     // Generate PDF using puppeteer
     try {
-<<<<<<< HEAD
       const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
       const page = await browser.newPage();
       await page.emulateMediaType('screen');
@@ -1936,17 +1925,7 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
       res.setHeader("Accept-Ranges", "none");
       res.setHeader("X-BoxCric-Receipt", "pdf-success");
       return res.end(pdfBuffer);
-=======
-      const browser = await puppeteer.launch({ headless: true });
-      const page = await browser.newPage();
-      await page.setContent(receiptHTML, { waitUntil: "networkidle0" });
-      const pdfBuffer = await page.pdf({ format: "A4" });
-      await browser.close();
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename=BoxCric-Receipt-${bookingId}.pdf`);
-      res.setHeader("X-BoxCric-Receipt", "pdf-success");
-      res.send(pdfBuffer);
->>>>>>> 370759e95e9f65c50e7b7ca04539761f8d476be5
+
     } catch (pdfError) {
       console.error("Puppeteer PDF error:", pdfError);
       res.setHeader("X-BoxCric-Receipt", "pdf-fallback");

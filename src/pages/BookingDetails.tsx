@@ -142,14 +142,16 @@ const BookingDetails = () => {
 
       console.log('📧 Sending receipt email for booking:', booking._id);
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('boxcric_token');
       console.log('🔑 Using token for email:', token ? 'Token present' : 'No token');
-      
-      // Use test endpoint temporarily to bypass auth issues
-      const response = await fetch(`http://localhost:3002/api/bookings/${booking._id}/send-receipt-test`, {
+
+      const bookingId = booking.bookingId || booking._id;
+      const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
+      const response = await fetch(`${apiBase}/bookings/${bookingId}/send-receipt`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -200,9 +202,7 @@ const BookingDetails = () => {
         const token = localStorage.getItem('boxcric_token');
         const bookingId = booking.bookingId || booking._id;
         // Always use API base URL so production doesn’t call the frontend domain
-        const apiBase = (import.meta as any).env?.VITE_API_URL || (import.meta as any).env?.DEV
-          ? 'http://localhost:3001/api'
-          : 'https://box-junu.onrender.com/api';
+        const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
         let pdfUrl = `${apiBase}/bookings/${bookingId}/receipt-pdf`;
         if (!token) {
           toast.error("You must be logged in to download the PDF receipt.");

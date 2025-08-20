@@ -141,10 +141,12 @@ const Profile = () => {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="text-center">
-                <div className="w-24 h-24 bg-gradient-cricket rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-12 h-12 text-white" />
+                <div className="w-24 h-24 bg-gradient-to-r from-cricket-green to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-4 border-white">
+                  <span className="text-3xl font-bold text-white select-none">
+                    {user?.name ? user.name.trim().charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                  </span>
                 </div>
-                <CardTitle className="text-xl">{user?.name}</CardTitle>
+                <CardTitle className="text-xl">{user?.name || 'User'}</CardTitle>
                 <p className="text-gray-600">Cricket Enthusiast</p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -156,17 +158,12 @@ const Profile = () => {
                   <Phone className="w-4 h-4 text-gray-500" />
                   <span>{user?.phone}</span>
                 </div>
-                {user?.location && (
+                {user?.createdAt && (
                   <div className="flex items-center space-x-2 text-sm">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span>{user.location.cityName}, {user.location.state}</span>
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span>Member since {formatDate(user.createdAt)}</span>
                   </div>
                 )}
-                <div className="flex items-center space-x-2 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  //@ts-ignore
-                  <span>Member since {formatDate(user?.createdAt || new Date().toISOString())}</span>
-                </div>
 
                 <Separator />
 
@@ -203,10 +200,8 @@ const Profile = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-1">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="favorites">Favorites</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -330,137 +325,6 @@ const Profile = () => {
                     )}
                   </CardContent>
                 </Card>
-              </TabsContent>
-
-              {/* Favorites Tab */}
-              <TabsContent value="favorites" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Favorite Grounds
-                  </h2>
-                  <Button 
-                    className="bg-cricket-green hover:bg-cricket-green/90"
-                    onClick={() => navigate("/favorites")}
-                  >
-                    View All Favorites
-                  </Button>
-                </div>
-
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/favorites")}>
-                  <CardContent className="p-12 text-center">
-                    <Star className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                      Manage Your Favorites
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Click here to view and manage your favorite cricket grounds. Add grounds to favorites for quick access and easy booking.
-                    </p>
-                    <div className="space-y-3">
-                      <Button
-                        className="bg-cricket-green hover:bg-cricket-green/90"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate("/favorites");
-                        }}
-                      >
-                        <Star className="w-4 h-4 mr-2" />
-                        Go to Favorites
-                      </Button>
-                      <div className="text-sm text-gray-500">
-                        Or{" "}
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="p-0 h-auto text-cricket-green"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/");
-                          }}
-                        >
-                          browse grounds
-                        </Button>
-                        {" "}to add favorites
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Account Settings
-                  </h2>
-                </div>
-
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Email Notifications</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span>Booking confirmations</span>
-                        <Button variant="outline" size="sm">
-                          Enable
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Ground recommendations</span>
-                        <Button variant="outline" size="sm">
-                          Enable
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Promotional offers</span>
-                        <Button variant="outline" size="sm">
-                          Disable
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Privacy Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span>Location sharing</span>
-                        <Button variant="outline" size="sm">
-                          Enable
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Profile visibility</span>
-                        <Button variant="outline" size="sm">
-                          Public
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Account Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button
-                        variant="outline"
-                        className="w-full text-cricket-green border-cricket-green hover:bg-cricket-green/10"
-                      >
-                        Change Password
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full text-red-600 border-red-600 hover:bg-red-50"
-                      >
-                        Delete Account
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
               </TabsContent>
             </Tabs>
           </div>

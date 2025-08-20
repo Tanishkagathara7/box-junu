@@ -135,20 +135,20 @@ const Bookings = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/")}
               className="flex items-center space-x-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Profile</span>
+              <span>Back to Home</span>
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Bookings</h1>
           </div>
           <Button 
-            className="bg-cricket-green hover:bg-cricket-green/90"
+            className="bg-cricket-green hover:bg-cricket-green/90 w-full sm:w-auto"
             onClick={() => navigate("/")}
           >
             Book New Ground
@@ -177,10 +177,10 @@ const Bookings = () => {
           <div className="space-y-4">
             {bookings.filter(b => b.groundId).map((booking) => (
               <Card key={booking._id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <h3 className="font-semibold text-lg">
                           {booking.groundId ? booking.groundId.name : "Unknown Ground"}
                         </h3>
@@ -192,17 +192,17 @@ const Bookings = () => {
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm text-gray-600">
                         <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>{formatDate(booking.bookingDate)}</span>
+                          <Calendar className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{formatDate(booking.bookingDate)}</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatTime(booking.timeSlot)}</span>
+                          <Clock className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{formatTime(booking.timeSlot)}</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <User className="w-4 h-4" />
+                          <User className="w-4 h-4 flex-shrink-0" />
                           <span>{booking.playerDetails.playerCount} players</span>
                         </div>
                       </div>
@@ -218,7 +218,7 @@ const Bookings = () => {
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-left sm:text-right mt-2 sm:mt-0">
                       <div className="text-xl font-bold text-cricket-green">
                         ₹{booking.pricing.totalAmount}
                       </div>
@@ -228,7 +228,7 @@ const Bookings = () => {
                     </div>
                   </div>
 
-                  <div className="flex space-x-2 mt-4">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <Button 
                       variant="outline" 
                       size="sm"

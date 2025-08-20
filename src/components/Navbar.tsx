@@ -393,14 +393,18 @@ const Navbar = ({
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden flex items-center justify-center p-3 rounded-full bg-cricket-green/20 hover:bg-cricket-green/30 transition-colors shadow-md absolute top-3 right-4 z-[201]"
+              className={`md:hidden flex items-center justify-center p-3 rounded-full transition-colors shadow-md absolute top-3 right-4 z-[201] ${
+                isMenuOpen 
+                  ? "bg-cricket-green text-white hover:bg-cricket-green/90" 
+                  : "bg-white hover:bg-cricket-green/10 text-cricket-green border border-gray-200"
+              }`}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle mobile menu"
             >
               {isMenuOpen ? (
-                <X className="w-7 h-7 text-cricket-green" />
+                <X className="w-7 h-7" />
               ) : (
-                <Menu className="w-7 h-7 text-cricket-green" />
+                <Menu className="w-7 h-7" />
               )}
             </Button>
           </div>

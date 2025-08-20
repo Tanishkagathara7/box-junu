@@ -199,10 +199,11 @@ const BookingDetails = () => {
         setIsDownloadingReceipt(true);
         const token = localStorage.getItem('boxcric_token');
         const bookingId = booking.bookingId || booking._id;
-        let pdfUrl = `/api/bookings/${bookingId}/receipt-pdf`;
-        if (window.location.hostname === 'localhost') {
-          pdfUrl = `http://localhost:3002/api/bookings/${bookingId}/receipt-pdf`;
-        }
+        // Always use API base URL so production doesn’t call the frontend domain
+        const apiBase = (import.meta as any).env?.VITE_API_URL || (import.meta as any).env?.DEV
+          ? 'http://localhost:3001/api'
+          : 'https://box-junu.onrender.com/api';
+        let pdfUrl = `${apiBase}/bookings/${bookingId}/receipt-pdf`;
         if (!token) {
           toast.error("You must be logged in to download the PDF receipt.");
           return;

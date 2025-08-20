@@ -1553,7 +1553,13 @@ router.get("/:id/receipt-test", async (req, res) => {
     const bookingId = req.params.id;
     console.log(`🧪 Test receipt generation for booking: ${bookingId}`);
 
-    const booking = await Booking.findById(bookingId);
+    // Find booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
@@ -1820,3 +1826,108 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 export { adminRouter };
 
 export default router;
+// Generate booking receipt PDF (mobile-friendly)
+import puppeteer from "puppeteer";
+router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    // Find booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
+    if (!booking) {
+      res.status(404).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Booking not found) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+    // Get user details
+    const user = await User.findById(booking.userId);
+    if (!user) {
+      res.status(404).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (User not found) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+    // Populate ground details for the receipt
+    let bookingObj = booking.toObject();
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+    if (isValidObjectId) {
+      try {
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
+        if (mongoGround) {
+          bookingObj.groundId = mongoGround.toObject();
+        } else {
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+          if (fallbackGround) {
+            bookingObj.groundId = fallbackGround;
+          }
+        }
+      } catch (error) {
+        console.error("Error populating ground for receipt:", error);
+      }
+    } else {
+      const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+      if (fallbackGround) {
+        bookingObj.groundId = fallbackGround;
+      }
+    }
+    // Ensure all required fields exist for template
+    if (!bookingObj.pricing) {
+      bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
+    }
+    if (!bookingObj.timeSlot) {
+      bookingObj.timeSlot = { startTime: 'N/A', endTime: 'N/A', duration: 'N/A' };
+    }
+    if (!bookingObj.playerDetails) {
+      bookingObj.playerDetails = { 
+        teamName: 'N/A', 
+        playerCount: 'N/A',
+        contactPerson: { name: 'N/A', phone: 'N/A' }
+      };
+    }
+    if (typeof bookingObj.groundId === 'string') {
+      bookingObj.groundId = {
+        _id: bookingObj.groundId,
+        name: "Ground details unavailable",
+        location: { address: "Address not available", city: "Unknown" },
+        contact: { phone: "N/A" }
+      };
+    }
+    // Import the template function
+    let generateBookingReceiptHTML;
+    try {
+      const templateModule = await import("../templates/bookingReceiptTemplate.js");
+      generateBookingReceiptHTML = templateModule.generateBookingReceiptHTML;
+    } catch (importError) {
+      res.status(500).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Template error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+    let receiptHTML;
+    try {
+      receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+    } catch (templateError) {
+      res.status(500).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Receipt error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+    // Generate PDF using puppeteer
+    try {
+      const browser = await puppeteer.launch({ headless: true });
+      const page = await browser.newPage();
+      await page.setContent(receiptHTML, { waitUntil: "networkidle0" });
+      const pdfBuffer = await page.pdf({ format: "A4" });
+      await browser.close();
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename=BoxCric-Receipt-${bookingId}.pdf`);
+      res.setHeader("X-BoxCric-Receipt", "pdf-success");
+      res.send(pdfBuffer);
+    } catch (pdfError) {
+      console.error("Puppeteer PDF error:", pdfError);
+      res.setHeader("X-BoxCric-Receipt", "pdf-fallback");
+      res.status(500).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (PDF error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+  } catch (error) {
+    res.status(500).set('Content-Type', 'application/pdf');
+    return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Server error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+  }
+});

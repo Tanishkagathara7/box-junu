@@ -195,253 +195,59 @@ const BookingDetails = () => {
   };
 
   const handleDownloadReceipt = async () => {
-    try {
-      setIsDownloadingReceipt(true);
-
-      // First get the receipt HTML
-      const token = localStorage.getItem('token');
-      console.log('🔑 Using token for receipt:', token ? 'Token present' : 'No token');
-      
-      // Use test endpoint temporarily to bypass auth issues
-      const response = await fetch(`http://localhost:3002/api/bookings/${booking._id}/receipt-test`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Failed to generate receipt");
-        return;
-      }
-
-      const htmlContent = await response.text();
-
-      // Debug: Check if HTML content is valid
-      console.log('📄 Received HTML content length:', htmlContent.length);
-      console.log('📄 HTML preview:', htmlContent.substring(0, 300));
-
-      // Check for key elements in the HTML (more flexible validation)
-      const hasBoxCric = htmlContent.includes('BoxCric') || htmlContent.includes('Box Cric');
-      const hasReceiptTitle = htmlContent.includes('BOOKING RECEIPT') || htmlContent.includes('Receipt') || htmlContent.includes('RECEIPT');
-      const hasBookingId = htmlContent.includes(booking.bookingId) || htmlContent.includes(booking._id);
-
-      console.log('📋 HTML validation:', {
-        hasBoxCric,
-        hasReceiptTitle,
-        hasBookingId,
-        contentLength: htmlContent.length,
-        preview: htmlContent.substring(0, 200)
-      });
-
-      // Check if response is an error message instead of HTML
-      if (htmlContent.includes('"success":false') || htmlContent.includes('error')) {
-        console.error('❌ Received error response instead of HTML:', htmlContent);
-        toast.error("Failed to generate receipt - authentication or server error");
-        return;
-      }
-
-      if (htmlContent.length < 50) {
-        console.error('❌ HTML content seems too short:', htmlContent);
-        toast.error("Invalid receipt content received");
-        return;
-      }
-
-      // More flexible validation - just check if it looks like HTML
-      const isValidHTML = htmlContent.includes('<') && htmlContent.includes('>');
-      if (!isValidHTML) {
-        console.error('❌ Response does not appear to be HTML');
-        console.log('📄 Response content:', htmlContent.substring(0, 500));
-        toast.error("Invalid receipt format received");
-        return;
-      }
-
       try {
-        // Import libraries dynamically with better error handling for production
-        console.log('Importing PDF libraries...');
-
-        // Try multiple import strategies for better compatibility
-        let jsPDF, html2canvas;
-
-        try {
-          // Strategy 1: Standard dynamic import with proper destructuring
-          const [jsPDFModule, html2canvasModule] = await Promise.all([
-            import('jspdf'),
-            import('html2canvas')
-          ]);
-
-          console.log('jsPDF module:', jsPDFModule);
-          console.log('html2canvas module:', html2canvasModule);
-
-          // Correct way to access jsPDF constructor
-          jsPDF = jsPDFModule.jsPDF || jsPDFModule.default?.jsPDF || jsPDFModule.default;
-          html2canvas = html2canvasModule.default || html2canvasModule;
-
-        } catch (importError) {
-          console.log('Standard import failed, trying alternative approach:', importError);
-
-          // Strategy 2: Check if libraries are globally available
-          if (typeof window !== 'undefined') {
-            // @ts-ignore - Access global jsPDF constructor
-            const globalJsPDF = window.jsPDF;
-            // @ts-ignore
-            const globalHtml2canvas = window.html2canvas;
-
-            if (globalJsPDF) {
-              jsPDF = globalJsPDF;
-            }
-            if (globalHtml2canvas) {
-              html2canvas = globalHtml2canvas;
-            }
-          }
-
-          if (!jsPDF || !html2canvas) {
-            throw new Error('PDF libraries not available in this environment');
-          }
+        setIsDownloadingReceipt(true);
+    const token = localStorage.getItem('boxcric_token');
+        const bookingId = booking.bookingId || booking._id;
+        let pdfUrl = `/api/bookings/${bookingId}/receipt-pdf`;
+        if (window.location.hostname === 'localhost') {
+          pdfUrl = `http://localhost:3002/api/bookings/${bookingId}/receipt-pdf`;
         }
-
-        if (!jsPDF || !html2canvas) {
-          throw new Error('Failed to load PDF generation libraries');
+        console.log('[PDF] Token before request:', token);
+        if (!token) {
+          toast.error("You must be logged in to download the PDF receipt.");
+          setIsDownloadingReceipt(false);
+          return;
         }
-
-        console.log('PDF libraries loaded successfully');
-
-        // Alternative approach: Use a visible iframe for better rendering
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 800px;
-          height: 1200px;
-          border: none;
-          background: white;
-          z-index: 9999;
-        `;
-        
-        document.body.appendChild(iframe);
-        
-        // Write content to iframe
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(htmlContent);
-        iframe.contentDocument.close();
-        
-        // Wait for iframe to load
-        await new Promise(resolve => {
-          iframe.onload = resolve;
-          setTimeout(resolve, 2000); // fallback timeout
+        const response = await fetch(pdfUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/pdf',
+          },
         });
-        
-        const iframeBody = iframe.contentDocument.body;
-        console.log('📄 Iframe body content:', iframeBody.innerHTML.length);
-        console.log('📄 Iframe scroll height:', iframeBody.scrollHeight);
-
-        try {
-          console.log('Converting HTML to canvas...');
-
-          // Ensure the iframe has content before converting
-          if (iframeBody.scrollHeight < 100) {
-            throw new Error('Content too small to render properly');
+        if (!response.ok) {
+          if (response.status === 401) {
+            toast.error("Unauthorized. Please log in again to download your receipt.");
+          } else {
+            toast.error("Failed to generate PDF receipt.");
           }
-
-          // Convert iframe content to canvas
-          const canvas = await html2canvas(iframeBody, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: true,
-            removeContainer: false
-          });
-
-          console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
-
-          // Validate canvas has content
-          if (canvas.width === 0 || canvas.height === 0) {
-            throw new Error('Canvas has invalid dimensions');
-          }
-
-          // Create PDF with proper constructor call
-          console.log('Creating PDF...');
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const imgData = canvas.toDataURL('image/png', 1.0);
-
-          console.log('Image data generated, length:', imgData.length);
-
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-          console.log('PDF dimensions:', pdfWidth, 'x', pdfHeight);
-
-          // Check if canvas captured content
-          const context = canvas.getContext('2d');
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imageData.data;
-          let hasContent = false;
-          
-          // Check if canvas has any non-white pixels
-          for (let i = 0; i < data.length; i += 4) {
-            if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
-              hasContent = true;
-              break;
-            }
-          }
-          
-          if (!hasContent) {
-            console.warn('⚠️ Canvas appears to be blank, trying alternative approach');
-            // Show the receipt in a new window as fallback
-            const newWindow = window.open('', '_blank');
-            if (newWindow) {
-              newWindow.document.write(htmlContent);
-              newWindow.document.close();
-            }
-            toast.error("PDF generation issue - receipt opened in new tab for manual save");
-            // Clean up iframe before returning
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe);
-            }
-            return;
-          }
-
-          // Add image to PDF
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-          // Save the PDF
-          const fileName = `BoxCric-Receipt-${booking.bookingId || booking._id}.pdf`;
-          pdf.save(fileName);
-
-          toast.success("Receipt PDF downloaded successfully!");
-
-        } catch (pdfError) {
-          console.error("Error generating PDF:", pdfError);
-          toast.error("PDF generation failed. Please try again.");
-        } finally {
-          // Clean up iframe
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
+          setIsDownloadingReceipt(false);
+          return;
         }
-      } catch (importError) {
-        console.error("Error with PDF generation:", importError);
-
-        // Provide fallback option
-        toast.error("PDF generation failed. Opening receipt in new tab for manual save.");
-
-        // Fallback: Open receipt in new window for manual save
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.document.write(htmlContent);
-          newWindow.document.close();
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/pdf')) {
+          toast.error("Server did not return a PDF. Please contact support.");
+          setIsDownloadingReceipt(false);
+          return;
         }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `BoxCric-Receipt-${bookingId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success("Receipt PDF downloaded successfully!");
+      } catch (error) {
+        console.error("Error downloading receipt:", error);
+        toast.error("Failed to download receipt. Please try again.");
+      } finally {
+        setIsDownloadingReceipt(false);
       }
-    } catch (error) {
-      console.error("Error downloading receipt:", error);
-      toast.error("Failed to download receipt. Please try again.");
-    } finally {
-      setIsDownloadingReceipt(false);
-    }
-  };
+    };
 
   if (isLoading) {
     return (

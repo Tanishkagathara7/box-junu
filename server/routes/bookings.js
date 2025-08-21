@@ -1423,8 +1423,13 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
 
     console.log(`📧 Receipt email request for booking: ${bookingId} by user: ${userId}`);
 
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
+    // Find the booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -1646,8 +1651,15 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 
     console.log(`📄 Receipt generation request for booking: ${bookingId} by user: ${userId}`);
 
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
+    // Find booking by ObjectId or bookingId to support both kinds of URLs
+    const rawId = bookingId;
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(rawId)) {
+      booking = await Booking.findById(rawId);
+    } else {
+      booking = await Booking.findOne({ bookingId: rawId });
+    }
+
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -1897,7 +1909,8 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
       const templateModule = await import("../templates/bookingReceiptTemplate.js");
       generateBookingReceiptHTML = templateModule.generateBookingReceiptHTML;
     } catch (importError) {
-      res.status(500).set('Content-Type', 'application/pdf');
+      res.set('X-BoxCric-Receipt', 'pdf-fallback-template');
+      res.status(200).set('Content-Type', 'application/pdf');
       return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Template error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
     }
     let receiptHTML;
@@ -1928,9 +1941,10 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
 
     } catch (pdfError) {
       console.error("Puppeteer PDF error:", pdfError);
-      res.setHeader("X-BoxCric-Receipt", "pdf-fallback");
-      res.status(500).set('Content-Type', 'application/pdf');
-      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (PDF error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+      // Return a tiny valid PDF with status 200 so clients can still download something
+      res.setHeader("X-BoxCric-Receipt", "pdf-error-fallback");
+      res.status(200).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 20 150 Td (BoxCric Receipt) Tj 0 -30 Td (PDF generation fallback) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
     }
   } catch (error) {
     res.status(500).set('Content-Type', 'application/pdf');

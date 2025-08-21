@@ -1922,17 +1922,35 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
     }
     // Generate PDF using puppeteer
     try {
-      // Ensure Puppeteer uses the downloaded Chrome on Render
-      let execPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      // Resolve a safe Chrome/Chromium executable path at runtime.
+      // Build and runtime containers on Render are different, so paths like
+      // /opt/render/.cache might not exist when the server runs.
+      let execPath = undefined;
       try {
-        // puppeteer.executablePath() exists in recent versions
-        const maybePath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : '';
+        // Prefer Puppeteer's own installed browser
+        const maybePath = (typeof puppeteer.executablePath === 'function') ? puppeteer.executablePath() : '';
         if (maybePath) execPath = maybePath;
+      } catch {}
+
+      // If the chosen path doesn't exist (or wasn't set), try common fallbacks
+      try {
+        const fs = await import('fs');
+        const exists = (p) => !!p && fs.existsSync(p);
+        const candidates = [
+          execPath,
+          process.env.PUPPETEER_EXECUTABLE_PATH,
+          process.env.CHROME_PATH,
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium-browser',
+          '/usr/bin/chromium'
+        ];
+        execPath = candidates.find(exists);
       } catch {}
 
       const browser = await puppeteer.launch({
         headless: true,
-        executablePath: execPath,
+        executablePath: execPath, // undefined is OK; Puppeteer will pick its bundled binary
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
       const page = await browser.newPage();

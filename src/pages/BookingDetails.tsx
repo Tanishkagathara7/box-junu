@@ -211,6 +211,13 @@ const BookingDetails = () => {
         // Detect mobile browsers
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+        // Pre-open a tab on mobile to avoid popup blockers
+        let preOpenTab: Window | null = null;
+        if (isMobile) {
+          preOpenTab = window.open('', '_blank');
+        }
+
+
         // 1) Try server-rendered PDF first
         try {
           let pdfUrl = `${apiBase}/bookings/${bookingId}/receipt-pdf`;
@@ -229,7 +236,8 @@ const BookingDetails = () => {
             if (blob && blob.size > 0) {
               const url = window.URL.createObjectURL(blob);
               if (isMobile) {
-                window.open(url, '_blank');
+                if (preOpenTab) preOpenTab.location.href = url;
+                else window.open(url, '_blank');
               } else {
                 const link = document.createElement('a');
                 link.href = url;
@@ -334,8 +342,9 @@ const BookingDetails = () => {
 
         const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
         if (isMobile) {
-          const blobUrl = pdf.output('bloburl');
-          window.open(blobUrl, '_blank');
+          const blobUrl = String(pdf.output('bloburl'));
+          if (preOpenTab) preOpenTab.location.href = blobUrl as string;
+          else window.open(blobUrl, '_blank');
         } else {
           pdf.save(fileName);
         }

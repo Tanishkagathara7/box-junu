@@ -1922,7 +1922,19 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
     }
     // Generate PDF using puppeteer
     try {
-      const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+      // Ensure Puppeteer uses the downloaded Chrome on Render
+      let execPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      try {
+        // puppeteer.executablePath() exists in recent versions
+        const maybePath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : '';
+        if (maybePath) execPath = maybePath;
+      } catch {}
+
+      const browser = await puppeteer.launch({
+        headless: true,
+        executablePath: execPath,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
       const page = await browser.newPage();
       await page.emulateMediaType('screen');
       await page.setContent(receiptHTML, { waitUntil: "networkidle0" });

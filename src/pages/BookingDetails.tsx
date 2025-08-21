@@ -203,7 +203,6 @@ const BookingDetails = () => {
         const bookingId = booking.bookingId || booking._id;
         // Always use API base URL so production doesn’t call the frontend domain
         const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
-        let pdfUrl = `${apiBase}/bookings/${bookingId}/receipt-pdf`;
         if (!token) {
           toast.error("You must be logged in to download the PDF receipt.");
           return;
@@ -211,58 +210,141 @@ const BookingDetails = () => {
 
         // Detect mobile browsers
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (isMobile) {
-          pdfUrl += (pdfUrl.includes('?') ? '&' : '?') + 'mode=inline';
+
+        // 1) Try server-rendered PDF first
+        try {
+          let pdfUrl = `${apiBase}/bookings/${bookingId}/receipt-pdf`;
+          if (isMobile) {
+            pdfUrl += (pdfUrl.includes('?') ? '&' : '?') + 'mode=inline';
+          }
+
+          const response = await fetch(pdfUrl, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const contentType = response.headers.get('content-type') || '';
+          if (response.ok && contentType.includes('application/pdf')) {
+            const blob = await response.blob();
+            if (blob && blob.size > 0) {
+              const url = window.URL.createObjectURL(blob);
+              if (isMobile) {
+                window.open(url, '_blank');
+              } else {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `BoxCric-Receipt-${bookingId}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+              window.URL.revokeObjectURL(url);
+              toast.success('Receipt PDF ready.');
+              return; // Done
+            }
+          } else {
+            console.warn('receipt-pdf returned status/content-type:', response.status, contentType);
+          }
+        } catch (serverPdfErr) {
+          console.warn('Server PDF generation failed, falling back to client-side:', serverPdfErr);
         }
 
-        const response = await fetch(pdfUrl, {
+        // 2) Fallback: fetch HTML and generate PDF on the client
+        const htmlResp = await fetch(`${apiBase}/bookings/${bookingId}/receipt`, {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            // Do NOT set 'Content-Type' for GET; it can break downloads on some browsers
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        if (!response.ok) {
-          if (response.status === 401) {
-            toast.error("Unauthorized. Please log in again to download your receipt.");
+
+        if (!htmlResp.ok) {
+          if (htmlResp.status === 401) {
+            toast.error('Unauthorized. Please log in again to download your receipt.');
           } else {
-            toast.error("Failed to generate PDF receipt.");
+            toast.error('Failed to generate receipt. Please try again later.');
           }
           return;
         }
 
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('application/pdf')) {
-          toast.error("Server did not return a PDF. Please contact support.");
+        const htmlContent = await htmlResp.text();
+        if (!htmlContent || htmlContent.length < 50 || !htmlContent.includes('<')) {
+          toast.error('Invalid receipt content received.');
           return;
         }
 
-        const blob = await response.blob();
-        if (!blob || blob.size === 0) {
-          toast.error("Received empty PDF file. Please try again.");
-          return;
+        // Dynamic import to keep bundle size small
+        const jsPDF = (await import('jspdf')).default;
+        const html2canvas = (await import('html2canvas')).default;
+
+        // Create a visible container so html2canvas can render styles correctly
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+        tempDiv.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 800px;
+          background-color: #ffffff;
+          font-family: Arial, sans-serif;
+          color: #000;
+          padding: 20px;
+          z-index: 9999;
+          visibility: visible;
+        `;
+        document.body.appendChild(tempDiv);
+
+        // Ensure all elements are visible
+        tempDiv.querySelectorAll('*').forEach(el => {
+          if (el instanceof HTMLElement) {
+            el.style.color = '#000';
+            el.style.visibility = 'visible';
+            el.style.opacity = '1';
+          }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const canvas = await html2canvas(tempDiv, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+        });
+
+        if (!canvas || canvas.width === 0 || canvas.height === 0) {
+          throw new Error('Canvas generation failed');
         }
 
-        const url = window.URL.createObjectURL(blob);
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pageHeight = pdf.internal.pageSize.getHeight();
 
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        // Handle multi-page if content is taller than one page
+        let heightLeft = pdfHeight - pageHeight;
+        while (heightLeft > 0) {
+          pdf.addPage();
+          const position = - (pdfHeight - heightLeft);
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
+
+        const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
         if (isMobile) {
-          // On mobile, open in a new tab so the system viewer can handle the PDF
-          window.open(url, '_blank');
+          const blobUrl = pdf.output('bloburl');
+          window.open(blobUrl, '_blank');
         } else {
-          // On desktop, trigger a download
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `BoxCric-Receipt-${bookingId}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          pdf.save(fileName);
         }
 
-        window.URL.revokeObjectURL(url);
-        toast.success("Receipt PDF ready.");
+        document.body.removeChild(tempDiv);
+        toast.success('Receipt PDF ready.');
       } catch (error) {
-        console.error("Error downloading receipt:", error);
-        toast.error("Failed to download receipt. Please try again.");
+        console.error('Error downloading receipt:', error);
+        toast.error('Failed to download receipt. Please try again.');
       } finally {
         setIsDownloadingReceipt(false);
       }

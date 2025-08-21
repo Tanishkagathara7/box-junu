@@ -23,7 +23,8 @@
     "deploy": "node deploy-to-render.js",
     "deploy:vercel": "node deploy-vercel.js",
     "check:health": "node check-deployment-health.js",
-    "deploy:safe": "node deploy-with-fix.js"
+    "deploy:safe": "node deploy-with-fix.js",
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "resolutions": {
     "@rollup/rollup-linux-x64-gnu": "^3.0.0"

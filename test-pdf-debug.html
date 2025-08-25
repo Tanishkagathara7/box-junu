@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Debug Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <button onclick="testPDFWithRealData()">Test PDF with Real Receipt Data</button>
+    <div id="debug-info"></div>
+
+    <script>
+        async function testPDFWithRealData() {
+            const debugDiv = document.getElementById('debug-info');
+            debugDiv.innerHTML = '<p>Starting test...</p>';
+            
+            try {
+                // Fetch real receipt HTML
+                const response = await fetch('http://localhost:3002/api/bookings/68a30109ff18c2ec94c09831/receipt-test');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch receipt HTML');
+                }
+                
+                const htmlContent = await response.text();
+                debugDiv.innerHTML += `<p>✅ Fetched HTML (${htmlContent.length} chars)</p>`;
+                
+                // Create iframe for rendering
+                const iframe = document.createElement('iframe');
+                iframe.style.cssText = `
+                    position: fixed;
+                    top: 50px;
+                    left: 0;
+                    width: 800px;
+                    height: 1000px;
+                    border: 2px solid red;
+                    background: white;
+                    z-index: 9999;
+                `;
+                
+                document.body.appendChild(iframe);
+                
+                // Write content to iframe
+                iframe.contentDocument.open();
+                iframe.contentDocument.write(htmlContent);
+                iframe.contentDocument.close();
+                
+                debugDiv.innerHTML += '<p>✅ Created iframe with content</p>';
+                
+                // Wait for rendering
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                const iframeBody = iframe.contentDocument.body;
+                debugDiv.innerHTML += `<p>📄 Iframe content height: ${iframeBody.scrollHeight}px</p>`;
+                
+                // Generate canvas
+                const canvas = await html2canvas(iframeBody, {
+                    scale: 1,
+                    backgroundColor: '#ffffff',
+                    logging: true,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                debugDiv.innerHTML += `<p>🖼️ Canvas: ${canvas.width}x${canvas.height}</p>`;
+                
+                // Check canvas content
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                let hasContent = false;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
+                        hasContent = true;
+                        break;
+                    }
+                }
+                
+                debugDiv.innerHTML += `<p>📊 Canvas has content: ${hasContent}</p>`;
+                
+                if (hasContent) {
+                    // Generate PDF
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save('debug-receipt.pdf');
+                    
+                    debugDiv.innerHTML += '<p>✅ PDF generated and downloaded!</p>';
+                } else {
+                    debugDiv.innerHTML += '<p>❌ Canvas is blank - PDF would be empty</p>';
+                }
+                
+                // Keep iframe visible for 5 seconds for inspection
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                debugDiv.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                console.error('Test error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

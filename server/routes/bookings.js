@@ -1423,8 +1423,13 @@ router.post("/:id/send-receipt", authMiddleware, async (req, res) => {
 
     console.log(`📧 Receipt email request for booking: ${bookingId} by user: ${userId}`);
 
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
+    // Find the booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -1553,7 +1558,13 @@ router.get("/:id/receipt-test", async (req, res) => {
     const bookingId = req.params.id;
     console.log(`🧪 Test receipt generation for booking: ${bookingId}`);
 
-    const booking = await Booking.findById(bookingId);
+    // Find booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
@@ -1582,7 +1593,7 @@ router.get("/:id/receipt-test", async (req, res) => {
       }
     }
 
-    // Ensure all required fields exist
+    // Ensure all required fields exist with proper venue details
     if (!bookingObj.pricing) {
       bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
     }
@@ -1596,6 +1607,31 @@ router.get("/:id/receipt-test", async (req, res) => {
         contactPerson: { name: 'N/A', phone: 'N/A' }
       };
     }
+
+    // Ensure ground details are properly populated for venue section
+    if (!bookingObj.groundId || typeof bookingObj.groundId === 'string') {
+      console.log('⚠️ Ground details missing, using fallback');
+      bookingObj.groundId = {
+        name: 'Ground details unavailable',
+        location: {
+          address: 'Address not available',
+          city: 'N/A',
+          state: 'N/A'
+        },
+        contact: {
+          phone: 'N/A',
+          email: 'N/A'
+        }
+      };
+    }
+
+    console.log('📋 Final booking object for receipt:', {
+      bookingId: bookingObj.bookingId,
+      groundName: bookingObj.groundId?.name,
+      groundLocation: bookingObj.groundId?.location?.address,
+      timeSlot: bookingObj.timeSlot,
+      pricing: bookingObj.pricing
+    });
 
     const receiptHTML = generateBookingReceiptHTML(bookingObj, user);
     res.setHeader('Content-Type', 'text/html');
@@ -1615,8 +1651,15 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 
     console.log(`📄 Receipt generation request for booking: ${bookingId} by user: ${userId}`);
 
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
+    // Find booking by ObjectId or bookingId to support both kinds of URLs
+    const rawId = bookingId;
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(rawId)) {
+      booking = await Booking.findById(rawId);
+    } else {
+      booking = await Booking.findOne({ bookingId: rawId });
+    }
+
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -1795,3 +1838,146 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 export { adminRouter };
 
 export default router;
+// Generate booking receipt PDF (mobile-friendly)
+import puppeteer from "puppeteer";
+router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    // Find booking by ObjectId or bookingId
+    let booking = null;
+    if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
+      booking = await Booking.findById(bookingId);
+    } else {
+      booking = await Booking.findOne({ bookingId });
+    }
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+    // Get user details
+    const user = await User.findById(booking.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    // Populate ground details for the receipt
+    let bookingObj = booking.toObject();
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+    if (isValidObjectId) {
+      try {
+        const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
+        if (mongoGround) {
+          bookingObj.groundId = mongoGround.toObject();
+        } else {
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+          if (fallbackGround) {
+            bookingObj.groundId = fallbackGround;
+          }
+        }
+      } catch (error) {
+        console.error("Error populating ground for receipt:", error);
+      }
+    } else {
+      const fallbackGround = fallbackGrounds.find(g => g._id === bookingObj.groundId);
+      if (fallbackGround) {
+        bookingObj.groundId = fallbackGround;
+      }
+    }
+    // Ensure all required fields exist for template
+    if (!bookingObj.pricing) {
+      bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
+    }
+    if (!bookingObj.timeSlot) {
+      bookingObj.timeSlot = { startTime: 'N/A', endTime: 'N/A', duration: 'N/A' };
+    }
+    if (!bookingObj.playerDetails) {
+      bookingObj.playerDetails = { 
+        teamName: 'N/A', 
+        playerCount: 'N/A',
+        contactPerson: { name: 'N/A', phone: 'N/A' }
+      };
+    }
+    if (typeof bookingObj.groundId === 'string') {
+      bookingObj.groundId = {
+        _id: bookingObj.groundId,
+        name: "Ground details unavailable",
+        location: { address: "Address not available", city: "Unknown" },
+        contact: { phone: "N/A" }
+      };
+    }
+    // Import the template function
+    let generateBookingReceiptHTML;
+    try {
+      const templateModule = await import("../templates/bookingReceiptTemplate.js");
+      generateBookingReceiptHTML = templateModule.generateBookingReceiptHTML;
+    } catch (importError) {
+      res.set('X-BoxCric-Receipt', 'pdf-fallback-template');
+      res.status(200).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Template error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+    let receiptHTML;
+    try {
+      receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+    } catch (templateError) {
+      res.status(500).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Receipt error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+    // Generate PDF using puppeteer
+    try {
+      // Resolve a safe Chrome/Chromium executable path at runtime.
+      // Build and runtime containers on Render are different, so paths like
+      // /opt/render/.cache might not exist when the server runs.
+      let execPath = undefined;
+      try {
+        // Prefer Puppeteer's own installed browser
+        const maybePath = (typeof puppeteer.executablePath === 'function') ? puppeteer.executablePath() : '';
+        if (maybePath) execPath = maybePath;
+      } catch {}
+
+      // If the chosen path doesn't exist (or wasn't set), try common fallbacks
+      try {
+        const fs = await import('fs');
+        const exists = (p) => !!p && fs.existsSync(p);
+        const candidates = [
+          execPath,
+          process.env.PUPPETEER_EXECUTABLE_PATH,
+          process.env.CHROME_PATH,
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium-browser',
+          '/usr/bin/chromium'
+        ];
+        execPath = candidates.find(exists);
+      } catch {}
+
+      const browser = await puppeteer.launch({
+        headless: true,
+        executablePath: execPath, // undefined is OK; Puppeteer will pick its bundled binary
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      const page = await browser.newPage();
+      await page.emulateMediaType('screen');
+      await page.setContent(receiptHTML, { waitUntil: "networkidle0" });
+      const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
+      await browser.close();
+      const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
+      const disposition = (req.query.mode === 'inline' || req.query.disposition === 'inline') ? 'inline' : 'attachment';
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `${disposition}; filename="${fileName}"`);
+      res.setHeader("Content-Length", String(pdfBuffer.length));
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Accept-Ranges", "none");
+      res.setHeader("X-BoxCric-Receipt", "pdf-success");
+      return res.end(pdfBuffer);
+
+    } catch (pdfError) {
+      console.error("Puppeteer PDF error:", pdfError);
+      // Return a tiny valid PDF with status 200 so clients can still download something
+      res.setHeader("X-BoxCric-Receipt", "pdf-error-fallback");
+      res.status(200).set('Content-Type', 'application/pdf');
+      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 20 150 Td (BoxCric Receipt) Tj 0 -30 Td (PDF generation fallback) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+    }
+  } catch (error) {
+    res.status(500).set('Content-Type', 'application/pdf');
+    return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Server error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+  }
+});

@@ -28,7 +28,8 @@ export const generateBookingReceiptHTML = (booking, user) => {
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=3.0">
+      <meta name="format-detection" content="telephone=no">
       <title>BoxCric - Booking Receipt</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -232,13 +233,48 @@ export const generateBookingReceiptHTML = (booking, user) => {
           }
         }
         @media (max-width: 600px) {
-          .container { margin: 10px; }
-          .info-grid { display: block; }
-          .info-row { display: block; }
+          .container { 
+            margin: 5px; 
+            padding: 10px;
+            font-size: 12px;
+          }
+          .header {
+            flex-direction: column;
+            text-align: center;
+          }
+          .receipt-info {
+            text-align: center;
+            margin-top: 10px;
+          }
+          .logo {
+            font-size: 24px;
+          }
+          .receipt-title {
+            font-size: 20px;
+          }
+          .booking-id-value {
+            font-size: 16px;
+          }
+          .info-grid { 
+            display: block; 
+          }
+          .info-row { 
+            display: block; 
+          }
           .info-item {
             display: block;
             width: 100%;
             margin-bottom: 10px;
+            padding: 8px;
+          }
+          .section-title {
+            font-size: 14px;
+          }
+          .info-value {
+            font-size: 12px;
+          }
+          .pricing-row {
+            font-size: 12px;
           }
         }
       </style>
@@ -270,21 +306,21 @@ export const generateBookingReceiptHTML = (booking, user) => {
             <div class="info-row">
               <div class="info-item">
                 <div class="info-label">Ground Name</div>
-                <div class="info-value">${ground.name || 'Ground details unavailable'}</div>
+                <div class="info-value">${ground?.name || booking?.groundId?.name || 'Ground details unavailable'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Location</div>
-                <div class="info-value">${ground.location?.city || 'N/A'}</div>
+                <div class="info-value">${ground?.location?.address || ground?.location?.city || booking?.groundId?.location?.address || booking?.groundId?.location?.city || 'N/A'}</div>
               </div>
             </div>
             <div class="info-row">
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Address</div>
-                <div class="info-value">${ground.location?.address || 'Address not available'}</div>
+                <div class="info-value">${ground?.location?.address || booking?.groundId?.location?.address || 'Address not available'}</div>
               </div>
               <div class="info-item" style="border-top: none;">
                 <div class="info-label">Contact</div>
-                <div class="info-value">${ground.contact?.phone || 'N/A'}</div>
+                <div class="info-value">${ground?.contact?.phone || booking?.groundId?.contact?.phone || 'Contact not available'}</div>
               </div>
             </div>
           </div>

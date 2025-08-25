@@ -227,13 +227,15 @@ const BookingDetails = () => {
       setIsDownloadingReceipt(true);
       const token = localStorage.getItem('boxcric_token');
       const bookingId = booking.bookingId || booking._id;
-      // Always use API base URL so production doesn't call the frontend domain
-      const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
+      
       if (!token) {
         toast.error("You must be logged in to download the PDF receipt.");
         return;
       }
 
+      // Always use API base URL so production doesn't call the frontend domain
+      const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
+      
       // Detect mobile browsers
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -243,74 +245,340 @@ const BookingDetails = () => {
         preOpenTab = window.open('', '_blank');
       }
 
-      // 1) Try server-rendered PDF first
+      console.log('📄 Starting PDF generation for booking:', bookingId);
+
+      // Generate a guaranteed-to-work HTML receipt with current booking data
+      const generateSimpleReceiptHTML = () => {
+        return `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>BoxCric Receipt</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                font-family: Arial, sans-serif; 
+                margin: 40px; 
+                background: white; 
+                color: black; 
+                font-size: 14px;
+                line-height: 1.5;
+              }
+              .header { 
+                text-align: center; 
+                margin-bottom: 30px; 
+                border-bottom: 3px solid #22c55e; 
+                padding-bottom: 20px; 
+              }
+              .logo { 
+                font-size: 28px; 
+                font-weight: bold; 
+                color: #22c55e; 
+                margin-bottom: 5px; 
+              }
+              .tagline { 
+                font-size: 14px; 
+                color: #666; 
+              }
+              .receipt-title { 
+                font-size: 24px; 
+                font-weight: bold; 
+                color: #000; 
+                margin: 10px 0; 
+              }
+              .receipt-date { 
+                color: #666; 
+                font-size: 12px; 
+              }
+              .booking-id { 
+                text-align: center;
+                background: #f8f9fa;
+                border: 2px solid #22c55e;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+              }
+              .booking-id-label { 
+                font-size: 12px; 
+                color: #666; 
+                margin-bottom: 5px; 
+                text-transform: uppercase; 
+                letter-spacing: 1px; 
+              }
+              .booking-id-value { 
+                font-size: 20px; 
+                font-weight: bold; 
+                color: #22c55e; 
+                letter-spacing: 2px; 
+                font-family: 'Courier New', monospace; 
+              }
+              .section { 
+                margin-bottom: 20px; 
+                border-bottom: 1px solid #ddd; 
+                padding-bottom: 15px; 
+              }
+              .section-title { 
+                font-size: 16px; 
+                font-weight: 600; 
+                color: #1f2937; 
+                margin-bottom: 15px; 
+              }
+              .info-grid { 
+                display: table; 
+                width: 100%; 
+                border-collapse: collapse; 
+              }
+              .info-row { 
+                display: table-row; 
+              }
+              .info-item { 
+                display: table-cell; 
+                padding: 10px; 
+                border: 1px solid #ddd; 
+                vertical-align: top; 
+                width: 50%; 
+              }
+              .info-label { 
+                font-size: 11px; 
+                color: #666; 
+                text-transform: uppercase; 
+                letter-spacing: 0.5px; 
+                margin-bottom: 3px; 
+                font-weight: bold; 
+              }
+              .info-value { 
+                font-size: 14px; 
+                font-weight: normal; 
+                color: #000; 
+              }
+              .pricing-summary { 
+                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+                padding: 20px; 
+                border-radius: 10px; 
+                margin-top: 20px; 
+              }
+              .pricing-row { 
+                display: flex; 
+                justify-content: space-between; 
+                margin-bottom: 10px; 
+                padding: 5px 0; 
+              }
+              .pricing-total { 
+                border-top: 2px solid #22c55e; 
+                padding-top: 15px; 
+                margin-top: 15px; 
+                font-size: 18px; 
+                font-weight: bold; 
+                color: #22c55e; 
+              }
+              .footer { 
+                background: #f9fafb; 
+                padding: 25px; 
+                text-align: center; 
+                border-top: 1px solid #e5e7eb; 
+                margin-top: 30px; 
+              }
+              .footer-text { 
+                color: #6b7280; 
+                font-size: 14px; 
+                margin-bottom: 15px; 
+              }
+              .contact-info { 
+                color: #4b5563; 
+                font-size: 13px; 
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="logo">🏏 BoxCric</div>
+              <div class="tagline">Book. Play. Win.</div>
+              <div class="receipt-title">BOOKING RECEIPT</div>
+              <div class="receipt-date">${new Date().toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}</div>
+            </div>
+
+            <div class="booking-id">
+              <div class="booking-id-label">Booking ID</div>
+              <div class="booking-id-value">${bookingId}</div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">🏟️ Venue Details</div>
+              <div class="info-grid">
+                <div class="info-row">
+                  <div class="info-item">
+                    <div class="info-label">Ground Name</div>
+                    <div class="info-value">${booking?.groundId?.name || booking?.ground?.name || 'Ground details unavailable'}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Location</div>
+                    <div class="info-value">${booking?.groundId?.location?.address || booking?.ground?.location?.address || 'N/A'}</div>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-item" style="border-top: none;">
+                    <div class="info-label">Address</div>
+                    <div class="info-value">${booking?.groundId?.location?.address || booking?.ground?.location?.address || 'Address not available'}</div>
+                  </div>
+                  <div class="info-item" style="border-top: none;">
+                    <div class="info-label">Contact</div>
+                    <div class="info-value">${booking?.groundId?.contact?.phone || booking?.ground?.contact?.phone || 'Contact not available'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">📅 Booking Details</div>
+              <div class="info-grid">
+                <div class="info-row">
+                  <div class="info-item">
+                    <div class="info-label">Date</div>
+                    <div class="info-value">${booking?.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-IN', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'N/A'}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Time Slot</div>
+                    <div class="info-value">${booking?.timeSlot?.startTime && booking?.timeSlot?.endTime ? 
+                      `${new Date(`2000-01-01 ${booking.timeSlot.startTime}`).toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })} - ${new Date(`2000-01-01 ${booking.timeSlot.endTime}`).toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}` : 'N/A'}</div>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-item" style="border-top: none;">
+                    <div class="info-label">Duration</div>
+                    <div class="info-value">${booking?.timeSlot?.duration || 'N/A'} hour(s)</div>
+                  </div>
+                  <div class="info-item" style="border-top: none;">
+                    <div class="info-label">Status</div>
+                    <div class="info-value">
+                      <strong style="color: #22c55e;">${booking?.status === 'confirmed' ? '✅ CONFIRMED' : '⏳ PENDING'}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">👥 Team Details</div>
+              <div class="info-grid">
+                <div class="info-row">
+                  <div class="info-item">
+                    <div class="info-label">Team Name</div>
+                    <div class="info-value">${booking?.playerDetails?.teamName || 'N/A'}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Players</div>
+                    <div class="info-value">${booking?.playerDetails?.playerCount || 'N/A'}</div>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-item" style="border-top: none;">
+                    <div class="info-label">Contact Person</div>
+                    <div class="info-value">${booking?.playerDetails?.contactPerson?.name || 'N/A'}</div>
+                  </div>
+                  <div class="info-item" style="border-top: none;">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">${booking?.playerDetails?.contactPerson?.phone || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">💰 Payment Summary</div>
+              <div class="pricing-summary">
+                <div class="pricing-row">
+                  <span>Base Amount</span>
+                  <span>₹${booking?.pricing?.baseAmount || 0}</span>
+                </div>
+                <div class="pricing-row">
+                  <span>Discount</span>
+                  <span>-₹${booking?.pricing?.discount || 0}</span>
+                </div>
+                <div class="pricing-row">
+                  <span>Taxes & Fees</span>
+                  <span>₹${booking?.pricing?.taxes || 0}</span>
+                </div>
+                <div class="pricing-row pricing-total">
+                  <span>Total Amount</span>
+                  <span>₹${booking?.pricing?.totalAmount || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div class="footer-text">
+                Thank you for choosing BoxCric!
+              </div>
+              <div class="footer-text">
+                Show this receipt at the venue for entry
+              </div>
+              <div class="contact-info">
+                📧 support@boxcric.com | 📞 +91-XXXX-XXXX-XX | 🌐 www.boxcric.com
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+      };
+
+      // Use the simple HTML generator instead of fetching from server
+      const htmlContent = generateSimpleReceiptHTML();
+      console.log('📄 Generated simple HTML receipt, length:', htmlContent.length);
+
+      // Strategy 2a: Try npm package imports first
+      let jsPDF: any = null;
+      let html2canvas: any = null;
+
       try {
-        let pdfUrl = `${apiBase}/bookings/${bookingId}/receipt-pdf`;
-        if (isMobile) {
-          pdfUrl += (pdfUrl.includes('?') ? '&' : '?') + 'mode=inline';
-        }
-
-        const response = await fetch(pdfUrl, {
-          method: 'GET',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const contentType = response.headers.get('content-type') || '';
-        if (response.ok && contentType.includes('application/pdf')) {
-          const blob = await response.blob();
-          if (blob && blob.size > 0) {
-            const url = window.URL.createObjectURL(blob);
-            if (isMobile) {
-              if (preOpenTab) preOpenTab.location.href = url;
-              else window.open(url, '_blank');
-            } else {
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `BoxCric-Receipt-${bookingId}.pdf`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+        console.log('📦 Loading PDF libraries from npm packages...');
+        const jsPDFModule = await import('jspdf');
+        const html2canvasModule = await import('html2canvas');
+        jsPDF = jsPDFModule.default;
+        html2canvas = html2canvasModule.default;
+        console.log('✅ NPM packages loaded successfully');
+      } catch (npmError) {
+        console.warn('NPM packages failed, trying CDN fallback:', npmError);
+        
+        // Strategy 2b: Try CDN fallback
+        try {
+          if (typeof window !== 'undefined') {
+            // @ts-ignore
+            jsPDF = window.jsPDF || (window as any).jsPDF;
+            // @ts-ignore
+            html2canvas = window.html2canvas || (window as any).html2canvas;
+            
+            if (!jsPDF || !html2canvas) {
+              throw new Error('CDN libraries not available');
             }
-            window.URL.revokeObjectURL(url);
-            toast.success('Receipt PDF ready.');
-            return; // Done
+            console.log('✅ CDN libraries loaded successfully');
+          } else {
+            throw new Error('Window object not available');
           }
-        } else {
-          console.warn('receipt-pdf returned status/content-type:', response.status, contentType);
+        } catch (cdnError) {
+          console.error('CDN fallback also failed:', cdnError);
+          throw new Error('PDF libraries could not be loaded');
         }
-      } catch (serverPdfErr) {
-        console.warn('Server PDF generation failed, falling back to client-side:', serverPdfErr);
       }
 
-      // 2) Fallback: fetch HTML and generate PDF on the client
-      const htmlResp = await fetch(`${apiBase}/bookings/${bookingId}/receipt`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!htmlResp.ok) {
-        if (htmlResp.status === 401) {
-          toast.error('Unauthorized. Please log in again to download your receipt.');
-        } else {
-          toast.error('Failed to generate receipt. Please try again later.');
-        }
-        return;
-      }
-
-      const htmlContent = await htmlResp.text();
-      if (!htmlContent || htmlContent.length < 50 || !htmlContent.includes('<')) {
-        toast.error('Invalid receipt content received.');
-        return;
-      }
-
-      console.log('📄 HTML content received, length:', htmlContent.length);
-      console.log('📄 HTML preview:', htmlContent.substring(0, 200));
-
-      // Dynamic import to keep bundle size small
-      const jsPDF = (await import('jspdf')).default;
-      const html2canvas = (await import('html2canvas')).default;
-
-      // Create a visible container so html2canvas can render styles correctly
+      // Create a visible container for HTML rendering
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlContent;
       tempDiv.style.cssText = `
@@ -327,6 +595,9 @@ const BookingDetails = () => {
         overflow: visible;
         white-space: normal;
         word-wrap: break-word;
+        transform: scale(1);
+        transform-origin: top left;
+        border: 1px solid #ccc;
       `;
       document.body.appendChild(tempDiv);
 
@@ -340,29 +611,47 @@ const BookingDetails = () => {
           el.style.overflow = 'visible';
           el.style.whiteSpace = 'normal';
           el.style.wordWrap = 'break-word';
+          
+          // Ensure text is visible
+          if (el.tagName === 'P' || el.tagName === 'DIV' || el.tagName === 'SPAN' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3') {
+            el.style.color = '#000';
+            el.style.backgroundColor = 'transparent';
+            el.style.fontSize = el.style.fontSize || '14px';
+          }
         }
       });
 
-      // Wait for fonts and images to load
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Debug: Log what elements we have
+      console.log('🔍 Elements found in HTML:', {
+        total: tempDiv.querySelectorAll('*').length,
+        divs: tempDiv.querySelectorAll('div').length,
+        paragraphs: tempDiv.querySelectorAll('p').length,
+        headers: tempDiv.querySelectorAll('h1, h2, h3').length,
+        textContent: tempDiv.textContent?.substring(0, 200)
+      });
 
+      // Wait for fonts and images to load
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      console.log('🎨 Converting HTML to canvas...');
+      
       // Convert HTML to canvas with improved settings
       const canvas = await html2canvas(tempDiv, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        logging: true, // Enable logging for debugging
+        logging: true, // Enable logging to see what's happening
         width: 800,
         height: Math.max(tempDiv.scrollHeight, 600),
         scrollX: 0,
         scrollY: 0,
         windowWidth: 800,
         windowHeight: Math.max(tempDiv.scrollHeight, 600),
-        foreignObjectRendering: false, // Disable to avoid issues
+        foreignObjectRendering: false,
         removeContainer: false,
         imageTimeout: 15000,
-        onclone: (clonedDoc) => {
+        onclone: (clonedDoc: any) => {
           // Ensure cloned document has proper styling
           const clonedBody = clonedDoc.body;
           if (clonedBody) {
@@ -370,6 +659,26 @@ const BookingDetails = () => {
             clonedBody.style.color = '#000000';
             clonedBody.style.fontFamily = 'Arial, sans-serif';
           }
+          
+          // Ensure all text elements are visible
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el: any) => {
+            if (el instanceof HTMLElement) {
+              el.style.color = '#000000';
+              el.style.visibility = 'visible';
+              el.style.opacity = '1';
+              el.style.display = el.style.display === 'none' ? 'block' : el.style.display;
+              
+              // Ensure text is visible
+              if (el.tagName === 'P' || el.tagName === 'DIV' || el.tagName === 'SPAN' || 
+                  el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3') {
+                el.style.color = '#000000';
+                el.style.backgroundColor = 'transparent';
+                el.style.fontSize = el.style.fontSize || '14px';
+                el.style.fontWeight = el.style.fontWeight || 'normal';
+              }
+            }
+          });
         }
       });
 
@@ -405,12 +714,29 @@ const BookingDetails = () => {
       console.log(`📄 PDF generated with ${pageCount} pages`);
 
       const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
-      if (isMobile) {
-        const blobUrl = String(pdf.output('bloburl'));
-        if (preOpenTab) preOpenTab.location.href = blobUrl as string;
-        else window.open(blobUrl, '_blank');
-      } else {
-        pdf.save(fileName);
+      
+      // Strategy 3: Fallback to new window if PDF generation fails
+      try {
+        if (isMobile) {
+          const blobUrl = String(pdf.output('bloburl'));
+          if (preOpenTab) preOpenTab.location.href = blobUrl as string;
+          else window.open(blobUrl, '_blank');
+        } else {
+          pdf.save(fileName);
+        }
+        toast.success('Receipt PDF ready.');
+      } catch (saveError) {
+        console.warn('PDF save failed, opening in new window:', saveError);
+        
+        // Final fallback: Open receipt in new window for manual save
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(htmlContent);
+          newWindow.document.close();
+          toast.info('Receipt opened in new window. Use browser print function to save as PDF.');
+        } else {
+          toast.error('Please allow popups to download the receipt.');
+        }
       }
 
       // Clean up
@@ -418,8 +744,7 @@ const BookingDetails = () => {
         document.body.removeChild(tempDiv);
       }
 
-      toast.success('Receipt PDF ready.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error downloading receipt:', error);
       
       // Provide more specific error messages
@@ -427,6 +752,8 @@ const BookingDetails = () => {
         toast.error('PDF generation failed. Please try again or contact support.');
       } else if (error.message.includes('NetworkError')) {
         toast.error('Network error. Please check your internet connection and try again.');
+      } else if (error.message.includes('PDF libraries could not be loaded')) {
+        toast.error('PDF generation failed. Please try again or contact support.');
       } else {
         toast.error('Failed to download receipt. Please try again.');
       }

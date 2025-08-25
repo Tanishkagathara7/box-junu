@@ -1837,13 +1837,14 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 
 export { adminRouter };
 
-// Generate booking receipt PDF (mobile-friendly)
-import puppeteer from "puppeteer";
-
-export default router;
+// Generate booking receipt PDF (mobile-friendly) - Simplified to always return HTML
 router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
   try {
     const bookingId = req.params.id;
+    const userId = req.userId;
+    
+    console.log(`📄 PDF generation request for booking: ${bookingId} by user: ${userId}`);
+
     // Find booking by ObjectId or bookingId
     let booking = null;
     if (/^[0-9a-fA-F]{24}$/.test(bookingId)) {
@@ -1851,17 +1852,29 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
     } else {
       booking = await Booking.findOne({ bookingId });
     }
+    
     if (!booking) {
+      console.error(`❌ Booking not found: ${bookingId}`);
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
+
+    // Check if user owns this booking
+    if (booking.userId.toString() !== userId) {
+      console.error(`❌ Access denied: User ${userId} trying to access booking ${bookingId}`);
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
     // Get user details
     const user = await User.findById(booking.userId);
     if (!user) {
+      console.error(`❌ User not found: ${booking.userId}`);
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
     // Populate ground details for the receipt
     let bookingObj = booking.toObject();
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingObj.groundId);
+    
     if (isValidObjectId) {
       try {
         const mongoGround = await Ground.findById(bookingObj.groundId).select("name location price features images amenities rating owner contact");
@@ -1882,6 +1895,7 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
         bookingObj.groundId = fallbackGround;
       }
     }
+
     // Ensure all required fields exist for template
     if (!bookingObj.pricing) {
       bookingObj.pricing = { baseAmount: 0, discount: 0, taxes: 0, totalAmount: 0 };
@@ -1904,230 +1918,153 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
         contact: { phone: "N/A" }
       };
     }
-    // Import the template function
+
+    // Import the template function with better error handling
     let generateBookingReceiptHTML;
     try {
       const templateModule = await import("../templates/bookingReceiptTemplate.js");
       generateBookingReceiptHTML = templateModule.generateBookingReceiptHTML;
+      console.log("✅ Template module imported successfully");
     } catch (importError) {
-      res.set('X-BoxCric-Receipt', 'pdf-fallback-template');
-      res.status(200).set('Content-Type', 'application/pdf');
-      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Template error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+      console.error("❌ Error importing template:", importError);
+      
+      // Return HTML instead of error PDF for client-side generation
+      console.log("🔄 Falling back to HTML response for client-side PDF generation...");
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('X-BoxCric-Receipt', 'html-fallback');
+      res.setHeader('X-BoxCric-Booking-ID', bookingId);
+      
+      // Return a simple HTML receipt
+      const simpleHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>BoxCric Receipt</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .receipt { border: 2px solid #22c55e; padding: 20px; border-radius: 10px; }
+            .booking-id { font-size: 18px; font-weight: bold; color: #22c55e; text-align: center; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏏 BoxCric</h1>
+            <h2>BOOKING RECEIPT</h2>
+          </div>
+          <div class="receipt">
+            <div class="booking-id">Booking ID: ${bookingId}</div>
+            <p><strong>Ground:</strong> ${bookingObj.groundId?.name || 'N/A'}</p>
+            <p><strong>Date:</strong> ${new Date(bookingObj.bookingDate).toLocaleDateString()}</p>
+            <p><strong>Amount:</strong> ₹${bookingObj.pricing?.totalAmount || 0}</p>
+            <p><strong>Status:</strong> ${bookingObj.status}</p>
+          </div>
+        </body>
+        </html>
+      `;
+      return res.send(simpleHTML);
     }
+
     let receiptHTML;
     try {
+      // Debug: Log the data being passed to template
+      console.log("📋 Booking data for PDF template:", {
+        bookingId: bookingObj.bookingId,
+        groundName: bookingObj.groundId?.name,
+        groundLocation: bookingObj.groundId?.location?.address,
+        bookingDate: bookingObj.bookingDate,
+        timeSlot: bookingObj.timeSlot,
+        pricing: bookingObj.pricing,
+        playerDetails: bookingObj.playerDetails,
+        status: bookingObj.status
+      });
+      
+      console.log("👤 User data for PDF template:", {
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      });
+      
       receiptHTML = generateBookingReceiptHTML(bookingObj, user);
+      console.log("✅ Receipt HTML generated successfully");
+      console.log("📄 Generated HTML length:", receiptHTML.length);
+      console.log("📄 HTML preview:", receiptHTML.substring(0, 300));
     } catch (templateError) {
-      res.status(500).set('Content-Type', 'application/pdf');
-      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Receipt error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+      console.error("❌ Error generating receipt HTML:", templateError);
+      
+      // Return HTML instead of error PDF for client-side generation
+      console.log("🔄 Falling back to HTML response for client-side PDF generation...");
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('X-BoxCric-Receipt', 'html-fallback');
+      res.setHeader('X-BoxCric-Booking-ID', bookingId);
+      
+      // Return a simple HTML receipt
+      const simpleHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>BoxCric Receipt</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .receipt { border: 2px solid #22c55e; padding: 20px; border-radius: 10px; }
+            .booking-id { font-size: 18px; font-weight: bold; color: #22c55e; text-align: center; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏏 BoxCric</h1>
+            <h2>BOOKING RECEIPT</h2>
+          </div>
+          <div class="receipt">
+            <div class="booking-id">Booking ID: ${bookingId}</div>
+            <p><strong>Ground:</strong> ${bookingObj.groundId?.name || 'N/A'}</p>
+            <p><strong>Date:</strong> ${new Date(bookingObj.bookingDate).toLocaleDateString()}</p>
+            <p><strong>Amount:</strong> ₹${bookingObj.pricing?.totalAmount || 0}</p>
+            <p><strong>Status:</strong> ${bookingObj.status}</p>
+          </div>
+        </body>
+        </html>
+      `;
+      return res.send(simpleHTML);
     }
-    // Generate PDF using puppeteer
-    try {
-      console.log('🖨️ Starting PDF generation with Puppeteer...');
-      
-      // Resolve a safe Chrome/Chromium executable path at runtime.
-      // Build and runtime containers on Render are different, so paths like
-      // /opt/render/.cache might not exist when the server runs.
-      let execPath = undefined;
-      try {
-        // Prefer Puppeteer's own installed browser
-        const maybePath = (typeof puppeteer.executablePath === 'function') ? puppeteer.executablePath() : '';
-        if (maybePath) execPath = maybePath;
-        console.log('🔍 Puppeteer executable path:', execPath || 'Using bundled binary');
-      } catch {}
 
-      // If the chosen path doesn't exist (or wasn't set), try common fallbacks
-      try {
-        const fs = await import('fs');
-        const exists = (p) => !!p && fs.existsSync(p);
-        const candidates = [
-          execPath,
-          process.env.PUPPETEER_EXECUTABLE_PATH,
-          process.env.CHROME_PATH,
-          '/usr/bin/google-chrome-stable',
-          '/usr/bin/google-chrome',
-          '/usr/bin/chromium-browser',
-          '/usr/bin/chromium'
-        ];
-        execPath = candidates.find(exists);
-        console.log('🔍 Found executable path:', execPath || 'Using bundled binary');
-      } catch {}
+    // Always return HTML for client-side PDF generation (more reliable)
+    console.log("🔄 Returning HTML for client-side PDF generation...");
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('X-BoxCric-Receipt', 'html-success');
+    res.setHeader('X-BoxCric-Booking-ID', bookingId);
+    return res.send(receiptHTML);
 
-      console.log('🚀 Launching browser...');
-      const browser = await puppeteer.launch({
-        headless: true,
-        executablePath: execPath, // undefined is OK; Puppeteer will pick its bundled binary
-        args: [
-          '--no-sandbox', 
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process'
-        ]
-      });
-      
-      console.log('📄 Creating new page...');
-      const page = await browser.newPage();
-      
-      // Set viewport for better rendering
-      await page.setViewport({ width: 800, height: 600 });
-      await page.emulateMediaType('screen');
-      
-      console.log('📝 Setting HTML content...');
-      await page.setContent(receiptHTML, { 
-        waitUntil: "networkidle0",
-        timeout: 30000 
-      });
-      
-      // Wait a bit for any dynamic content to render
-      await page.waitForTimeout(2000);
-      
-      console.log('🖨️ Generating PDF...');
-      const pdfBuffer = await page.pdf({ 
-        format: "A4", 
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '20mm',
-          bottom: '20mm',
-          left: '20mm'
-        }
-      });
-      
-      console.log('✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
-      await browser.close();
-      
-      const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
-      const disposition = (req.query.mode === 'inline' || req.query.disposition === 'inline') ? 'inline' : 'attachment';
-      
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `${disposition}; filename="${fileName}"`);
-      res.setHeader("Content-Length", String(pdfBuffer.length));
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Accept-Ranges", "none");
-      res.setHeader("X-BoxCric-Receipt", "pdf-success");
-      
-      console.log('📤 Sending PDF response...');
-      return res.end(pdfBuffer);
-
-    } catch (pdfError) {
-      console.error("❌ Puppeteer PDF error:", pdfError);
-      
-      // Try to close browser if it's still open
-      try {
-        if (browser) await browser.close();
-      } catch (closeError) {
-        console.error("Error closing browser:", closeError);
-      }
-      
-      // Return a better fallback PDF with more information
-      res.setHeader("X-BoxCric-Receipt", "pdf-error-fallback");
-      res.status(200).set('Content-Type', 'application/pdf');
-      
-      const fallbackPDF = `%PDF-1.4
-%âãÏÓ
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R >>
-endobj
-4 0 obj
-<< /Length 200 >>
-stream
-BT
-/F1 16 Tf
-50 750 Td
-(BoxCric Receipt) Tj
-0 -30 Td
-(PDF generation failed) Tj
-0 -30 Td
-(Booking ID: ${bookingId}) Tj
-0 -30 Td
-(Please try again or contact support) Tj
-ET
-endstream
-endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 6
-0000000000 65535 f 
-0000000010 00000 n 
-0000000079 00000 n 
-0000000178 00000 n 
-0000000277 00000 n 
-0000000376 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-475
-%%EOF`;
-      
-      return res.send(Buffer.from(fallbackPDF, 'utf-8'));
-    }
   } catch (error) {
     console.error("❌ Server error in PDF generation:", error);
-    res.status(500).set('Content-Type', 'application/pdf');
-    return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Server error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
-  }
-});
-
-// Test PDF generation endpoint (for debugging)
-router.get("/test-pdf", async (req, res) => {
-  try {
-    console.log('🧪 Testing PDF generation...');
     
-    const testHTML = `
+    // Return HTML instead of error PDF
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('X-BoxCric-Receipt', 'html-error');
+    
+    const errorHTML = `
       <!DOCTYPE html>
       <html>
       <head>
+        <title>BoxCric Receipt Error</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { color: #22c55e; font-size: 24px; margin-bottom: 20px; }
-          .content { font-size: 16px; line-height: 1.5; }
+          body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+          .error { color: #dc2626; border: 2px solid #dc2626; padding: 20px; border-radius: 10px; }
         </style>
       </head>
       <body>
-        <div class="header">🏏 BoxCric</div>
-        <div class="content">
-          <h2>Test PDF Generation</h2>
-          <p>This is a test PDF to verify that Puppeteer is working correctly.</p>
-          <p>If you can see this PDF, the PDF generation system is working!</p>
-          <p>Generated at: ${new Date().toLocaleString()}</p>
+        <div class="error">
+          <h1>BoxCric Receipt</h1>
+          <h2>PDF generation failed</h2>
+          <p>Booking ID: ${req.params.id || 'Unknown'}</p>
+          <p>Please try again or contact support</p>
         </div>
       </body>
       </html>
     `;
-    
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
-    const page = await browser.newPage();
-    await page.setContent(testHTML);
-    
-    const pdfBuffer = await page.pdf({ 
-      format: "A4", 
-      printBackground: true 
-    });
-    
-    await browser.close();
-    
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "inline; filename=test.pdf");
-    res.end(pdfBuffer);
-    
-  } catch (error) {
-    console.error("❌ Test PDF generation failed:", error);
-    res.status(500).json({ error: error.message });
+    return res.send(errorHTML);
   }
 });
+
+export default router;

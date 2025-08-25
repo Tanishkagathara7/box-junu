@@ -196,6 +196,32 @@ const BookingDetails = () => {
     }
   };
 
+  // Test PDF generation function for debugging
+  const testPDFGeneration = async () => {
+    try {
+      console.log('🧪 Testing PDF generation...');
+      const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
+      
+      const response = await fetch(`${apiBase}/bookings/test-pdf`);
+      console.log('Test PDF response status:', response.status);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        window.URL.revokeObjectURL(url);
+        toast.success('Test PDF generated successfully!');
+      } else {
+        const errorText = await response.text();
+        console.error('Test PDF failed:', errorText);
+        toast.error('Test PDF generation failed');
+      }
+    } catch (error) {
+      console.error('Test PDF error:', error);
+      toast.error('Test PDF generation failed');
+    }
+  };
+
   const handleDownloadReceipt = async () => {
     try {
       setIsDownloadingReceipt(true);
@@ -277,6 +303,9 @@ const BookingDetails = () => {
         return;
       }
 
+      console.log('📄 HTML content received, length:', htmlContent.length);
+      console.log('📄 HTML preview:', htmlContent.substring(0, 200));
+
       // Dynamic import to keep bundle size small
       const jsPDF = (await import('jspdf')).default;
       const html2canvas = (await import('html2canvas')).default;
@@ -295,49 +324,85 @@ const BookingDetails = () => {
         padding: 20px;
         z-index: 9999;
         visibility: visible;
+        overflow: visible;
+        white-space: normal;
+        word-wrap: break-word;
       `;
       document.body.appendChild(tempDiv);
 
-      // Ensure all elements are visible
+      // Ensure all elements are visible and properly styled
       tempDiv.querySelectorAll('*').forEach(el => {
         if (el instanceof HTMLElement) {
           el.style.color = '#000';
           el.style.visibility = 'visible';
           el.style.opacity = '1';
+          el.style.display = el.style.display === 'none' ? 'block' : el.style.display;
+          el.style.overflow = 'visible';
+          el.style.whiteSpace = 'normal';
+          el.style.wordWrap = 'break-word';
         }
       });
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for fonts and images to load
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
+      // Convert HTML to canvas with improved settings
       const canvas = await html2canvas(tempDiv, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true, // Enable logging for debugging
+        width: 800,
+        height: Math.max(tempDiv.scrollHeight, 600),
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 800,
+        windowHeight: Math.max(tempDiv.scrollHeight, 600),
+        foreignObjectRendering: false, // Disable to avoid issues
+        removeContainer: false,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          // Ensure cloned document has proper styling
+          const clonedBody = clonedDoc.body;
+          if (clonedBody) {
+            clonedBody.style.backgroundColor = '#ffffff';
+            clonedBody.style.color = '#000000';
+            clonedBody.style.fontFamily = 'Arial, sans-serif';
+          }
+        }
       });
 
       if (!canvas || canvas.width === 0 || canvas.height === 0) {
-        throw new Error('Canvas generation failed');
+        throw new Error('Canvas generation failed - canvas is empty');
       }
 
+      console.log('✅ Canvas generated successfully:', canvas.width, 'x', canvas.height);
+
+      // Create PDF with proper settings
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       const pageHeight = pdf.internal.pageSize.getHeight();
+
+      console.log('📄 PDF dimensions:', { pdfWidth, pdfHeight, pageHeight });
 
       // Add first page
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
 
       // Handle multi-page if content is taller than one page
       let heightLeft = pdfHeight - pageHeight;
+      let pageCount = 1;
       while (heightLeft > 0) {
         pdf.addPage();
+        pageCount++;
         const position = - (pdfHeight - heightLeft);
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
         heightLeft -= pageHeight;
       }
+
+      console.log(`📄 PDF generated with ${pageCount} pages`);
 
       const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
       if (isMobile) {
@@ -348,11 +413,23 @@ const BookingDetails = () => {
         pdf.save(fileName);
       }
 
-      document.body.removeChild(tempDiv);
+      // Clean up
+      if (document.body.contains(tempDiv)) {
+        document.body.removeChild(tempDiv);
+      }
+
       toast.success('Receipt PDF ready.');
     } catch (error) {
-      console.error('Error downloading receipt:', error);
-      toast.error('Failed to download receipt. Please try again.');
+      console.error('❌ Error downloading receipt:', error);
+      
+      // Provide more specific error messages
+      if (error.message.includes('Canvas generation failed')) {
+        toast.error('PDF generation failed. Please try again or contact support.');
+      } else if (error.message.includes('NetworkError')) {
+        toast.error('Network error. Please check your internet connection and try again.');
+      } else {
+        toast.error('Failed to download receipt. Please try again.');
+      }
     } finally {
       setIsDownloadingReceipt(false);
     }
@@ -711,6 +788,17 @@ const BookingDetails = () => {
                           </span>
                         </Button>
                       </div>
+
+                      {/* Debug button - only show in development */}
+                      {(import.meta as any).env?.DEV && (
+                        <Button
+                          onClick={testPDFGeneration}
+                          variant="outline"
+                          className="flex items-center justify-center gap-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white text-sm px-3 py-2 min-w-0 flex-1"
+                        >
+                          🧪 Test PDF
+                        </Button>
+                      )}
                     </>
                   )}
 

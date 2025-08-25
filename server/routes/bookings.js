@@ -1837,9 +1837,10 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 
 export { adminRouter };
 
-export default router;
 // Generate booking receipt PDF (mobile-friendly)
 import puppeteer from "puppeteer";
+
+export default router;
 router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -1922,6 +1923,8 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
     }
     // Generate PDF using puppeteer
     try {
+      console.log('🖨️ Starting PDF generation with Puppeteer...');
+      
       // Resolve a safe Chrome/Chromium executable path at runtime.
       // Build and runtime containers on Render are different, so paths like
       // /opt/render/.cache might not exist when the server runs.
@@ -1930,6 +1933,7 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
         // Prefer Puppeteer's own installed browser
         const maybePath = (typeof puppeteer.executablePath === 'function') ? puppeteer.executablePath() : '';
         if (maybePath) execPath = maybePath;
+        console.log('🔍 Puppeteer executable path:', execPath || 'Using bundled binary');
       } catch {}
 
       // If the chosen path doesn't exist (or wasn't set), try common fallbacks
@@ -1946,20 +1950,58 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
           '/usr/bin/chromium'
         ];
         execPath = candidates.find(exists);
+        console.log('🔍 Found executable path:', execPath || 'Using bundled binary');
       } catch {}
 
+      console.log('🚀 Launching browser...');
       const browser = await puppeteer.launch({
         headless: true,
         executablePath: execPath, // undefined is OK; Puppeteer will pick its bundled binary
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process'
+        ]
       });
+      
+      console.log('📄 Creating new page...');
       const page = await browser.newPage();
+      
+      // Set viewport for better rendering
+      await page.setViewport({ width: 800, height: 600 });
       await page.emulateMediaType('screen');
-      await page.setContent(receiptHTML, { waitUntil: "networkidle0" });
-      const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
+      
+      console.log('📝 Setting HTML content...');
+      await page.setContent(receiptHTML, { 
+        waitUntil: "networkidle0",
+        timeout: 30000 
+      });
+      
+      // Wait a bit for any dynamic content to render
+      await page.waitForTimeout(2000);
+      
+      console.log('🖨️ Generating PDF...');
+      const pdfBuffer = await page.pdf({ 
+        format: "A4", 
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '20mm',
+          bottom: '20mm',
+          left: '20mm'
+        }
+      });
+      
+      console.log('✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
       await browser.close();
+      
       const fileName = `BoxCric-Receipt-${bookingId}.pdf`;
       const disposition = (req.query.mode === 'inline' || req.query.disposition === 'inline') ? 'inline' : 'attachment';
+      
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `${disposition}; filename="${fileName}"`);
       res.setHeader("Content-Length", String(pdfBuffer.length));
@@ -1967,17 +2009,125 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Accept-Ranges", "none");
       res.setHeader("X-BoxCric-Receipt", "pdf-success");
+      
+      console.log('📤 Sending PDF response...');
       return res.end(pdfBuffer);
 
     } catch (pdfError) {
-      console.error("Puppeteer PDF error:", pdfError);
-      // Return a tiny valid PDF with status 200 so clients can still download something
+      console.error("❌ Puppeteer PDF error:", pdfError);
+      
+      // Try to close browser if it's still open
+      try {
+        if (browser) await browser.close();
+      } catch (closeError) {
+        console.error("Error closing browser:", closeError);
+      }
+      
+      // Return a better fallback PDF with more information
       res.setHeader("X-BoxCric-Receipt", "pdf-error-fallback");
       res.status(200).set('Content-Type', 'application/pdf');
-      return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 20 150 Td (BoxCric Receipt) Tj 0 -30 Td (PDF generation fallback) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+      
+      const fallbackPDF = `%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 200 >>
+stream
+BT
+/F1 16 Tf
+50 750 Td
+(BoxCric Receipt) Tj
+0 -30 Td
+(PDF generation failed) Tj
+0 -30 Td
+(Booking ID: ${bookingId}) Tj
+0 -30 Td
+(Please try again or contact support) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000079 00000 n 
+0000000178 00000 n 
+0000000277 00000 n 
+0000000376 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+475
+%%EOF`;
+      
+      return res.send(Buffer.from(fallbackPDF, 'utf-8'));
     }
   } catch (error) {
+    console.error("❌ Server error in PDF generation:", error);
     res.status(500).set('Content-Type', 'application/pdf');
     return res.send(Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 100 Td (Server error) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000178 00000 n \n0000000277 00000 n \n0000000376 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n475\n%%EOF', 'utf-8'));
+  }
+});
+
+// Test PDF generation endpoint (for debugging)
+router.get("/test-pdf", async (req, res) => {
+  try {
+    console.log('🧪 Testing PDF generation...');
+    
+    const testHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { color: #22c55e; font-size: 24px; margin-bottom: 20px; }
+          .content { font-size: 16px; line-height: 1.5; }
+        </style>
+      </head>
+      <body>
+        <div class="header">🏏 BoxCric</div>
+        <div class="content">
+          <h2>Test PDF Generation</h2>
+          <p>This is a test PDF to verify that Puppeteer is working correctly.</p>
+          <p>If you can see this PDF, the PDF generation system is working!</p>
+          <p>Generated at: ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    await page.setContent(testHTML);
+    
+    const pdfBuffer = await page.pdf({ 
+      format: "A4", 
+      printBackground: true 
+    });
+    
+    await browser.close();
+    
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline; filename=test.pdf");
+    res.end(pdfBuffer);
+    
+  } catch (error) {
+    console.error("❌ Test PDF generation failed:", error);
+    res.status(500).json({ error: error.message });
   }
 });

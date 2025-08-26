@@ -12,7 +12,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Routes
-import testRoutes from "./routes/test.js";
 import authRoutes from "./routes/auth.js";
 import groundRoutes, { adminRouter as adminGroundsRouter } from "./routes/grounds.js";
 import bookingRoutes, { adminRouter as adminBookingsRouter } from "./routes/bookings.js";
@@ -179,15 +178,13 @@ app.get("/api", (req, res) => {
       "/api/grounds",
       "/api/bookings",
       "/api/payments",
-      "/api/users",
-      "/api/test"
+      "/api/users"
     ],
     timestamp: new Date().toISOString()
   });
 });
 
 // API Routes
-app.use("/api/test", testRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/grounds", groundRoutes);
 app.use("/api/admin/grounds", adminGroundsRouter);

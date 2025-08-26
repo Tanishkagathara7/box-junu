@@ -210,7 +210,7 @@ async function getAllGroundsHandler(req, res) {
         todayBookings = await Booking.find({
           groundId: { $in: groundIds },
           bookingDate: new Date(today),
-          status: { $in: ["pending", "confirmed"] }
+          status: "confirmed"
         }).lean();
         
         console.log(`Found ${todayBookings.length} bookings for today (${today})`);
@@ -396,7 +396,7 @@ async function getGroundByIdHandler(req, res) {
             const bookings = await Booking.find({
               groundId: req.params.id,
               bookingDate: { $in: dates },
-              status: { $in: ["pending", "confirmed"] }
+              status: "confirmed"
             }).lean();
             
             console.log(`Found ${bookings.length} bookings for ground ${ground.name}`);

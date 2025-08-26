@@ -1217,7 +1217,7 @@ adminRouter.post("/", async (req, res) => {
     const existingBookings = await Booking.find({
       groundId,
       bookingDate: new Date(bookingDate),
-      status: { $in: ["pending", "confirmed"] }
+      status: "confirmed"
     });
 
     const overlappingBooking = existingBookings.find(booking => {

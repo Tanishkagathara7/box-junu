@@ -173,7 +173,7 @@ app.get("/api", (req, res) => {
   res.json({
     message: "BoxCric API",
     status: "active",
-    version: "1.0.0",
+    version: "1.0.1",
     endpoints: [
       "/api/auth",
       "/api/grounds",

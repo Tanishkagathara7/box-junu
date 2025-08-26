@@ -4,8 +4,7 @@ services:
     env: node
     plan: free
     branch: main
-    rootDir: .
-    buildCommand: npm install && npm run build
+    buildCommand: npm install
     startCommand: npm run start:render
     healthCheckPath: /api/health
     autoDeploy: true

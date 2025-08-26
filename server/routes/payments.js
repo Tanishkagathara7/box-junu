@@ -72,6 +72,74 @@ router.get("/status/:bookingId", async (req, res) => {
           console.log(`✅ Auto-fixed booking ${bookingId} - now confirmed`);
         }
 
+        // Auto-fix: If payment is PAID but payment status is pending (even if booking is confirmed)
+        if (order_status === 'PAID' && booking.payment.status === 'pending') {
+          console.log(`🔧 Auto-fixing payment status for booking ${bookingId}: Payment is PAID but status is pending`);
+          
+          booking.payment.status = "completed";
+          booking.payment.paidAt = booking.payment.paidAt || new Date();
+          booking.payment.paymentDetails = response.data;
+          
+          // Ensure booking is confirmed if payment is successful
+          if (booking.status !== 'confirmed') {
+            booking.status = "confirmed";
+            booking.confirmation = {
+              confirmedAt: new Date(),
+              confirmationCode: `BC${Date.now().toString().slice(-6)}`,
+              confirmedBy: "auto_fix"
+            };
+          }
+
+          await booking.save();
+          console.log(`✅ Auto-fixed payment status for booking ${bookingId}`);
+          
+          // Send receipt email if it wasn't sent before
+          try {
+            const User = (await import('../models/User.js')).default;
+            const { sendBookingReceiptEmail } = await import('../services/emailService.js');
+            const Ground = (await import('../models/Ground.js')).default;
+            const { fallbackGrounds } = await import('../data/fallbackGrounds.js');
+            
+            const user = await User.findById(booking.userId);
+            if (user && user.email) {
+              console.log(`📧 Auto-fix: Sending receipt email to: ${user.email}`);
+              
+              // Populate ground details for the email
+              let bookingForEmail = booking.toObject();
+              const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingForEmail.groundId);
+              
+              if (isValidObjectId) {
+                try {
+                  const mongoGround = await Ground.findById(bookingForEmail.groundId);
+                  if (mongoGround) {
+                    bookingForEmail.groundId = mongoGround.toObject();
+                    console.log(`✅ Auto-fix: Populated MongoDB ground: ${mongoGround.name}`);
+                  } else {
+                    const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+                    if (fallbackGround) {
+                      bookingForEmail.groundId = fallbackGround;
+                      console.log(`✅ Auto-fix: Populated fallback ground: ${fallbackGround.name}`);
+                    }
+                  }
+                } catch (groundError) {
+                  console.error('Auto-fix: Error finding ground:', groundError);
+                }
+              } else {
+                const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+                if (fallbackGround) {
+                  bookingForEmail.groundId = fallbackGround;
+                  console.log(`✅ Auto-fix: Populated fallback ground: ${fallbackGround.name}`);
+                }
+              }
+              
+              const emailResult = await sendBookingReceiptEmail(bookingForEmail, user);
+              console.log(`📧 Auto-fix: Receipt email result:`, emailResult.success ? 'SUCCESS' : 'FAILED');
+            }
+          } catch (emailError) {
+            console.error("❌ Auto-fix: Failed to send receipt email:", emailError.message);
+          }
+        }
+
         return res.json({
           success: true,
           status: order_status,
@@ -481,16 +549,55 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
       // Get user details for email
       const User = (await import('../models/User.js')).default;
       const { sendBookingReceiptEmail } = await import('../services/emailService.js');
+      const Ground = (await import('../models/Ground.js')).default;
+      const { fallbackGrounds } = await import('../data/fallbackGrounds.js');
       
       const user = await User.findById(booking.userId);
       if (user && user.email) {
         console.log(`📧 Sending receipt email to: ${user.email}`);
-        const emailResult = await sendBookingReceiptEmail(booking, user);
-        console.log(`📧 Receipt email result:`, emailResult);
+        
+        // Populate ground details for the email
+        let bookingForEmail = booking.toObject();
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingForEmail.groundId);
+        
+        if (isValidObjectId) {
+          try {
+            const mongoGround = await Ground.findById(bookingForEmail.groundId);
+            if (mongoGround) {
+              bookingForEmail.groundId = mongoGround.toObject();
+              console.log(`✅ Populated MongoDB ground: ${mongoGround.name}`);
+            } else {
+              const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+              if (fallbackGround) {
+                bookingForEmail.groundId = fallbackGround;
+                console.log(`✅ Populated fallback ground: ${fallbackGround.name}`);
+              }
+            }
+          } catch (groundError) {
+            console.error('Error finding ground:', groundError);
+          }
+        } else {
+          const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+          if (fallbackGround) {
+            bookingForEmail.groundId = fallbackGround;
+            console.log(`✅ Populated fallback ground: ${fallbackGround.name}`);
+          }
+        }
+        
+        const emailResult = await sendBookingReceiptEmail(bookingForEmail, user);
+        console.log(`📧 Receipt email result:`, emailResult.success ? 'SUCCESS' : `FAILED - ${emailResult.message}`);
+        
+        if (!emailResult.success) {
+          console.error(`❌ Email failed for booking ${booking.bookingId}:`, emailResult.error);
+          // Log the failure but don't fail the payment verification
+        }
+      } else {
+        console.error(`❌ No user or email found for booking ${booking.bookingId}`);
       }
     } catch (emailError) {
       // Don't fail the payment verification if email fails
-      console.error("❌ Failed to send receipt email:", emailError);
+      console.error("❌ Failed to send receipt email:", emailError.message);
+      console.error("❌ Email error stack:", emailError.stack);
     }
 
     res.json({
@@ -608,16 +715,55 @@ router.post("/webhook", async (req, res) => {
         // Get user details for email
         const User = (await import('../models/User.js')).default;
         const { sendBookingReceiptEmail } = await import('../services/emailService.js');
+        const Ground = (await import('../models/Ground.js')).default;
+        const { fallbackGrounds } = await import('../data/fallbackGrounds.js');
         
         const user = await User.findById(booking.userId);
         if (user && user.email) {
           console.log(`📧 Webhook: Sending receipt email to: ${user.email}`);
-          const emailResult = await sendBookingReceiptEmail(booking, user);
-          console.log(`📧 Webhook: Receipt email result:`, emailResult);
+          
+          // Populate ground details for the email
+          let bookingForEmail = booking.toObject();
+          const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingForEmail.groundId);
+          
+          if (isValidObjectId) {
+            try {
+              const mongoGround = await Ground.findById(bookingForEmail.groundId);
+              if (mongoGround) {
+                bookingForEmail.groundId = mongoGround.toObject();
+                console.log(`✅ Webhook: Populated MongoDB ground: ${mongoGround.name}`);
+              } else {
+                const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+                if (fallbackGround) {
+                  bookingForEmail.groundId = fallbackGround;
+                  console.log(`✅ Webhook: Populated fallback ground: ${fallbackGround.name}`);
+                }
+              }
+            } catch (groundError) {
+              console.error('Webhook: Error finding ground:', groundError);
+            }
+          } else {
+            const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+            if (fallbackGround) {
+              bookingForEmail.groundId = fallbackGround;
+              console.log(`✅ Webhook: Populated fallback ground: ${fallbackGround.name}`);
+            }
+          }
+          
+          const emailResult = await sendBookingReceiptEmail(bookingForEmail, user);
+          console.log(`📧 Webhook: Receipt email result:`, emailResult.success ? 'SUCCESS' : `FAILED - ${emailResult.message}`);
+          
+          if (!emailResult.success) {
+            console.error(`❌ Webhook: Email failed for booking ${booking.bookingId}:`, emailResult.error);
+            // Log the failure but don't fail the webhook
+          }
+        } else {
+          console.error(`❌ Webhook: No user or email found for booking ${booking.bookingId}`);
         }
       } catch (emailError) {
         // Don't fail the webhook if email fails
-        console.error("❌ Webhook: Failed to send receipt email:", emailError);
+        console.error("❌ Webhook: Failed to send receipt email:", emailError.message);
+        console.error("❌ Webhook: Email error stack:", emailError.stack);
       }
     }
 

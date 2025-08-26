@@ -261,7 +261,9 @@ export const sendBookingConfirmationEmail = async (booking, user) => {
               <div class="booking-id">${booking.bookingId}</div>
               <div class="details">
                 <div><span class="label">Ground:</span> <span class="value">${ground.name || 'N/A'}</span></div>
-                <div><span class="label">Location:</span> <span class="value">${ground?.location?.address || ground?.location?.city || 'N/A'}</span></div>
+                <div><span class="label">Location:</span> <span class="value">${ground?.location?.cityName || ground?.location?.address || 'N/A'}</span></div>
+                <div><span class="label">Address:</span> <span class="value">${ground?.location?.address || 'N/A'}</span></div>
+                <div><span class="label">Contact:</span> <span class="value">${ground?.owner?.contact || ground?.contact?.phone || 'N/A'}</span></div>
                 <div><span class="label">Date:</span> <span class="value">${new Date(booking.bookingDate).toLocaleDateString('en-IN')}</span></div>
                 <div><span class="label">Time:</span> <span class="value">${timeSlot.startTime || 'N/A'} - ${timeSlot.endTime || 'N/A'}</span></div>
                 <div><span class="label">Amount:</span> <span class="value">₹${booking.pricing?.totalAmount || 0}</span></div>

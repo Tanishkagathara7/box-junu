@@ -358,8 +358,37 @@ router.post("/", authMiddleware, async (req, res) => {
         const user = await User.findById(userId);
         if (user && user.email) {
           console.log(`📧 Sending booking confirmation email to: ${user.email}`);
-          const emailResult = await sendBookingConfirmationEmail(booking, user);
-          console.log(`📧 Confirmation email result:`, emailResult);
+          
+          // Populate ground details for the email
+          let bookingForEmail = booking.toObject();
+          const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(bookingForEmail.groundId);
+          
+          if (isValidObjectId) {
+            try {
+              const mongoGround = await Ground.findById(bookingForEmail.groundId);
+              if (mongoGround) {
+                bookingForEmail.groundId = mongoGround.toObject();
+                console.log(`✅ Populated MongoDB ground for confirmation: ${mongoGround.name}`);
+              } else {
+                const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+                if (fallbackGround) {
+                  bookingForEmail.groundId = fallbackGround;
+                  console.log(`✅ Populated fallback ground for confirmation: ${fallbackGround.name}`);
+                }
+              }
+            } catch (groundError) {
+              console.error('Error finding ground for confirmation email:', groundError);
+            }
+          } else {
+            const fallbackGround = fallbackGrounds.find(g => g._id === bookingForEmail.groundId);
+            if (fallbackGround) {
+              bookingForEmail.groundId = fallbackGround;
+              console.log(`✅ Populated fallback ground for confirmation: ${fallbackGround.name}`);
+            }
+          }
+          
+          const emailResult = await sendBookingConfirmationEmail(bookingForEmail, user);
+          console.log(`📧 Confirmation email result:`, emailResult.success ? 'SUCCESS' : 'FAILED');
         }
       } catch (emailError) {
         // Don't fail the booking if email fails

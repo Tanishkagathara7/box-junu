@@ -173,6 +173,10 @@ Amount: ₹${booking.pricing?.totalAmount || 0}
 Status: ${booking.status}
 
 Thank you for choosing BoxCric!
+
+Need to access your booking details again?
+Visit our website and go to the "My Bookings" section to view all your booking information and receipts.
+
 Visit: www.boxcric.com
           `,
         });
@@ -213,9 +217,18 @@ Visit: www.boxcric.com
 export const sendBookingConfirmationEmail = async (booking, user) => {
   try {
     console.log(`📧 Sending booking confirmation email to: ${user.email}`);
+    console.log(`📋 Ground data for email:`, booking.groundId);
     
     const ground = booking.groundId || booking.ground || {};
     const timeSlot = booking.timeSlot || {};
+    
+    // Better location handling
+    const groundName = ground.name || 'Ground name not available';
+    const location = ground?.location?.cityName || ground?.location?.city || ground?.location?.address || 'Location not available';
+    const address = ground?.location?.address || 'Address not available';
+    const contact = ground?.owner?.contact || ground?.contact?.phone || ground?.contact || 'Contact not available';
+    
+    console.log(`🏟️ Email ground details - Name: ${groundName}, Location: ${location}, Address: ${address}`);
     
     const subject = `BoxCric - Booking Confirmation #${booking.bookingId}`;
     
@@ -237,6 +250,7 @@ export const sendBookingConfirmationEmail = async (booking, user) => {
           .label { font-weight: bold; color: #374151; }
           .value { color: #6b7280; }
           .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 12px; }
+          .receipt-note { background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center; }
           @media (max-width: 600px) {
             .container { margin: 5px; padding: 10px; }
             .content { padding: 15px; }
@@ -260,15 +274,20 @@ export const sendBookingConfirmationEmail = async (booking, user) => {
             <div class="booking-box">
               <div class="booking-id">${booking.bookingId}</div>
               <div class="details">
-                <div><span class="label">Ground:</span> <span class="value">${ground.name || 'N/A'}</span></div>
-                <div><span class="label">Location:</span> <span class="value">${ground?.location?.cityName || ground?.location?.address || 'N/A'}</span></div>
-                <div><span class="label">Address:</span> <span class="value">${ground?.location?.address || 'N/A'}</span></div>
-                <div><span class="label">Contact:</span> <span class="value">${ground?.owner?.contact || ground?.contact?.phone || 'N/A'}</span></div>
+                <div><span class="label">Ground:</span> <span class="value">${groundName}</span></div>
+                <div><span class="label">Location:</span> <span class="value">${location}</span></div>
+                <div><span class="label">Address:</span> <span class="value">${address}</span></div>
+                <div><span class="label">Contact:</span> <span class="value">${contact}</span></div>
                 <div><span class="label">Date:</span> <span class="value">${new Date(booking.bookingDate).toLocaleDateString('en-IN')}</span></div>
                 <div><span class="label">Time:</span> <span class="value">${timeSlot.startTime || 'N/A'} - ${timeSlot.endTime || 'N/A'}</span></div>
                 <div><span class="label">Amount:</span> <span class="value">₹${booking.pricing?.totalAmount || 0}</span></div>
                 <div><span class="label">Status:</span> <span class="value">${booking.status}</span></div>
               </div>
+            </div>
+            
+            <div class="receipt-note">
+              <p style="color: #0ea5e9; font-weight: bold; margin: 0 0 8px 0;">📧 Booking Receipt</p>
+              <p style="color: #4b5563; margin: 0; font-size: 14px;">A detailed booking receipt will be available in the <strong>"My Bookings"</strong> section of our website once your payment is confirmed.</p>
             </div>
             
             <p style="color: #6b7280; text-align: center;">

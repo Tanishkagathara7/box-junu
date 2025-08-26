@@ -853,14 +853,21 @@ router.patch("/:id/status", authMiddleware, async (req, res) => {
 router.get("/ground/:groundId/:date", async (req, res) => {
   try {
     const { groundId, date } = req.params;
+    console.log(`🔍 Checking availability for ground: ${groundId}, date: ${date}`);
+
+    // Ensure proper date format (convert YYYY-MM-DD to Date object)
+    const bookingDate = new Date(date);
+    console.log(`📅 Booking date object: ${bookingDate}`);
 
     // Fetch all confirmed bookings for this ground and date
     // Only confirmed bookings should show as unavailable to users
     const bookings = await Booking.find({
       groundId,
-      bookingDate: date,
+      bookingDate: bookingDate,
       status: "confirmed"
-    }).select("timeSlot status");
+    }).select("timeSlot status bookingId");
+    
+    console.log(`📋 Found ${bookings.length} confirmed bookings for this date:`, bookings.map(b => `${b.bookingId}: ${b.timeSlot.startTime}-${b.timeSlot.endTime}`));
 
     // Get all possible slots (24h)
     const ALL_24H_SLOTS = Array.from({ length: 24 }, (_, i) => {
@@ -1093,16 +1100,20 @@ adminRouter.get("/", async (req, res) => {
 adminRouter.get("/ground/:groundId/:date", async (req, res) => {
   try {
     const { groundId, date } = req.params;
-    console.log(`Admin availability request for ground: ${groundId}, date: ${date}`);
+    console.log(`🕵️ Admin availability request for ground: ${groundId}, date: ${date}`);
+    
+    // Ensure proper date format (convert YYYY-MM-DD to Date object)
+    const bookingDate = new Date(date);
+    console.log(`📅 Admin booking date object: ${bookingDate}`);
     
     // Get all confirmed bookings for this ground on this date
     // Only confirmed bookings should show as unavailable
     const bookings = await Booking.find({
       groundId,
-      bookingDate: new Date(date),
+      bookingDate: bookingDate,
       status: "confirmed"
     });
-    console.log(`Found ${bookings.length} existing bookings`);
+    console.log(`📋 Admin found ${bookings.length} confirmed bookings:`, bookings.map(b => `${b.bookingId}: ${b.timeSlot.startTime}-${b.timeSlot.endTime}`));
 
     // Generate all possible time slots (24 hours) - INDIVIDUAL TIMES, NOT RANGES
     const allSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);

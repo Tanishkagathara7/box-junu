@@ -422,6 +422,10 @@ export const generateBookingReceiptHTML = (booking, user) => {
           <div style="font-size: 14px; color: #666; margin-bottom: 15px;">
             Show this receipt at the venue for entry
           </div>
+          <div style="background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 8px; padding: 12px; margin: 15px 0; font-size: 14px; color: #0369a1;">
+            📱 <strong>Need to access your booking details again?</strong><br>
+            Visit our website and go to the <strong>"My Bookings"</strong> section to view all your booking information and receipts.
+          </div>
           <div style="font-size: 12px; color: #666;">
             📧 support@boxcric.com | 📞 +91-XXXX-XXXX-XX | 🌐 www.boxcric.com
           </div>

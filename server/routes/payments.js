@@ -476,6 +476,23 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
     await booking.save();
     console.log("✅ Booking saved successfully! Status:", booking.status, "Confirmation code:", booking.confirmation?.confirmationCode);
 
+    // Send booking receipt email after payment confirmation
+    try {
+      // Get user details for email
+      const User = (await import('../models/User.js')).default;
+      const { sendBookingReceiptEmail } = await import('../services/emailService.js');
+      
+      const user = await User.findById(booking.userId);
+      if (user && user.email) {
+        console.log(`📧 Sending receipt email to: ${user.email}`);
+        const emailResult = await sendBookingReceiptEmail(booking, user);
+        console.log(`📧 Receipt email result:`, emailResult);
+      }
+    } catch (emailError) {
+      // Don't fail the payment verification if email fails
+      console.error("❌ Failed to send receipt email:", emailError);
+    }
+
     res.json({
       success: true,
       message: "Payment verified and booking confirmed!",
@@ -584,6 +601,25 @@ router.post("/webhook", async (req, res) => {
     
     await booking.save();
     console.log("✅ Webhook: Booking updated successfully:", booking.bookingId, "new status:", booking.status);
+
+    // Send receipt email if payment was successful
+    if (order_status === 'PAID') {
+      try {
+        // Get user details for email
+        const User = (await import('../models/User.js')).default;
+        const { sendBookingReceiptEmail } = await import('../services/emailService.js');
+        
+        const user = await User.findById(booking.userId);
+        if (user && user.email) {
+          console.log(`📧 Webhook: Sending receipt email to: ${user.email}`);
+          const emailResult = await sendBookingReceiptEmail(booking, user);
+          console.log(`📧 Webhook: Receipt email result:`, emailResult);
+        }
+      } catch (emailError) {
+        // Don't fail the webhook if email fails
+        console.error("❌ Webhook: Failed to send receipt email:", emailError);
+      }
+    }
 
     res.json({ success: true });
   } catch (error) {

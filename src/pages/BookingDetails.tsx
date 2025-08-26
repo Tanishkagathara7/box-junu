@@ -13,7 +13,6 @@ import {
   CreditCard,
   User,
   Download,
-  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +31,6 @@ const BookingDetails = () => {
   const [booking, setBooking] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isEmailingReceipt, setIsEmailingReceipt] = useState(false);
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
 
   useEffect(() => {
@@ -44,6 +42,14 @@ const BookingDetails = () => {
       fetchBookingDetails();
     }
   }, [id, isAuthenticated]);
+
+  // Auto-send email when booking is confirmed
+  useEffect(() => {
+    if (booking && booking.status === "confirmed" && !booking.emailSent) {
+      // Automatically send email receipt for confirmed bookings
+      handleEmailReceipt();
+    }
+  }, [booking]);
 
   const fetchBookingDetails = async () => {
     try {
@@ -138,7 +144,11 @@ const BookingDetails = () => {
   // Receipt functions
   const handleEmailReceipt = async () => {
     try {
-      setIsEmailingReceipt(true);
+      // Prevent duplicate emails
+      if (booking?.emailSent) {
+        console.log('📧 Email already sent for this booking');
+        return;
+      }
 
       console.log('📧 Sending receipt email for booking:', booking._id);
 
@@ -176,6 +186,8 @@ const BookingDetails = () => {
       console.log('📧 Parsed email response:', data);
 
       if (data.success) {
+        // Mark booking as email sent to prevent duplicates
+        setBooking((prev: any) => ({ ...prev, emailSent: true }));
         toast.success("Receipt email sent successfully!");
         console.log('✅ Receipt email sent successfully');
       } else {
@@ -191,8 +203,6 @@ const BookingDetails = () => {
     } catch (error) {
       console.error("❌ Error sending receipt email:", error);
       toast.error("Failed to send receipt email. Please check your internet connection and try again.");
-    } finally {
-      setIsEmailingReceipt(false);
     }
   };
 
@@ -235,7 +245,7 @@ const BookingDetails = () => {
 
       // Always use API base URL so production doesn't call the frontend domain
       const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
-      
+
       // Detect mobile browsers
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -569,7 +579,7 @@ const BookingDetails = () => {
               throw new Error('CDN libraries not available');
             }
             console.log('✅ CDN libraries loaded successfully');
-          } else {
+        } else {
             throw new Error('Window object not available');
           }
         } catch (cdnError) {
@@ -634,7 +644,7 @@ const BookingDetails = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       console.log('🎨 Converting HTML to canvas...');
-      
+
       // Convert HTML to canvas with improved settings
       const canvas = await html2canvas(tempDiv, {
         scale: 2,
@@ -717,12 +727,12 @@ const BookingDetails = () => {
       
       // Strategy 3: Fallback to new window if PDF generation fails
       try {
-        if (isMobile) {
-          const blobUrl = String(pdf.output('bloburl'));
-          if (preOpenTab) preOpenTab.location.href = blobUrl as string;
-          else window.open(blobUrl, '_blank');
-        } else {
-          pdf.save(fileName);
+      if (isMobile) {
+        const blobUrl = String(pdf.output('bloburl'));
+        if (preOpenTab) preOpenTab.location.href = blobUrl as string;
+        else window.open(blobUrl, '_blank');
+      } else {
+        pdf.save(fileName);
         }
         toast.success('Receipt PDF ready.');
       } catch (saveError) {
@@ -1103,17 +1113,7 @@ const BookingDetails = () => {
                           </span>
                         </Button>
 
-                        <Button
-                          onClick={handleEmailReceipt}
-                          disabled={isEmailingReceipt}
-                          variant="outline"
-                          className="flex items-center justify-center gap-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white text-sm px-3 py-2 min-w-0 flex-1"
-                        >
-                          <Send className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">
-                            {isEmailingReceipt ? "Sending..." : "Email Receipt"}
-                          </span>
-                        </Button>
+                        {/* Email Receipt Button - REMOVED - Emails are now sent automatically */}
                       </div>
 
                       {/* Debug button - only show in development */}

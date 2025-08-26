@@ -5,7 +5,7 @@ import Booking from "../models/Booking.js";
 import Ground from "../models/Ground.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
-import { sendBookingReceiptEmail } from "../services/emailService.js";
+import { sendBookingReceiptEmail, sendBookingConfirmationEmail } from "../services/emailService.js";
 import { generateBookingReceiptHTML } from "../templates/bookingReceiptTemplate.js";
 import { 
   doTimeRangesOverlap, 
@@ -351,6 +351,21 @@ router.post("/", authMiddleware, async (req, res) => {
     
     try {
       await session.commitTransaction();
+      
+      // Send booking confirmation email after successful creation
+      try {
+        // Get user details for email
+        const user = await User.findById(userId);
+        if (user && user.email) {
+          console.log(`📧 Sending booking confirmation email to: ${user.email}`);
+          const emailResult = await sendBookingConfirmationEmail(booking, user);
+          console.log(`📧 Confirmation email result:`, emailResult);
+        }
+      } catch (emailError) {
+        // Don't fail the booking if email fails
+        console.error("❌ Failed to send booking confirmation email:", emailError);
+      }
+      
       res.json({ 
         success: true, 
         booking: booking.toObject() 

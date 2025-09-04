@@ -70,6 +70,7 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
   const [contactEmail, setContactEmail] = useState(user?.email || "");
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [createdBooking, setCreatedBooking] = useState<any>(null);
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
 
   // Generate next 7 days for quick date selection
   const getQuickDates = () => {
@@ -118,15 +119,35 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
     }
   }, [ground, selectedDate]);
 
+
+
+  // Refresh availability when modal opens
+  useEffect(() => {
+    if (isOpen && user) {
+      // Small delay to ensure the modal is fully opened
+      const timer = setTimeout(() => {
+        fetchAvailability();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, user]);
+
+
+
+
+
   const fetchAvailability = async () => {
     if (!ground || !selectedDate) return;
     setIsLoadingSlots(true);
     try {
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-      const response = await groundsApi.getAvailability(ground._id, dateStr);
+      
+      // Use the new bookings endpoint that excludes temporary holds
+      const response = await bookingsApi.getGroundAvailability(ground._id, dateStr);
       let bookedSlots: string[] = [];
-      if (response.data && response.data.success && response.data.availability) {
-        bookedSlots = response.data.availability.bookedSlots || [];
+      
+      if (response && (response as any).success && (response as any).availability) {
+        bookedSlots = (response as any).availability.bookedSlots || [];
       }
       
       const now = new Date();
@@ -144,6 +165,7 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
         })
       );
     } catch (e) {
+      console.warn("Failed to fetch availability, showing all slots as available:", e);
       setAvailableSlots(
         ALL_24H_SLOTS.map((slot) => ({ ...slot, isAvailable: true }))
       );
@@ -259,58 +281,83 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
       toast.error("Please login to create a booking");
       return;
     }
+    
+    // Prevent multiple rapid clicks
+    if (isCreatingBooking) {
+      console.log("Already creating booking, ignoring duplicate click");
+      return;
+    }
+    
     try {
-  const API = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
-  const healthResponse = await fetch(`${API}/health`);
+      const API = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
+      const healthResponse = await fetch(`${API}/health`);
       if (!healthResponse.ok) throw new Error('Server not responding');
     } catch {
       toast.error("Server is not running. Please start the server first.");
       return;
     }
-    const formattedDate = format(selectedDate, "yyyy-MM-dd");
-    const bookingData = {
-      groundId: ground._id,
-      bookingDate: formattedDate,
-      timeSlot: `${selectedStartSlotObj.slot.split('-')[0]}-${selectedEndTime}`, // Format as HH:MM-HH:MM
-      playerDetails: {
-        teamName: teamName || undefined,
-        playerCount: parseInt(playerCount),
-        contactPerson: {
-          name: contactName,
-          phone: contactPhone,
-          email: contactEmail || undefined,
-        },
-      },
-      requirements: undefined,
-    };
+
+    setIsCreatingBooking(true);
     
     try {
-      console.log("Sending booking data:", bookingData);
-      const response = await bookingsApi.createBooking(bookingData);
-      console.log("Booking response:", response);
-      if (response && (response as any).success) {
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
+      const timeSlot = `${selectedStartSlotObj.slot.split('-')[0]}-${selectedEndTime}`;
+      
+      // Create the booking (no temporary hold yet)
+      const bookingData = {
+        groundId: ground._id,
+        bookingDate: formattedDate,
+        timeSlot: timeSlot,
+        playerDetails: {
+          teamName: teamName || undefined,
+          playerCount: parseInt(playerCount),
+          contactPerson: {
+            name: contactName,
+            phone: contactPhone,
+            email: contactEmail || undefined,
+          },
+        },
+        requirements: undefined,
+      };
+      
+      console.log("Creating booking:", bookingData);
+      const bookingResponse = await bookingsApi.createBooking(bookingData);
+      
+      if (bookingResponse && (bookingResponse as any).success) {
         toast.success("Booking created! Please complete payment to confirm.");
         
         // Manually attach the ground object to the booking for PaymentModal
-        // This ensures the PaymentModal has access to the full ground details
         const bookingWithGroundData = {
-          ...(response as any).booking,
-          groundId: ground, // Replace the string ID with the full ground object
-          ground: ground    // Also add as 'ground' property for backwards compatibility
+          ...(bookingResponse as any).booking,
+          groundId: ground,
+          ground: ground
         };
         
-        console.log("Enhanced booking with ground data for PaymentModal:", bookingWithGroundData);
+        console.log("Booking created successfully:", bookingWithGroundData);
         setCreatedBooking(bookingWithGroundData);
         setIsPaymentModalOpen(true);
       } else {
-        throw new Error((response as any)?.message || "Failed to create booking");
+        throw new Error((bookingResponse as any)?.message || "Failed to create booking");
       }
     } catch (error: any) {
       console.error("Booking error:", error);
       let errorMessage = "Failed to create booking. Please try again.";
-      if (error.response?.data?.message) errorMessage = error.response.data.message;
-      else if (error.message) errorMessage = error.message;
+      
+      if (error.response?.status === 409) {
+        // Conflict error - slot is taken
+        errorMessage = error.response?.data?.message || "This slot is no longer available. Please select a different time.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast.error(errorMessage);
+      
+      // Refresh availability to show updated slots
+      await fetchAvailability();
+    } finally {
+      setIsCreatingBooking(false);
     }
   };
 
@@ -322,10 +369,12 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
     setCreatedBooking(null);
   };
 
-  const handlePaymentModalClose = () => {
+  const handlePaymentModalClose = async () => {
     setIsPaymentModalOpen(false);
     setCreatedBooking(null);
-    // Don't close the booking modal if payment is cancelled
+    
+    // Refresh availability to show updated slots
+    await fetchAvailability();
   };
 
   if (!ground) return null;
@@ -556,7 +605,7 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
           </div>
 
           {selectedDate && selectedStartSlotObj && selectedEndTime && playerCount && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 rounded-xl p-4 sm:p-6 border">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <Star className="w-5 h-5 text-blue-600" />
                 Booking Summary
@@ -622,13 +671,19 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
               </Button>
               <Button
                 onClick={handleBook}
-                disabled={!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone}
+                disabled={!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone || isCreatingBooking}
                 className="flex-1 h-12 sm:h-14 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                {!selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone 
-                  ? "Complete Details" 
-                  : "Proceed to Payment"
-                }
+                {isCreatingBooking ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Creating Booking...
+                  </div>
+                ) : !selectedDate || !selectedStartSlotObj || !selectedEndTime || !playerCount || !contactName || !contactPhone ? (
+                  "Complete Details"
+                ) : (
+                  "Proceed to Payment"
+                )}
               </Button>
             </div>
           </div>

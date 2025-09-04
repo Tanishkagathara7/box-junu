@@ -144,6 +144,24 @@ export const bookingsApi = {
     api.post(`/bookings/${id}/feedback`, data),
 
   getStats: () => api.get("/bookings/stats/summary"),
+
+  // Temporary hold APIs
+  createTemporaryHold: async (data: {
+    groundId: string;
+    bookingDate: string;
+    timeSlot: string;
+  }) => {
+    if (!isMongoObjectId(data.groundId)) {
+      throw new Error("This ground cannot be booked online.");
+    }
+    return api.post("/bookings/temp-hold", data);
+  },
+
+  releaseTemporaryHold: (holdId: string) => 
+    api.delete(`/bookings/temp-hold/${holdId}`),
+
+  getGroundAvailability: (groundId: string, date: string) =>
+    api.get(`/bookings/ground/${groundId}/${date}`),
 };
 
 // Payments API

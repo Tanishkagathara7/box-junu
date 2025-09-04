@@ -19,6 +19,8 @@ import userRoutes from "./routes/users.js";
 import paymentsRoutes from "./routes/payments.js";
 import { adminRouter as adminLocationsRouter } from "./routes/locations.js";
 import { startBookingCleanupService } from "./lib/bookingCleanup.js";
+import { startPeriodicCleanup } from "./lib/bookingUtils.js";
+import Booking from "./models/Booking.js";
 
 // Environment Config
 dotenv.config();
@@ -135,6 +137,14 @@ mongoose.connect(MONGODB_URI)
       console.log("🧹 Booking cleanup service started");
     } catch (cleanupError) {
       console.error("❌ Failed to start booking cleanup service:", cleanupError);
+    }
+    
+    // Start periodic cleanup of temporary holds
+    try {
+      startPeriodicCleanup(Booking, 2); // Run cleanup every 2 minutes
+      console.log("🕒 Temporary holds cleanup service started");
+    } catch (holdCleanupError) {
+      console.error("❌ Failed to start temporary holds cleanup service:", holdCleanupError);
     }
   })
   .catch((error) => {

@@ -10,9 +10,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { paymentsApi } from "@/lib/api";
+import { paymentsApi, bookingsApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 // Declare Cashfree types
 declare global {
@@ -67,6 +68,83 @@ const PaymentModal = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [temporaryHoldId, setTemporaryHoldId] = useState<string | null>(null);
+  const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
+  const [countdownTime, setCountdownTime] = useState<number>(0);
+
+  // Create temporary hold when payment modal opens
+  useEffect(() => {
+    const createTemporaryHold = async () => {
+      if (isOpen && booking && !temporaryHoldId) {
+        try {
+          console.log("Creating temporary hold for payment:", {
+            groundId: booking.groundId?._id || booking.groundId,
+            bookingDate: booking.bookingDate,
+            timeSlot: `${booking.timeSlot.startTime}-${booking.timeSlot.endTime}`
+          });
+          
+          const holdResponse = await bookingsApi.createTemporaryHold({
+            groundId: booking.groundId?._id || booking.groundId,
+            bookingDate: booking.bookingDate,
+            timeSlot: `${booking.timeSlot.startTime}-${booking.timeSlot.endTime}`
+          });
+          
+          if (holdResponse && (holdResponse as any).success) {
+            const holdId = (holdResponse as any).holdId;
+            const expiresAt = new Date((holdResponse as any).expiresAt);
+            
+            setTemporaryHoldId(holdId);
+            setHoldExpiresAt(expiresAt);
+            
+            console.log("Temporary hold created for payment:", holdId);
+            toast.success("Slot reserved for 15 minutes during payment!");
+          }
+        } catch (error) {
+          console.error("Failed to create temporary hold:", error);
+          // Don't show error to user as the booking can still proceed
+        }
+      }
+    };
+    
+    createTemporaryHold();
+  }, [isOpen, booking, temporaryHoldId]);
+
+  // Countdown effect for temporary hold expiration
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (holdExpiresAt) {
+      interval = setInterval(() => {
+        const now = new Date().getTime();
+        const expiry = holdExpiresAt.getTime();
+        const timeLeft = Math.max(0, expiry - now);
+        
+        setCountdownTime(Math.floor(timeLeft / 1000));
+        
+        if (timeLeft <= 0) {
+          // Hold expired
+          setTemporaryHoldId(null);
+          setHoldExpiresAt(null);
+          toast.warning("Your payment time has expired. Please try booking again.");
+        }
+      }, 1000);
+    } else {
+      setCountdownTime(0);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [holdExpiresAt]);
+
+  // Cleanup effect to release hold when modal closes
+  useEffect(() => {
+    return () => {
+      if (temporaryHoldId) {
+        bookingsApi.releaseTemporaryHold(temporaryHoldId).catch(console.error);
+      }
+    };
+  }, [temporaryHoldId]);
 
   // Enhanced dynamic amount calculation with proper ground data handling
   const bookingData = useMemo(() => {
@@ -353,6 +431,19 @@ const PaymentModal = ({
           if ((verifyResponse as any)?.success) {
             toast.success("Payment successful! Booking confirmed.");
             onPaymentSuccess(booking);
+            
+            // Clean up temporary hold on success
+            if (temporaryHoldId) {
+              try {
+                await bookingsApi.releaseTemporaryHold(temporaryHoldId);
+                console.log("Released temporary hold after payment success:", temporaryHoldId);
+              } catch (error) {
+                console.error("Failed to release hold after payment:", error);
+              }
+              setTemporaryHoldId(null);
+              setHoldExpiresAt(null);
+            }
+            
             setTimeout(() => {
               navigate("/profile/bookings");
             }, 500);
@@ -421,8 +512,20 @@ const PaymentModal = ({
   if (!booking || !bookingData) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
+    <Dialog open={isOpen} onOpenChange={async (open) => {
       if (!open) {
+        // Clean up temporary hold when modal closes
+        if (temporaryHoldId) {
+          try {
+            await bookingsApi.releaseTemporaryHold(temporaryHoldId);
+            console.log("Released temporary hold on modal close:", temporaryHoldId);
+          } catch (error) {
+            console.error("Failed to release hold on close:", error);
+          }
+          setTemporaryHoldId(null);
+          setHoldExpiresAt(null);
+        }
+        
         toast.error("Payment was not completed. Redirecting to home page.");
         setTimeout(() => {
           navigate("/");
@@ -432,8 +535,14 @@ const PaymentModal = ({
     }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="payment-description">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center text-cricket-green">
+          <DialogTitle className="text-2xl font-bold text-center text-cricket-green flex items-center justify-center gap-3">
             Complete Your Payment
+            {temporaryHoldId && countdownTime > 0 && (
+              <div className="bg-red-500/90 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 animate-pulse">
+                <Timer className="w-3 h-3" />
+                <span>{Math.floor(countdownTime / 60)}:{(countdownTime % 60).toString().padStart(2, '0')}</span>
+              </div>
+            )}
           </DialogTitle>
           <DialogDescription id="payment-description" className="sr-only">
             Complete your payment securely via Cashfree payment gateway

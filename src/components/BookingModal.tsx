@@ -331,7 +331,7 @@ const BookingModal = ({
                   const filteredSlots = availableSlots.filter(slotObj => {
                     const slotHour = parseInt(slotObj.slot.split(':')[0], 10);
                     if (isToday && slotHour <= currentHour) return false; // Hide past slots for today
-                    return true;
+                    return slotObj.isAvailable; // Only show available slots
                   });
                   const amSlots = filteredSlots.filter(slot => parseInt(slot.slot.split(':')[0], 10) < 12);
                   const pmSlots = filteredSlots.filter(slot => parseInt(slot.slot.split(':')[0], 10) >= 12);
@@ -347,15 +347,15 @@ const BookingModal = ({
                       <option value="" disabled>Select a time slot</option>
                       <optgroup label="AM">
                         {amSlots.map(slot => (
-                          <option key={slot.slot} value={slot.slot} disabled={!slot.isAvailable}>
-                            {slot.label} {slot.isAvailable ? '' : '(Booked)'}
+                          <option key={slot.slot} value={slot.slot}>
+                            {slot.label}
                           </option>
                         ))}
                       </optgroup>
                       <optgroup label="PM">
                         {pmSlots.map(slot => (
-                          <option key={slot.slot} value={slot.slot} disabled={!slot.isAvailable}>
-                            {slot.label} {slot.isAvailable ? '' : '(Booked)'}
+                          <option key={slot.slot} value={slot.slot}>
+                            {slot.label}
                           </option>
                         ))}
                       </optgroup>

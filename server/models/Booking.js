@@ -85,6 +85,12 @@ const bookingSchema = new mongoose.Schema(
       confirmationCode: String,
       groundOwnerNotified: { type: Boolean, default: false },
     },
+    temporaryHold: {
+      isOnHold: { type: Boolean, default: false },
+      holdStartedAt: Date,
+      holdExpiresAt: Date,
+      holdDuration: { type: Number, default: 15 }, // minutes
+    },
     checkin: {
       checkedInAt: Date,
       checkedInBy: String,
@@ -174,6 +180,35 @@ bookingSchema.methods.calculateRefund = function () {
   }
 
   return 0; // No refund
+};
+
+// Method to check if temporary hold is expired
+bookingSchema.methods.isHoldExpired = function () {
+  if (!this.temporaryHold?.isOnHold || !this.temporaryHold?.holdExpiresAt) {
+    return true; // No hold or no expiry time means expired/invalid
+  }
+  return new Date() > this.temporaryHold.holdExpiresAt;
+};
+
+// Method to start temporary hold
+bookingSchema.methods.startTemporaryHold = function (durationMinutes = 15) {
+  const now = new Date();
+  this.temporaryHold = {
+    isOnHold: true,
+    holdStartedAt: now,
+    holdExpiresAt: new Date(now.getTime() + (durationMinutes * 60 * 1000)),
+    holdDuration: durationMinutes
+  };
+};
+
+// Method to release temporary hold
+bookingSchema.methods.releaseTemporaryHold = function () {
+  this.temporaryHold = {
+    isOnHold: false,
+    holdStartedAt: undefined,
+    holdExpiresAt: undefined,
+    holdDuration: 15
+  };
 };
 
 // Virtual for formatted booking date

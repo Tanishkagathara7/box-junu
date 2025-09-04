@@ -206,11 +206,11 @@ async function getAllGroundsHandler(req, res) {
       
       let todayBookings = [];
       try {
-        // Fetch real bookings from MongoDB
+        // Fetch real bookings from MongoDB (both confirmed and pending)
         todayBookings = await Booking.find({
           groundId: { $in: groundIds },
           bookingDate: new Date(today),
-          status: "confirmed"
+          status: { $in: ["confirmed", "pending"] }
         }).lean();
         
         console.log(`Found ${todayBookings.length} bookings for today (${today})`);
@@ -396,7 +396,7 @@ async function getGroundByIdHandler(req, res) {
             const bookings = await Booking.find({
               groundId: req.params.id,
               bookingDate: { $in: dates },
-              status: "confirmed"
+              status: { $in: ["confirmed", "pending"] }
             }).lean();
             
             console.log(`Found ${bookings.length} bookings for ground ${ground.name}`);
@@ -511,8 +511,8 @@ router.get("/owner", authMiddleware, async (req, res) => {
 router.get("/", getAllGroundsHandler);
 router.get("/:id", getGroundByIdHandler);
 
-// Get ground availability for specific date (DEMO)
-router.get("/:id/availability/:date", (req, res) => {
+// Get ground availability for specific date
+router.get("/:id/availability/:date", async (req, res) => {
   const { id, date } = req.params;
   
   // Validate the ID parameter
@@ -528,13 +528,25 @@ router.get("/:id/availability/:date", (req, res) => {
   
   // First try to find in MongoDB only if it's a valid ObjectId
   if (isValidObjectId) {
-    Ground.findById(id).then(ground => {
+    try {
+      const ground = await Ground.findById(id);
       if (ground) {
-        // Get all bookings for this ground and date
-        const bookings = demoBookings.filter(
-          (b) => b.groundId === id && b.bookingDate === date
-        );
-        const bookedSlots = bookings.map((b) => b.timeSlot);
+        // Get real bookings for this ground and date (both confirmed and pending)
+        const bookings = await Booking.find({
+          groundId: id,
+          bookingDate: new Date(date),
+          status: { $in: ["confirmed", "pending"] }
+        }).lean();
+        
+        const bookedSlots = bookings.map((b) => {
+          // Handle both string format and object format for timeSlot
+          if (typeof b.timeSlot === 'string') {
+            return b.timeSlot;
+          } else if (b.timeSlot && b.timeSlot.startTime && b.timeSlot.endTime) {
+            return `${b.timeSlot.startTime}-${b.timeSlot.endTime}`;
+          }
+          return null;
+        }).filter(slot => slot !== null);
         const allSlots = ground.availability?.timeSlots && ground.availability.timeSlots.length > 0
           ? ground.availability.timeSlots
           : DEFAULT_TIME_SLOTS;
@@ -573,13 +585,13 @@ router.get("/:id/availability/:date", (req, res) => {
           },
         });
       }
-    }).catch(error => {
+    } catch (error) {
       console.error("Get availability error:", error);
       res.status(500).json({
         success: false,
         message: "Failed to fetch availability",
       });
-    });
+    }
   } else {
     // If not a valid ObjectId, check fallback data directly
     const fallbackGround = fallbackGrounds.find((g) => g._id === id);

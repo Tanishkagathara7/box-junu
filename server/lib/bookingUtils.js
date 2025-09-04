@@ -135,4 +135,53 @@ export function generateBookingId() {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substr(2, 5);
   return `BC${timestamp}${random}`.toUpperCase();
+}
+
+/**
+ * Clean up expired temporary holds
+ * @param {Object} Booking - Mongoose Booking model
+ * @returns {Promise<number>} - Number of holds cleaned up
+ */
+export async function cleanupExpiredHolds(Booking) {
+  try {
+    const now = new Date();
+    const result = await Booking.updateMany(
+      {
+        "temporaryHold.isOnHold": true,
+        "temporaryHold.holdExpiresAt": { $lt: now }
+      },
+      {
+        $set: {
+          "temporaryHold.isOnHold": false
+        },
+        $unset: {
+          "temporaryHold.holdStartedAt": "",
+          "temporaryHold.holdExpiresAt": ""
+        }
+      }
+    );
+    
+    if (result.modifiedCount > 0) {
+      console.log(`🧹 Cleaned up ${result.modifiedCount} expired temporary holds`);
+    }
+    
+    return result.modifiedCount;
+  } catch (error) {
+    console.error("Error cleaning up expired holds:", error);
+    return 0;
+  }
+}
+
+/**
+ * Start periodic cleanup of expired temporary holds
+ * @param {Object} Booking - Mongoose Booking model
+ * @param {number} intervalMinutes - Cleanup interval in minutes (default: 5)
+ * @returns {NodeJS.Timeout} - Interval ID that can be cleared
+ */
+export function startPeriodicCleanup(Booking, intervalMinutes = 5) {
+  console.log(`🕒 Starting periodic cleanup of temporary holds every ${intervalMinutes} minutes`);
+  
+  return setInterval(async () => {
+    await cleanupExpiredHolds(Booking);
+  }, intervalMinutes * 60 * 1000);
 } 

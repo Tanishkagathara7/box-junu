@@ -444,17 +444,16 @@ const PaymentModal = ({
               setHoldExpiresAt(null);
             }
             
-            setTimeout(() => {
-              navigate("/profile/bookings");
-            }, 500);
+            // Let PaymentCallback handle the redirect after payment success
             onClose();
             return true;
           } else if ((verifyResponse as any)?.requiresRefund) {
             // Handle the case where slot was taken by someone else
             toast.error((verifyResponse as any)?.message || "This time slot is no longer available. Your payment will be refunded.");
             setIsProcessing(false);
+            // Redirect to home instead of grounds
             setTimeout(() => {
-              navigate("/grounds"); // Redirect to grounds to book again
+              navigate("/");
             }, 3000);
             onClose();
             return true; // Stop checking
@@ -466,7 +465,7 @@ const PaymentModal = ({
             toast.error(errorData?.message || "This time slot is no longer available. Your payment will be refunded.");
             setIsProcessing(false);
             setTimeout(() => {
-              navigate("/grounds"); // Redirect to grounds to book again
+              navigate("/");
             }, 3000);
             onClose();
             return true; // Stop checking
@@ -492,19 +491,13 @@ const PaymentModal = ({
         setTimeout(() => {
           clearInterval(interval);
           setIsProcessing(false);
-          toast.error("Payment timeout or failed. Redirecting to home page.");
-          setTimeout(() => {
-            navigate("/");
-          }, 1000);
+          toast.warning("Payment check timed out. Please check your booking status.");
         }, 900000); // 15 minutes
       }, 5000); // Wait 5 seconds before first check
 
     } catch (error: any) {
       console.error("Payment initiation error:", error);
-      toast.error("Payment failed or cancelled. Redirecting to home page.");
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+      toast.error("Payment failed to initialize. Please try again.");
       setIsProcessing(false);
     }
   }, [booking, user, bookingData, onPaymentSuccess, onClose]);
@@ -526,10 +519,11 @@ const PaymentModal = ({
           setHoldExpiresAt(null);
         }
         
-        toast.error("Payment was not completed. Redirecting to home page.");
-        setTimeout(() => {
-          navigate("/");
-        }, 1000);
+        // Only show cancellation message and redirect if user manually closed the modal
+        // Don't redirect if payment is in progress or completed
+        if (!isProcessing) {
+          toast.info("Payment cancelled by user.");
+        }
       }
       onClose();
     }}>

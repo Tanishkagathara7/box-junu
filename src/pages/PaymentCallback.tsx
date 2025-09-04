@@ -51,7 +51,7 @@ const PaymentCallback = () => {
           console.log("Payment success detected, verifying payment...");
 
           try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("boxcric_token");
             const verifyResponse = await fetch(`${API_BASE_URL}/payments/verify-payment`, {
               method: "POST",
               headers: {

@@ -279,7 +279,7 @@ router.delete("/temp-hold/:holdId", authMiddleware, async (req, res) => {
   }
 });
 
-// Create a booking (authenticated)
+// Create a booking (authenticated) with idempotency support
 router.post("/", authMiddleware, async (req, res) => {
   // Check if MongoDB is connected
   const isMongoConnected = req.app.get("mongoConnected")();
@@ -288,6 +288,30 @@ router.post("/", authMiddleware, async (req, res) => {
       success: false, 
       message: "Database connection is not available. Please try again later." 
     });
+  }
+
+  // Support idempotency key to prevent duplicate submissions
+  const idempotencyKey = req.headers['idempotency-key'];
+  if (idempotencyKey) {
+    try {
+      // Check if we already processed this idempotency key
+      const existingBooking = await Booking.findOne({
+        userId: req.userId,
+        'special.idempotencyKey': idempotencyKey
+      });
+      
+      if (existingBooking) {
+        console.log(`Duplicate request detected with idempotency key: ${idempotencyKey}`);
+        return res.json({
+          success: true,
+          booking: existingBooking.toObject(),
+          message: "Booking already processed (idempotent request)"
+        });
+      }
+    } catch (idempotencyError) {
+      console.error("Error checking idempotency:", idempotencyError);
+      // Continue with normal processing if idempotency check fails
+    }
   }
 
   let session;
@@ -477,19 +501,26 @@ router.post("/", authMiddleware, async (req, res) => {
           ]
         }).session(session);
 
-        // Check for overlaps using JavaScript logic
-        console.log(`Checking for overlaps with ${existingBookings.length} existing bookings`);
-        const overlappingBooking = existingBookings.find(booking => {
-          const bookingStart = new Date(`2000-01-01 ${booking.timeSlot.startTime}`);
-          const bookingEnd = new Date(`2000-01-01 ${booking.timeSlot.endTime}`);
-          
-          const hasOverlap = start < bookingEnd && end > bookingStart;
-          if (hasOverlap) {
-            console.log(`Found overlap: New booking (${startTime}-${endTime}) overlaps with existing booking (${booking.timeSlot.startTime}-${booking.timeSlot.endTime}) with status ${booking.status}`);
-          }
-          
-          return hasOverlap;
-        });
+    // Check for overlaps using JavaScript logic with more comprehensive overlap detection
+    console.log(`Checking for overlaps with ${existingBookings.length} existing bookings`);
+    
+    // Create a more robust overlap check that includes exact time matches
+    const overlappingBooking = existingBookings.find(booking => {
+      const bookingStart = new Date(`2000-01-01 ${booking.timeSlot.startTime}`);
+      const bookingEnd = new Date(`2000-01-01 ${booking.timeSlot.endTime}`);
+      
+      // Check for any overlap: new booking starts before existing ends AND new booking ends after existing starts
+      const hasOverlap = start < bookingEnd && end > bookingStart;
+      
+      // Also check for exact time slot matches to prevent identical bookings
+      const exactMatch = booking.timeSlot.startTime === startTime && booking.timeSlot.endTime === endTime;
+      
+      if (hasOverlap || exactMatch) {
+        console.log(`Found ${exactMatch ? 'exact match' : 'overlap'}: New booking (${startTime}-${endTime}) ${exactMatch ? 'exactly matches' : 'overlaps with'} existing booking (${booking.timeSlot.startTime}-${booking.timeSlot.endTime}) with status ${booking.status}`);
+      }
+      
+      return hasOverlap || exactMatch;
+    });
 
         if (overlappingBooking) {
           console.log("Slot overlaps with an existing booking:", overlappingBooking.bookingId);
@@ -575,7 +606,12 @@ router.post("/", authMiddleware, async (req, res) => {
         totalAmount,
         currency: "INR"
       },
-      status: "pending"
+      status: "pending",
+      // Store idempotency key if provided to prevent duplicate requests
+      special: idempotencyKey ? {
+        idempotencyKey: idempotencyKey,
+        notes: `Created with idempotency key: ${idempotencyKey}`
+      } : undefined
     });
 
     console.log("Saving booking...");
@@ -1340,6 +1376,9 @@ router.get("/demo/:id", (req, res) => {
 
 // --- ADMIN ROUTER ---
 const adminRouter = express.Router();
+
+// Import duplicate cleanup utilities
+import { findDuplicateBookings, cleanupDuplicateBookings, findDuplicatesByAmount } from '../utils/duplicateBookingCleanup.js';
 
 // GET /api/admin/bookings - get all bookings
 adminRouter.get("/", async (req, res) => {
@@ -2166,6 +2205,62 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to generate receipt"
+    });
+  }
+});
+
+// Admin endpoint to find duplicate bookings
+adminRouter.get('/duplicates', async (req, res) => {
+  try {
+    console.log('🔍 Admin request to find duplicate bookings');
+    const duplicates = await findDuplicateBookings();
+    const amountDuplicates = await findDuplicatesByAmount();
+    
+    res.json({
+      success: true,
+      duplicates: {
+        exact: duplicates,
+        amountBased: amountDuplicates
+      },
+      summary: {
+        exactDuplicateGroups: duplicates.length,
+        amountBasedGroups: amountDuplicates.length,
+        totalDuplicateBookings: duplicates.reduce((sum, d) => sum + d.count, 0)
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error finding duplicates:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to find duplicate bookings',
+      error: error.message
+    });
+  }
+});
+
+// Admin endpoint to clean up duplicate bookings
+adminRouter.post('/duplicates/cleanup', async (req, res) => {
+  try {
+    const { dryRun = true } = req.body;
+    
+    console.log(`🧹 Admin request to ${dryRun ? 'preview' : 'execute'} duplicate cleanup`);
+    
+    const result = await cleanupDuplicateBookings(dryRun);
+    
+    res.json({
+      success: true,
+      result,
+      dryRun,
+      message: dryRun 
+        ? `Found ${result.cleaned} duplicates that can be cleaned up` 
+        : `Successfully cleaned up ${result.cleaned} duplicate bookings`
+    });
+  } catch (error) {
+    console.error('❌ Error cleaning duplicates:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clean up duplicate bookings',
+      error: error.message
     });
   }
 });

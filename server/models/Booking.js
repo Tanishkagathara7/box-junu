@@ -111,6 +111,7 @@ const bookingSchema = new mongoose.Schema(
       recurringPattern: String, // weekly, monthly
       parentBookingId: String,
       notes: String,
+      idempotencyKey: { type: String, unique: true, sparse: true }, // For preventing duplicate submissions
     },
   },
   {
@@ -132,6 +133,22 @@ bookingSchema.index({
   status: 1,
   "timeSlot.startTime": 1,
   "timeSlot.endTime": 1
+});
+
+// Prevent duplicate bookings for same ground, date, and time slot
+// This will catch most duplicates at the database level
+bookingSchema.index({
+  groundId: 1,
+  bookingDate: 1,
+  "timeSlot.startTime": 1,
+  "timeSlot.endTime": 1,
+  status: 1
+}, {
+  unique: true,
+  partialFilterExpression: {
+    status: { $in: ["pending", "confirmed", "completed"] } // Only apply unique constraint to active bookings
+  },
+  name: "prevent_duplicate_bookings"
 });
 
 // Generate unique booking ID

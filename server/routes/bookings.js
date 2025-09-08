@@ -208,7 +208,7 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
       });
 
       // Start temporary hold
-      holdBooking.startTemporaryHold(15); // 15 minutes
+      holdBooking.startTemporaryHold(5); // 5 minutes
       
       await holdBooking.save({ session });
       await session.commitTransaction();
@@ -219,7 +219,7 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
         success: true,
         holdId: holdBooking._id,
         expiresAt: holdBooking.temporaryHold.holdExpiresAt,
-        message: "Slot temporarily reserved for 15 minutes"
+        message: "Slot temporarily reserved for 5 minutes"
       });
 
     } catch (error) {
@@ -2494,6 +2494,32 @@ router.get("/:id/receipt-pdf", authMiddleware, async (req, res) => {
       </html>
     `;
     return res.send(errorHTML);
+  }
+});
+
+// Manual cleanup endpoint for testing/debugging
+router.post("/cleanup-expired", async (req, res) => {
+  try {
+    console.log('🗿 Manual cleanup requested by API call');
+    
+    // Import cleanup function
+    const { cleanupExpiredBookings } = await import('../lib/bookingCleanup.js');
+    
+    const result = await cleanupExpiredBookings();
+    
+    res.json({
+      success: true,
+      message: `Manual cleanup completed`,
+      expiredCount: result.expiredCount,
+      cleanupTime: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Manual cleanup failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Manual cleanup failed',
+      error: error.message
+    });
   }
 });
 

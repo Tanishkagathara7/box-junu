@@ -7,13 +7,17 @@ import Booking from '../models/Booking.js';
  */
 export async function cleanupExpiredBookings() {
   try {
-    // Find bookings that are pending and older than 15 minutes
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    // Find bookings that are pending and older than 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     
     const expiredBookings = await Booking.find({
       status: 'pending',
-      'payment.status': { $ne: 'completed' },
-      createdAt: { $lt: fifteenMinutesAgo }
+      $or: [
+        { 'payment.status': { $ne: 'completed' } },
+        { 'payment.status': { $exists: false } },
+        { 'payment': { $exists: false } }
+      ],
+      createdAt: { $lt: fiveMinutesAgo }
     });
 
     console.log(`Found ${expiredBookings.length} expired pending bookings to clean up`);
@@ -24,7 +28,7 @@ export async function cleanupExpiredBookings() {
       booking.cancellation = {
         cancelledBy: 'system',
         cancelledAt: new Date(),
-        reason: 'Payment timeout - booking expired after 15 minutes'
+        reason: 'Payment timeout - booking expired after 5 minutes'
       };
       
       // Update payment status if it exists
@@ -63,7 +67,7 @@ export function getBookingExpiryStatus(booking) {
   }
 
   const createdTime = new Date(booking.createdAt);
-  const expiryTime = new Date(createdTime.getTime() + 15 * 60 * 1000); // 15 minutes
+  const expiryTime = new Date(createdTime.getTime() + 5 * 60 * 1000); // 5 minutes
   const now = new Date();
   
   const isExpired = now > expiryTime;

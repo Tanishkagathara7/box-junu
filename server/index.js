@@ -133,8 +133,8 @@ mongoose.connect(MONGODB_URI)
     
     // Start booking cleanup service after MongoDB connection
     try {
-      startBookingCleanupService(5); // Run cleanup every 5 minutes
-      console.log("🧹 Booking cleanup service started");
+      startBookingCleanupService(1); // Run cleanup every 1 minute for faster cleanup
+      console.log("🧹 Booking cleanup service started - checking every 1 minute");
     } catch (cleanupError) {
       console.error("❌ Failed to start booking cleanup service:", cleanupError);
     }

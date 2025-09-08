@@ -89,7 +89,7 @@ const bookingSchema = new mongoose.Schema(
       isOnHold: { type: Boolean, default: false },
       holdStartedAt: Date,
       holdExpiresAt: Date,
-      holdDuration: { type: Number, default: 15 }, // minutes
+      holdDuration: { type: Number, default: 5 }, // minutes
     },
     checkin: {
       checkedInAt: Date,
@@ -208,7 +208,7 @@ bookingSchema.methods.isHoldExpired = function () {
 };
 
 // Method to start temporary hold
-bookingSchema.methods.startTemporaryHold = function (durationMinutes = 15) {
+bookingSchema.methods.startTemporaryHold = function (durationMinutes = 5) {
   const now = new Date();
   this.temporaryHold = {
     isOnHold: true,
@@ -224,7 +224,7 @@ bookingSchema.methods.releaseTemporaryHold = function () {
     isOnHold: false,
     holdStartedAt: undefined,
     holdExpiresAt: undefined,
-    holdDuration: 15
+    holdDuration: 5
   };
 };
 

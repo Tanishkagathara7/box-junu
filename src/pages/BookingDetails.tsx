@@ -43,13 +43,18 @@ const BookingDetails = () => {
     }
   }, [id, isAuthenticated]);
 
-  // Auto-send email when booking is confirmed
+  // Auto-send email when booking is confirmed (but only if user clearly owns the booking)
   useEffect(() => {
-    if (booking && booking.status === "confirmed" && !booking.emailSent) {
-      // Automatically send email receipt for confirmed bookings
-      handleEmailReceipt();
+    if (booking && booking.status === "confirmed" && !booking.emailSent && isAuthenticated) {
+      // Add a small delay to ensure UI has loaded and user context is stable
+      const timer = setTimeout(() => {
+        console.log('📧 Attempting automatic email receipt for confirmed booking:', booking.bookingId || booking._id);
+        handleEmailReceipt();
+      }, 1000); // 1 second delay
+      
+      return () => clearTimeout(timer);
     }
-  }, [booking]);
+  }, [booking, isAuthenticated]);
 
   const fetchBookingDetails = async () => {
     try {
@@ -192,45 +197,33 @@ const BookingDetails = () => {
         console.log('✅ Receipt email sent successfully');
       } else {
         console.error('❌ Email sending failed:', data);
-        toast.error(data.message || "Failed to send receipt email");
-
-        // Show more specific error if available
-        if (data.error) {
-          console.error('❌ Email error details:', data.error);
-          toast.error(`Email error: ${data.error}`);
+        
+        // Don't show error toast for access denied on automatic email sending
+        // This prevents confusing error messages when user views their booking
+        if (data.message !== "Access denied") {
+          toast.error(data.message || "Failed to send receipt email");
+          
+          // Show more specific error if available
+          if (data.error) {
+            console.error('❌ Email error details:', data.error);
+          }
+        } else {
+          // Just log access denied errors, don't show to user
+          console.warn('⚠️ Email access denied - user may not own this booking');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error sending receipt email:", error);
-      toast.error("Failed to send receipt email. Please check your internet connection and try again.");
+      
+      // Don't show error toast for access denied - this prevents confusing user
+      if (error?.response?.data?.message !== "Access denied" && error?.message !== "Access denied") {
+        toast.error("Failed to send receipt email. Please check your internet connection and try again.");
+      } else {
+        console.warn('⚠️ Email access denied in catch block - user may not own this booking');
+      }
     }
   };
 
-  // Test PDF generation function for debugging
-  const testPDFGeneration = async () => {
-    try {
-      console.log('🧪 Testing PDF generation...');
-      const apiBase = (import.meta as any).env?.VITE_API_URL || ((import.meta as any).env?.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
-      
-      const response = await fetch(`${apiBase}/bookings/test-pdf`);
-      console.log('Test PDF response status:', response.status);
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        window.URL.revokeObjectURL(url);
-        toast.success('Test PDF generated successfully!');
-      } else {
-        const errorText = await response.text();
-        console.error('Test PDF failed:', errorText);
-        toast.error('Test PDF generation failed');
-      }
-    } catch (error) {
-      console.error('Test PDF error:', error);
-      toast.error('Test PDF generation failed');
-    }
-  };
 
   const handleDownloadReceipt = async () => {
     try {
@@ -1116,16 +1109,6 @@ const BookingDetails = () => {
                         {/* Email Receipt Button - REMOVED - Emails are now sent automatically */}
                       </div>
 
-                      {/* Debug button - only show in development */}
-                      {(import.meta as any).env?.DEV && (
-                        <Button
-                          onClick={testPDFGeneration}
-                          variant="outline"
-                          className="flex items-center justify-center gap-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white text-sm px-3 py-2 min-w-0 flex-1"
-                        >
-                          🧪 Test PDF
-                        </Button>
-                      )}
                     </>
                   )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Calendar, Clock, ArrowLeft } from "lucide-react";
+import { User, Calendar, Clock, ArrowLeft, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +46,75 @@ interface BookingData {
   createdAt: string;
 }
 
+// Countdown Timer Component for Pending Bookings
+const BookingCountdown = ({ createdAt, onExpired }: { createdAt: string; onExpired: () => void }) => {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [isExpired, setIsExpired] = useState<boolean>(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const bookingTime = new Date(createdAt).getTime();
+      const expiryTime = bookingTime + (5 * 60 * 1000); // 5 minutes
+      const now = new Date().getTime();
+      const remaining = Math.max(0, expiryTime - now);
+      
+      if (remaining <= 0 && !isExpired) {
+        setIsExpired(true);
+        onExpired();
+      }
+      
+      return remaining;
+    };
+
+    const timer = setInterval(() => {
+      const remaining = calculateTimeLeft();
+      setTimeLeft(remaining);
+    }, 1000);
+
+    // Initial calculation
+    const initial = calculateTimeLeft();
+    setTimeLeft(initial);
+
+    return () => clearInterval(timer);
+  }, [createdAt, isExpired, onExpired]);
+
+  if (timeLeft <= 0) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+        <div className="flex items-center space-x-2 text-red-700">
+          <Timer className="w-4 h-4" />
+          <span className="text-sm font-medium">⏰ Booking expired - will be cancelled soon</span>
+        </div>
+      </div>
+    );
+  }
+
+  const minutes = Math.floor(timeLeft / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  return (
+    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2 text-orange-700">
+          <Timer className="w-4 h-4 animate-pulse" />
+          <span className="text-sm font-medium">
+            Complete payment in {minutes}:{seconds.toString().padStart(2, '0')} or booking will be cancelled
+          </span>
+        </div>
+        <div className="text-orange-800 font-mono font-bold">
+          {minutes}:{seconds.toString().padStart(2, '0')}
+        </div>
+      </div>
+      <div className="mt-2 bg-orange-200 rounded-full h-2 overflow-hidden">
+        <div 
+          className="bg-orange-500 h-full transition-all duration-1000 ease-linear"
+          style={{ width: `${(timeLeft / (5 * 60 * 1000)) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const Bookings = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +141,40 @@ const Bookings = () => {
       toast.error("Failed to load your bookings");
     } finally {
       setIsLoadingBookings(false);
+    }
+  };
+
+  const handleBookingExpired = (bookingId: string) => {
+    console.log(`Booking ${bookingId} has expired, refreshing booking list...`);
+    // Refresh the booking list to get updated status
+    fetchUserBookings();
+  };
+
+  // Manual cleanup function for testing
+  const triggerManualCleanup = async () => {
+    try {
+      const token = localStorage.getItem('boxcric_token');
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
+      
+      const response = await fetch(`${apiBase}/bookings/cleanup-expired`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Cleanup completed: ${data.expiredCount} expired bookings processed`);
+        fetchUserBookings(); // Refresh the booking list
+      } else {
+        toast.error('Cleanup failed: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Manual cleanup error:', error);
+      toast.error('Failed to trigger cleanup');
     }
   };
 
@@ -147,12 +250,24 @@ const Bookings = () => {
             </Button>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Bookings</h1>
           </div>
-          <Button 
-            className="bg-cricket-green hover:bg-cricket-green/90 w-full sm:w-auto"
-            onClick={() => navigate("/")}
-          >
-            Book New Ground
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              className="bg-cricket-green hover:bg-cricket-green/90 w-full sm:w-auto"
+              onClick={() => navigate("/")}
+            >
+              Book New Ground
+            </Button>
+            {/* Development cleanup button */}
+            {import.meta.env.DEV && (
+              <Button 
+                variant="outline"
+                className="border-orange-500 text-orange-500 hover:bg-orange-50 w-full sm:w-auto"
+                onClick={triggerManualCleanup}
+              >
+                🧹 Force Cleanup
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Bookings Content */}
@@ -216,6 +331,14 @@ const Bookings = () => {
                       <div className="mt-3 text-sm text-gray-600">
                         Booked on {formatDate(booking.createdAt)}
                       </div>
+                      
+                      {/* Countdown Timer for Pending Bookings */}
+                      {booking.status === "pending" && (
+                        <BookingCountdown 
+                          createdAt={booking.createdAt} 
+                          onExpired={() => handleBookingExpired(booking._id)}
+                        />
+                      )}
                     </div>
 
                     <div className="text-left sm:text-right mt-2 sm:mt-0">

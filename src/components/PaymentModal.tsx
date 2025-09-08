@@ -97,7 +97,7 @@ const PaymentModal = ({
             setHoldExpiresAt(expiresAt);
             
             console.log("Temporary hold created for payment:", holdId);
-            toast.success("Slot reserved for 15 minutes during payment!");
+            toast.success("Slot reserved for 5 minutes during payment!");
           }
         } catch (error) {
           console.error("Failed to create temporary hold:", error);
@@ -487,12 +487,12 @@ const PaymentModal = ({
           }
         }, 5000);
 
-        // Stop checking after 15 minutes
+        // Stop checking after 5 minutes
         setTimeout(() => {
           clearInterval(interval);
           setIsProcessing(false);
           toast.warning("Payment check timed out. Please check your booking status.");
-        }, 900000); // 15 minutes
+        }, 300000); // 5 minutes
       }, 5000); // Wait 5 seconds before first check
 
     } catch (error: any) {
@@ -647,7 +647,7 @@ const PaymentModal = ({
 
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
               <Clock className="w-4 h-4" />
-              <span>This booking will expire in 15 minutes if not paid</span>
+              <span>This booking will expire in 5 minutes if not paid</span>
             </div>
           </div>
         </div>

@@ -18,6 +18,7 @@ import bookingRoutes, { adminRouter as adminBookingsRouter } from "./routes/book
 import userRoutes from "./routes/users.js";
 import paymentsRoutes from "./routes/payments.js";
 import { adminRouter as adminLocationsRouter } from "./routes/locations.js";
+import notificationRoutes, { adminRouter as adminNotificationsRouter } from "./routes/notifications.js";
 import { startBookingCleanupService } from "./lib/bookingCleanup.js";
 import { startPeriodicCleanup } from "./lib/bookingUtils.js";
 import Booking from "./models/Booking.js";
@@ -203,6 +204,8 @@ app.use("/api/admin/bookings", adminBookingsRouter);
 app.use("/api/users", userRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/admin/locations", adminLocationsRouter);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin/notifications", adminNotificationsRouter);
 
 // Import health check middleware
 import { healthCheck } from "./lib/healthCheck.js";

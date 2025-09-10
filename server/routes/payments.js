@@ -6,6 +6,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import Booking from "../models/Booking.js";
 import Ground from "../models/Ground.js";
 import { Cashfree, CFEnvironment } from "cashfree-pg";
+import NotificationService from "../services/notificationService.js";
 
 // NOTE: For development, we use placeholder HTTPS URLs since Cashfree requires HTTPS
 // In production, these will be your actual domain URLs
@@ -543,6 +544,25 @@ router.post("/verify-payment", authMiddleware, async (req, res) => {
 
     await booking.save();
     console.log("✅ Booking saved successfully! Status:", booking.status, "Confirmation code:", booking.confirmation?.confirmationCode);
+
+    // Create booking confirmed notification
+    try {
+      const groundName = booking.groundId?.name || (booking.groundId && booking.groundId.name) || 'Unknown Ground';
+      const bookingData = {
+        bookingId: booking.bookingId,
+        groundName,
+        groundId: booking.groundId?._id || booking.groundId,
+        date: booking.bookingDate.toISOString().split('T')[0],
+        timeSlot: `${booking.timeSlot.startTime}-${booking.timeSlot.endTime}`,
+        amount: booking.pricing?.totalAmount
+      };
+      
+      await NotificationService.createBookingNotification(booking.userId, bookingData, 'booking_confirmed');
+      console.log(`📢 Created confirmed booking notification for booking: ${booking.bookingId}`);
+    } catch (notificationError) {
+      console.error('❌ Failed to create confirmed booking notification:', notificationError);
+      // Don't fail the payment verification if notification fails
+    }
 
     // Send booking receipt email after payment confirmation
     try {

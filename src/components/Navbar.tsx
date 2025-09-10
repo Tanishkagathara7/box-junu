@@ -14,16 +14,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "./AuthModal";
+import NotificationPanel from "./NotificationPanel";
 
 interface NavbarProps {
   selectedCity?: string;
   onCitySelect?: () => void;
   onSearch?: (query: string) => void;
   onFilterToggle?: () => void;
-  notifications?: any[];
-  showNotifDropdown?: boolean;
-  setShowNotifDropdown?: (v: boolean) => void;
-  clearNotifications?: () => void;
 }
 
 const Navbar = ({
@@ -31,10 +28,6 @@ const Navbar = ({
   onCitySelect,
   onSearch,
   onFilterToggle,
-  notifications = [],
-  showNotifDropdown = false,
-  setShowNotifDropdown = () => {},
-  clearNotifications = undefined,
 }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -155,157 +148,9 @@ const Navbar = ({
               {/* Auth Section */}
               {isAuthenticated && user ? (
                 <div className="flex items-center space-x-3">
-                  {/* Notification Bell */}
-                  <div className="relative">
-                    <button
-                      onClick={() => {
-                        setShowNotifDropdown(!showNotifDropdown);
-                        // Stop the pulse animation when dropdown is opened
-                        if (!showNotifDropdown && notifications.length > 0) {
-                          const badge = document.querySelector('.animate-pulse');
-                          if (badge) {
-                            badge.classList.remove('animate-pulse');
-                          }
-                        }
-                      }}
-                      className="relative bg-white rounded-full shadow-lg p-2 hover:bg-gray-100 transition-all"
-                      aria-label="Show notifications"
-                    >
-                      <Bell className="w-6 h-6 text-cricket-green" />
-                      {notifications.length > 0 && (
-                        <span className={`absolute -top-1 -right-1 text-white text-xs rounded-full px-1.5 py-0.5 font-bold animate-pulse ${
-                          notifications.some(n => n.status === 'pending') ? 'bg-yellow-500' :
-                          notifications.some(n => n.status === 'cancelled') ? 'bg-red-500' :
-                          'bg-green-500'
-                        }`}>
-                          {notifications.length}
-                        </span>
-                      )}
-                    </button>
-                    {/* Notification Dropdown with overlay and improved style */}
-                    {showNotifDropdown && (
-                      <>
-                        {/* Overlay */}
-                        <div
-                          className="fixed inset-0 bg-black/20 z-40"
-                          onClick={() => setShowNotifDropdown(false)}
-                        />
-                        {/* Dropdown - responsive positioning and sizing */}
-                        <div className="fixed top-20 right-4 sm:right-8 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 animate-fade-in flex flex-col">
-                          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-2xl">
-                            <span className="font-semibold text-base sm:text-lg text-gray-900">Notifications</span>
-                            <button onClick={() => setShowNotifDropdown(false)} className="text-gray-400 hover:text-gray-700 text-xl font-bold p-1">&times;</button>
-                          </div>
-                          <div className="overflow-y-auto max-h-80 sm:max-h-96 px-3 sm:px-4 py-2">
-                            {notifications.length === 0 && (
-                              <div className="text-center text-gray-500 py-8">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                  <Bell className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <p className="text-gray-500 font-medium text-sm sm:text-base">No notifications yet</p>
-                                <p className="text-gray-400 text-xs sm:text-sm mt-1">We'll notify you about booking updates</p>
-                              </div>
-                            )}
-                            {notifications.map((notif) => {
-                              // Get status-specific styling and content
-                              const getStatusConfig = (status: string) => {
-                                switch (status) {
-                                  case 'pending':
-                                    return {
-                                      bgColor: 'bg-yellow-50 border-l-4 border-yellow-500',
-                                      icon: '⏳',
-                                      iconBg: 'bg-yellow-100 text-yellow-700',
-                                      title: 'Booking Pending',
-                                      textColor: 'text-yellow-800'
-                                    };
-                                  case 'confirmed':
-                                    return {
-                                      bgColor: 'bg-green-50 border-l-4 border-green-500',
-                                      icon: '✔️',
-                                      iconBg: 'bg-green-100 text-green-700',
-                                      title: 'Booking Confirmed!',
-                                      textColor: 'text-green-800'
-                                    };
-                                  case 'cancelled':
-                                    return {
-                                      bgColor: 'bg-red-50 border-l-4 border-red-500',
-                                      icon: '❌',
-                                      iconBg: 'bg-red-100 text-red-700',
-                                      title: 'Booking Cancelled',
-                                      textColor: 'text-red-800'
-                                    };
-                                  case 'completed':
-                                    return {
-                                      bgColor: 'bg-blue-50 border-l-4 border-blue-500',
-                                      icon: '✅',
-                                      iconBg: 'bg-blue-100 text-blue-700',
-                                      title: 'Booking Completed',
-                                      textColor: 'text-blue-800'
-                                    };
-                                  default:
-                                    return {
-                                      bgColor: 'bg-gray-50 border-l-4 border-gray-500',
-                                      icon: '📋',
-                                      iconBg: 'bg-gray-100 text-gray-700',
-                                      title: 'Booking Update',
-                                      textColor: 'text-gray-800'
-                                    };
-                                }
-                              };
-
-                              const statusConfig = getStatusConfig(notif.status);
-                              
-                              return (
-                                <div 
-                                  key={notif.id} 
-                                  className={`rounded-lg p-3 sm:p-4 mb-2 flex items-center gap-3 sm:gap-4 hover:bg-gray-50 transition-colors cursor-pointer ${statusConfig.bgColor}`}
-                                  onClick={() => {
-                                    // Navigate to booking details if we have a booking ID
-                                    if (notif.id && notif.id !== 'unknown') {
-                                      window.location.href = `/booking/${notif.id}`;
-                                    }
-                                    setShowNotifDropdown(false);
-                                  }}
-                                >
-                                  <div className="flex-shrink-0">
-                                    <span className={`inline-block w-8 h-8 ${statusConfig.iconBg} rounded-full flex items-center justify-center text-lg sm:text-xl`}>
-                                      {statusConfig.icon}
-                                    </span>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className={`font-semibold text-base sm:text-lg ${statusConfig.textColor}`}>
-                                      {statusConfig.title}
-                                    </div>
-                                    <div className="text-gray-700 text-xs sm:text-sm mt-1 space-y-1">
-                                      <div><b>Ground:</b> {notif.ground}</div>
-                                      <div><b>Date:</b> {notif.date ? new Date(notif.date).toLocaleDateString() : 'Not specified'}</div>
-                                      <div><b>Time:</b> {notif.time}</div>
-                                      {notif.status === 'cancelled' && notif.reason && (
-                                        <div className="text-red-700"><b>Reason:</b> {notif.reason}</div>
-                                      )}
-                                    </div>
-                                    {notif.createdAt && (
-                                      <div className="text-xs text-gray-400 mt-2">
-                                        {new Date(notif.createdAt).toLocaleString()}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {clearNotifications && notifications.length > 0 && (
-                            <button
-                              onClick={() => { clearNotifications(); setShowNotifDropdown(false); }}
-                              className="text-gray-500 hover:text-red-600 text-sm py-3 border-t border-gray-100 w-full bg-transparent font-medium rounded-b-2xl transition-colors hover:bg-red-50"
-                            >
-                              Clear All Notifications
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {/* New Notification Panel */}
+                  <NotificationPanel />
+                  
                   {/* User Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

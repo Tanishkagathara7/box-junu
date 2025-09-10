@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import mongoose from "mongoose";
 import { sendBookingReceiptEmail, sendBookingConfirmationEmail } from "../services/emailService.js";
 import { generateBookingReceiptHTML } from "../templates/bookingReceiptTemplate.js";
+import NotificationService from "../services/notificationService.js";
 import { 
   doTimeRangesOverlap, 
   validateTimeSlot, 
@@ -640,6 +641,25 @@ router.post("/", authMiddleware, async (req, res) => {
     
     try {
       await session.commitTransaction();
+      
+      // Create pending booking notification
+      try {
+        const groundName = ground?.name || 'Unknown Ground';
+        const bookingData = {
+          bookingId: booking.bookingId,
+          groundName,
+          groundId,
+          date: bookingDate,
+          timeSlot: `${startTime}-${endTime}`,
+          amount: totalAmount
+        };
+        
+        await NotificationService.createBookingNotification(userId, bookingData, 'booking_pending');
+        console.log(`📢 Created pending booking notification for booking: ${booking.bookingId}`);
+      } catch (notificationError) {
+        console.error('❌ Failed to create pending booking notification:', notificationError);
+        // Don't fail the booking if notification fails
+      }
       
       // Send booking confirmation email after successful creation
       try {

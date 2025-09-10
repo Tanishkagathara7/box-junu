@@ -223,6 +223,38 @@ export const usersApi = {
     api.delete("/users/account", { data }),
 };
 
+// Notifications API
+export const notificationsApi = {
+  getNotifications: (params?: {
+    page?: number;
+    limit?: number;
+    unreadOnly?: boolean;
+    type?: string;
+  }) => api.get("/notifications", { params }),
+
+  getUnreadCount: () => api.get("/notifications/count"),
+
+  markAsRead: (notificationId: string) => 
+    api.patch(`/notifications/${notificationId}/read`),
+
+  markAllAsRead: () => api.patch("/notifications/read-all"),
+
+  deleteNotification: (notificationId: string) => 
+    api.delete(`/notifications/${notificationId}`),
+};
+
+// Admin Notifications API
+export const adminNotificationsApi = {
+  sendBroadcast: (data: {
+    title: string;
+    message: string;
+    priority?: string;
+    actionUrl?: string;
+  }) => api.post("/admin/notifications/broadcast", data),
+
+  getStats: () => api.get("/admin/notifications/stats"),
+};
+
 // Helper functions
 export const setAuthToken = (token: string) => {
   localStorage.setItem("boxcric_token", token);

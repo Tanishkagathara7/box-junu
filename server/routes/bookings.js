@@ -1747,6 +1747,16 @@ adminRouter.patch("/:id", async (req, res) => {
       "requirements",
       "pricing"
     ];
+    
+    // Get the current booking before updating to compare status changes
+    const currentBooking = await Booking.findById(bookingId)
+      .populate("userId", "name email")
+      .populate("groundId", "name location");
+    
+    if (!currentBooking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+    
     // Only allow updating certain fields
     const updateData = {};
     for (const key of allowedFields) {
@@ -1767,9 +1777,57 @@ adminRouter.patch("/:id", async (req, res) => {
     const booking = await Booking.findByIdAndUpdate(bookingId, updateData, { new: true })
       .populate("userId", "name email")
       .populate("groundId", "name location");
+    
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
+    
+    // Send notification if status changed
+    if (update.status && update.status !== currentBooking.status) {
+      try {
+        const groundName = booking.groundId?.name || 'Ground';
+        const bookingData = {
+          bookingId: booking.bookingId,
+          groundName,
+          groundId: booking.groundId?._id || booking.groundId,
+          date: booking.bookingDate.toISOString().split('T')[0],
+          timeSlot: `${booking.timeSlot.startTime}-${booking.timeSlot.endTime}`,
+          amount: booking.pricing?.totalAmount || 0,
+          reason: update.reason // Allow admin to provide reason for cancellation
+        };
+        
+        let notificationType;
+        switch (update.status) {
+          case 'confirmed':
+            notificationType = 'booking_confirmed';
+            break;
+          case 'cancelled':
+            notificationType = 'booking_cancelled';
+            break;
+          case 'completed':
+            notificationType = 'booking_confirmed'; // Use confirmed template but with custom message
+            bookingData.title = '✅ Booking Completed!';
+            bookingData.message = `Your booking at ${groundName} has been marked as completed. Thank you for choosing us!`;
+            break;
+          default:
+            // Don't send notification for other status changes
+            notificationType = null;
+        }
+        
+        if (notificationType) {
+          await NotificationService.createBookingNotification(
+            booking.userId._id || booking.userId,
+            bookingData,
+            notificationType
+          );
+          console.log(`📢 Created ${notificationType} notification for booking ${booking.bookingId}`);
+        }
+      } catch (notificationError) {
+        console.error('❌ Failed to send status change notification:', notificationError);
+        // Don't fail the booking update if notification fails
+      }
+    }
+    
     res.json({ success: true, booking });
   } catch (error) {
     console.error("Error updating booking:", error);

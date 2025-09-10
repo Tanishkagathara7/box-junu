@@ -5,6 +5,48 @@ import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
+// --- ADMIN ROUTER ---
+// Minimal admin router exposing user listing for admin panel
+const adminRouter = express.Router();
+
+// List users with pagination and optional search
+adminRouter.get("/", async (req, res) => {
+  try {
+    const { page = 1, limit = 50, search = "" } = req.query;
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const users = await User.find(query)
+      .select("name email phone role isActive createdAt")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const total = await User.countDocuments(query);
+
+    res.json({
+      success: true,
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    console.error("Admin users list error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
+  }
+});
+
 // Update user profile
 router.put("/profile", authMiddleware, async (req, res) => {
   try {
@@ -316,3 +358,4 @@ router.delete("/account", authMiddleware, async (req, res) => {
 });
 
 export default router;
+export { adminRouter };

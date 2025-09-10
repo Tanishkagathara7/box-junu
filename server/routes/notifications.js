@@ -1,6 +1,7 @@
 import express from 'express';
 import NotificationService from '../services/notificationService.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { adminAuth } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
@@ -131,9 +132,25 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 // Admin Routes
 const adminRouter = express.Router();
+// Admin: List notifications (most recent first)
+adminRouter.get('/', async (req, res) => {
+  try {
+    const Notification = (await import('../models/Notification.js')).default;
+    const { page = 1, limit = 50 } = req.query;
+    const notifications = await Notification.find({})
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+    const total = await Notification.countDocuments();
+    res.json({ success: true, notifications, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
+  } catch (error) {
+    console.error('Error listing notifications for admin:', error);
+    res.status(500).json({ success: false, message: 'Failed to list notifications' });
+  }
+});
 
 // Send broadcast notification (Admin only)
-adminRouter.post('/broadcast', authMiddleware, async (req, res) => {
+adminRouter.post('/broadcast', adminAuth, async (req, res) => {
   try {
     const user = req.user;
     
@@ -145,7 +162,7 @@ adminRouter.post('/broadcast', authMiddleware, async (req, res) => {
       });
     }
     
-    const { title, message, priority, actionUrl } = req.body;
+    const { title, message, priority, actionUrl, type } = req.body;
     
     if (!title || !message) {
       return res.status(400).json({
@@ -157,8 +174,9 @@ adminRouter.post('/broadcast', authMiddleware, async (req, res) => {
     const result = await NotificationService.createBroadcastNotification(user._id, {
       title,
       message,
-      priority,
-      actionUrl
+      priority: priority || 'medium',
+      actionUrl,
+      type: type || 'admin_broadcast'
     });
     
     res.json(result);
@@ -172,8 +190,73 @@ adminRouter.post('/broadcast', authMiddleware, async (req, res) => {
   }
 });
 
+// Send targeted notification to specific users (Admin only)
+adminRouter.post('/send', adminAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Check if user is admin
+    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+    
+    const { userIds, title, message, priority, actionUrl, type } = req.body;
+    
+    if (!title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and message are required'
+      });
+    }
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'User IDs are required and must be a non-empty array'
+      });
+    }
+    
+    const results = [];
+    
+    for (const userId of userIds) {
+      try {
+        const notification = await NotificationService.createBookingNotification(userId, {
+          title,
+          message,
+          priority: priority || 'medium',
+          actionUrl,
+          adminId: user._id
+        }, type || 'admin_broadcast');
+        results.push({ userId, success: true, notificationId: notification._id });
+      } catch (error) {
+        console.error(`Error creating notification for user ${userId}:`, error);
+        results.push({ userId, success: false, error: error.message });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    
+    res.json({
+      success: true,
+      message: `Sent ${successCount} of ${userIds.length} notifications`,
+      results,
+      sentCount: successCount
+    });
+    
+  } catch (error) {
+    console.error('Error sending targeted notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send targeted notifications'
+    });
+  }
+});
+
 // Get admin notification stats
-adminRouter.get('/stats', authMiddleware, async (req, res) => {
+adminRouter.get('/stats', adminAuth, async (req, res) => {
   try {
     const user = req.user;
     
@@ -217,6 +300,42 @@ adminRouter.get('/stats', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get notification stats'
+    });
+  }
+});
+
+// Temporary admin notification route without auth for testing
+adminRouter.post('/broadcast-test', async (req, res) => {
+  try {
+    console.log('📢 Testing admin broadcast without auth...');
+    console.log('Request body:', req.body);
+    
+    const { title, message, priority, actionUrl, type } = req.body;
+    
+    if (!title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and message are required'
+      });
+    }
+    
+    // Pass null so service won't attempt to set sentBy with an invalid ObjectId
+    const result = await NotificationService.createBroadcastNotification(null, {
+      title,
+      message,
+      priority: priority || 'medium',
+      actionUrl: actionUrl || '/notifications',
+      type: type || 'admin_broadcast'
+    });
+    
+    console.log('✅ Broadcast result:', result);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ Error sending test broadcast notification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send broadcast notification: ' + error.message
     });
   }
 });

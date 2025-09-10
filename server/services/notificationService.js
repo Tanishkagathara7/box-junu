@@ -1,5 +1,6 @@
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
+import mongoose from 'mongoose';
 
 /**
  * Notification Service
@@ -57,6 +58,13 @@ class NotificationService {
           actionUrl = `/booking/${bookingData.bookingId}`;
           break;
           
+        case 'admin_broadcast':
+          title = bookingData.title || '📢 Admin Announcement';
+          message = bookingData.message || 'You have a new message from the admin.';
+          priority = bookingData.priority || 'medium';
+          actionUrl = bookingData.actionUrl || '/notifications';
+          break;
+          
         default:
           throw new Error(`Unknown booking notification type: ${type}`);
       }
@@ -91,6 +99,38 @@ class NotificationService {
   }
   
   /**
+   * Create admin notification for specific user
+   */
+  static async createAdminNotification(userId, adminId, data) {
+    try {
+      const notificationData = {
+        userId,
+        title: data.title,
+        message: data.message,
+        type: data.type || 'admin_broadcast',
+        priority: data.priority || 'medium',
+        sentBy: adminId,
+        data: {
+          actionUrl: data.actionUrl,
+          metadata: data.metadata,
+          bookingId: data.bookingId,
+          groundId: data.groundId,
+          amount: data.amount
+        }
+      };
+      
+      const notification = await Notification.createNotification(notificationData);
+      
+      console.log(`📢 Created admin notification for user ${userId}:`, data.title);
+      return notification;
+      
+    } catch (error) {
+      console.error('Error creating admin notification:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Create admin broadcast notification
    */
   static async createBroadcastNotification(adminId, data) {
@@ -112,12 +152,16 @@ class NotificationService {
         message: data.message,
         type: 'admin_broadcast',
         priority: data.priority || 'medium',
-        sentBy: adminId,
         data: {
           actionUrl: data.actionUrl,
           metadata: data.metadata
         }
       };
+      
+      // Only set sentBy if the provided adminId is a valid ObjectId
+      if (adminId && mongoose.Types.ObjectId.isValid(adminId)) {
+        notificationData.sentBy = adminId;
+      }
       
       const notifications = await Notification.createBroadcastNotification(
         notificationData, 

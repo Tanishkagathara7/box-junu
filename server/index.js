@@ -15,10 +15,11 @@ const __dirname = path.dirname(__filename);
 import authRoutes from "./routes/auth.js";
 import groundRoutes, { adminRouter as adminGroundsRouter } from "./routes/grounds.js";
 import bookingRoutes, { adminRouter as adminBookingsRouter } from "./routes/bookings.js";
-import userRoutes from "./routes/users.js";
+import userRoutes, { adminRouter as adminUsersRouter } from "./routes/users.js";
 import paymentsRoutes from "./routes/payments.js";
 import { adminRouter as adminLocationsRouter } from "./routes/locations.js";
 import notificationRoutes, { adminRouter as adminNotificationsRouter } from "./routes/notifications.js";
+import { adminAuth } from "./middleware/adminAuth.js";
 import { startBookingCleanupService } from "./lib/bookingCleanup.js";
 import { startPeriodicCleanup } from "./lib/bookingUtils.js";
 import Booking from "./models/Booking.js";
@@ -202,9 +203,11 @@ app.use("/api/admin/grounds", adminGroundsRouter);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin/bookings", adminBookingsRouter);
 app.use("/api/users", userRoutes);
+app.use("/api/admin/users", adminUsersRouter);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/admin/locations", adminLocationsRouter);
 app.use("/api/notifications", notificationRoutes);
+// Protect admin notification routes with tolerant admin auth
 app.use("/api/admin/notifications", adminNotificationsRouter);
 
 // Import health check middleware
@@ -212,6 +215,192 @@ import { healthCheck } from "./lib/healthCheck.js";
 
 // Health Check endpoint
 app.get("/api/health", healthCheck);
+
+// Test endpoints for notification system validation
+app.post("/api/test-admin-notification", async (req, res) => {
+  try {
+    console.log('🧪 Testing admin notification creation...');
+    
+    const NotificationService = (await import('./services/notificationService.js')).default;
+    const User = (await import('./models/User.js')).default;
+    
+    // Get all users to send test notification
+    const users = await User.find({ isActive: { $ne: false } }).limit(5); // Limit to 5 for testing
+    
+    if (users.length === 0) {
+      return res.json({
+        success: false,
+        message: 'No users found to send test notification to'
+      });
+    }
+    
+    const results = [];
+    
+    for (const user of users) {
+      try {
+        const notification = await NotificationService.createAdminNotification(
+          user._id,
+          'system', // Admin ID placeholder
+          {
+            title: '🗺️ Test Admin Notification',
+            message: `Hello ${user.name}! This is a test notification from the admin. Your notification system is working correctly.`,
+            type: 'admin_broadcast',
+            priority: 'medium',
+            actionUrl: '/notifications'
+          }
+        );
+        
+        results.push({
+          userId: user._id,
+          userName: user.name,
+          success: true,
+          notificationId: notification._id
+        });
+      } catch (error) {
+        results.push({
+          userId: user._id,
+          userName: user.name,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    
+    res.json({
+      success: true,
+      message: `Test notifications created for ${successCount} of ${users.length} users`,
+      results
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating test admin notification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create test notification: ' + error.message
+    });
+  }
+});
+
+app.post("/api/test-booking-notification", async (req, res) => {
+  try {
+    console.log('🗺️ Testing booking notification creation...');
+    
+    const NotificationService = (await import('./services/notificationService.js')).default;
+    const User = (await import('./models/User.js')).default;
+    
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId is required in request body'
+      });
+    }
+    
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    const testBookingData = {
+      bookingId: 'TEST' + Date.now(),
+      groundName: 'Test Cricket Ground',
+      groundId: 'test-ground-123',
+      date: new Date().toISOString().split('T')[0],
+      timeSlot: '10:00-12:00',
+      amount: 500
+    };
+    
+    const notification = await NotificationService.createBookingNotification(
+      userId,
+      testBookingData,
+      'booking_confirmed'
+    );
+    
+    res.json({
+      success: true,
+      message: 'Test booking notification created successfully',
+      notification: {
+        id: notification._id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type
+      },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating test booking notification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create test booking notification: ' + error.message
+    });
+  }
+});
+
+app.get("/api/debug-notifications/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(`🔍 Debugging notifications for user: ${userId}`);
+    
+    const Notification = (await import('./models/Notification.js')).default;
+    const User = (await import('./models/User.js')).default;
+    
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Get all notifications for this user
+    const notifications = await Notification.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(20);
+    
+    const unreadCount = await Notification.countDocuments({ userId, isRead: false });
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      },
+      notifications: notifications.map(n => ({
+        id: n._id,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        priority: n.priority,
+        isRead: n.isRead,
+        createdAt: n.createdAt,
+        data: n.data
+      })),
+      totalNotifications: notifications.length,
+      unreadCount
+    });
+    
+  } catch (error) {
+    console.error('❌ Error debugging notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to debug notifications: ' + error.message
+    });
+  }
+});
 
 // Root endpoint for deployment health checks
 app.get("/", (req, res) => {

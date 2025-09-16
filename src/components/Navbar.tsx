@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Filter, Menu, X, User, MapPin, LogOut, Heart, BookOpen, Bell, Home, Info, HelpCircle, Settings } from "lucide-react";
+import { Search, SlidersHorizontal, Menu, X, User, MapPin, LogOut, Settings, Bell, Home, Info, HelpCircle, ChevronDown, Heart, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,9 +55,9 @@ const Navbar = ({
   };
 
   const navItems = [
-    { name: "Home", path: "/", icon: Home },
-    { name: "About Us", path: "/about", icon: Info },
-    { name: "Help & Support", path: "/help", icon: HelpCircle },
+    { name: "Home", path: "/" },
+    { name: "About Us", path: "/about" },
+    { name: "Help & Support", path: "/help" },
   ];
 
   const getUserInitials = (name: string) => {
@@ -71,162 +71,173 @@ const Navbar = ({
 
   return (
     <>
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* BoxCric Logo - Positioned at the far left */}
-            <div className="flex-shrink-0 mr-4">
-              <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-cricket rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-md">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white rounded-lg flex items-center justify-center">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-cricket-green rounded-md"></div>
+      {/* Premium Minimal Cricket Navbar */}
+      <nav className="sticky top-0 z-50 bg-gradient-to-r from-emerald-50 via-white to-emerald-50 backdrop-blur-xl border-b border-emerald-100/50 shadow-lg">
+        {/* Glassmorphism overlay */}
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm"></div>
+        
+        <div className="w-full relative">
+          <div className="flex items-center justify-between h-16 pl-4 pr-4 sm:pr-6 lg:pr-8">
+            
+            {/* Logo - Farest Top Left */}
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+              <Link to="/" className="flex items-center group">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200 shadow-lg">
+                  <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
+                    <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
                   </div>
                 </div>
-                <div className="text-left">
-                  <h1 className="text-xl sm:text-2xl font-bold font-display text-cricket-green group-hover:text-cricket-green/80 transition-colors">
+                <div>
+                  <h1 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition-colors duration-200">
                     BoxCric
                   </h1>
-                  <p className="hidden xs:block text-xs text-gray-500 -mt-0.5 sm:-mt-1 font-medium">Book. Play. Win.</p>
+                  <p className="text-xs text-emerald-600 font-semibold -mt-1 tracking-wide">PREMIUM GROUNDS</p>
                 </div>
               </Link>
             </div>
 
-            {/* Desktop Navigation - Centered */}
-            <div className="hidden md:flex items-center space-x-4 lg:space-x-8 flex-1 justify-center">
+            {/* Navigation Items - Properly Centered */}
+            <div className="hidden lg:flex items-center justify-center space-x-10 flex-1 ml-64">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.path}
-                  className="text-gray-700 hover:text-cricket-green transition-colors duration-200 font-medium relative group"
+                  className="text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200 relative group py-2"
                 >
                   {item.name}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cricket-green transition-all duration-200 group-hover:w-full"></span>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300 ease-out"></span>
                 </Link>
               ))}
             </div>
 
-            {/* Mobile menu button placeholder - actual menu is at the bottom */}
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-4">
+              
+              {/* Location Selector - Sleek Pill */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="hidden md:flex items-center space-x-2 h-10 px-4 bg-white/80 backdrop-blur border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/50 rounded-full transition-all duration-200 shadow-sm"
+                  >
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-medium text-gray-700">{selectedCity || "Location"}</span>
+                    <ChevronDown className="w-3 h-3 text-gray-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={onCitySelect}>
+                    Select City
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {/* Search Bar and Actions - Right side */}
-            <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
-              {/* Location Selector */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onCitySelect}
-                className="flex items-center space-x-2 hover:bg-cricket-green/5 hover:border-cricket-green/20 transition-colors"
-              >
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm font-medium">{selectedCity || "Select City"}</span>
-              </Button>
+              {/* Centered Search Bar */}
+              <div className="hidden md:block">
+                <form onSubmit={handleSearch} className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search cricket grounds…"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        // Trigger search on every keystroke for instant results
+                        onSearch?.(e.target.value);
+                      }}
+                      className="w-80 pl-10 pr-10 h-10 bg-white/90 border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-xl shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          onSearch?.("");
+                        }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
 
-              {/* Search */}
-              <form onSubmit={handleSearch} className="relative">
-                <Input
-                  type="text"
-                  placeholder="Search grounds..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-72 pl-10 pr-4 border-gray-200 focus:border-cricket-green focus:ring-cricket-green/20"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              </form>
-
-              {/* Filter */}
+              {/* Filters CTA Button */}
               {onFilterToggle && (
                 <Button
-                  variant="outline"
-                  size="sm"
                   onClick={onFilterToggle}
-                  className="flex items-center space-x-2 hover:bg-cricket-green/5 hover:border-cricket-green/20 transition-colors"
+                  className="hidden md:flex items-center space-x-2 h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
                 >
-                  <Filter className="w-4 h-4" />
-                  <span className="hidden lg:inline">Filters</span>
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Filters</span>
                 </Button>
               )}
 
-              {/* Auth Section */}
+              {/* Notification Bell */}
+              {isAuthenticated && user && (
+                <NotificationPanel />
+              )}
+
+              {/* User Profile - Far Right */}
               {isAuthenticated && user ? (
-                <div className="flex items-center space-x-3">
-                  {/* New Notification Panel */}
-                  <NotificationPanel />
-                  
-                  {/* User Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex items-center space-x-3 h-10 hover:bg-gray-100"
-                      >
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={user.avatar} />
-                          <AvatarFallback className="bg-cricket-green text-white text-sm font-semibold">
-                            {getUserInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="hidden lg:block text-left">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.name.split(" ")[0]}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {user.email}
-                          </div>
-                        </div>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64">
-                      <div className="px-3 py-2 border-b border-gray-100">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback className="bg-cricket-green text-white">
-                              {getUserInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-gray-900">{user.name}</div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <DropdownMenuItem onClick={() => navigate("/profile")}>
-                        <User className="w-4 h-4 mr-3" />
-                        My Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate("/profile/bookings")}>
-                        <BookOpen className="w-4 h-4 mr-3" />
-                        My Bookings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate("/favorites")}>
-                        <Heart className="w-4 h-4 mr-3" />
-                        Favorites
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate("/settings")}>
-                        Settings
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                        <LogOut className="w-4 h-4 mr-3" />
-                        Sign Out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center space-x-2 h-10 px-3 py-2 rounded-full hover:bg-gray-100 transition-all duration-200"
+                    >
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={user.avatar} />
+                        <AvatarFallback className="bg-emerald-600 text-white text-sm font-semibold">
+                          {getUserInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <ChevronDown className="w-3 h-3 text-gray-500 hidden lg:block" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-4 py-3 border-b">
+                      <div className="font-medium text-gray-900">{user.name}</div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
+                    </div>
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      <User className="w-4 h-4 mr-2" />
+                      My Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/profile/bookings")}>
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      My Bookings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/favorites")}>
+                      <Heart className="w-4 h-4 mr-2" />
+                      Favorites
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/settings")}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <div className="flex items-center space-x-3">
                   <Button
                     variant="ghost"
-                    size="sm"
                     onClick={() => handleAuthClick("login")}
-                    className="hover:text-cricket-green transition-colors"
+                    className="h-10 px-4 text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200"
                   >
                     Login
                   </Button>
                   <Button
-                    size="sm"
-                    className="bg-cricket-green hover:bg-cricket-green/90 text-white font-semibold px-6"
                     onClick={() => handleAuthClick("register")}
+                    className="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Sign Up
                   </Button>
@@ -234,163 +245,120 @@ const Navbar = ({
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`md:hidden flex items-center justify-center p-3 rounded-full transition-colors shadow-md absolute top-3 right-4 z-[201] ${
-                isMenuOpen 
-                  ? "bg-cricket-green text-white hover:bg-cricket-green/90" 
-                  : "bg-white hover:bg-cricket-green/10 text-cricket-green border border-gray-200"
-              }`}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle mobile menu"
-            >
-              {isMenuOpen ? (
-                <X className="w-7 h-7" />
-              ) : (
-                <Menu className="w-7 h-7" />
-              )}
-            </Button>
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden p-2 h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+              >
+                {isMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </Button>
           </div>
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="md:hidden fixed inset-0 z-[200] overflow-y-auto bg-white/95 backdrop-blur-lg shadow-xl">
-              <div className="space-y-6 px-4 py-6 pt-20 max-h-screen overflow-y-auto relative">
+            <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-40">
+              <div className="px-4 py-6 space-y-4">
+                {/* Mobile Search */}
+                <form onSubmit={handleSearch}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search cricket grounds…"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        // Trigger search on every keystroke for instant results
+                        onSearch?.(e.target.value);
+                      }}
+                      className="w-full pl-10 pr-10 h-10 bg-white border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-xl"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          onSearch?.("");
+                        }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </form>
 
-                {/* Mobile Location and Filter */}
-                <div className="flex flex-col space-y-3">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={onCitySelect}
-                    className="flex items-center justify-center space-x-3 py-3 h-12"
-                  >
-                    <MapPin className="w-5 h-5" />
-                    <span className="text-base font-medium">
-                      {selectedCity || "Select City"}
-                    </span>
-                  </Button>
-                  {onFilterToggle && (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={onFilterToggle}
-                      className="flex items-center justify-center space-x-3 py-3 h-12"
+                {/* Mobile Location */}
+                <Button
+                  variant="outline"
+                  onClick={onCitySelect}
+                  className="w-full justify-start h-10 bg-white border-emerald-200 hover:bg-emerald-50"
+                >
+                  <MapPin className="w-4 h-4 mr-2 text-emerald-600" />
+                  {selectedCity || "Select Location"}
+                </Button>
+
+                {/* Mobile Navigation */}
+                <div className="space-y-2">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      className="flex items-center px-4 py-3 text-gray-700 hover:text-emerald-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setIsMenuOpen(false)}
                     >
-                      <Filter className="w-5 h-5" />
-                      <span className="text-base">Filters</span>
-                    </Button>
-                  )}
+                      {item.name}
+                    </Link>
+                  ))}
                 </div>
 
                 {/* Mobile Auth */}
                 {isAuthenticated && user ? (
-                  <div className="space-y-4 pt-6 border-t border-gray-200">
-                    {/* User Info at Top */}
-                    <div className="flex items-center space-x-4 px-4 py-3 bg-gray-50 rounded-lg">
-                      <Avatar className="w-14 h-14">
-                        <AvatarImage src={user.avatar} />
-                        <AvatarFallback className="bg-cricket-green text-white font-semibold text-lg">
-                          {getUserInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-base">{user.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Combined Navigation Items */}
-                    <div className="grid grid-cols-1 gap-2">
-                      {navItems.map((item) => (
-                        <Link
-                          key={item.name}
-                          to={item.path}
-                          className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 font-medium text-base shadow-sm border border-gray-100"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <item.icon className="w-5 h-5 mr-3 text-cricket-green" />
-                          {item.name}
-                        </Link>
-                      ))}
-                    </div>
-
-                    {/* User-specific links */}
-                    <div className="grid grid-cols-1 gap-2">
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base shadow-sm border border-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <User className="w-5 h-5 mr-3 text-cricket-green" />
-                        My Profile
-                      </Link>
-                      <Link
-                        to="/profile/bookings"
-                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base shadow-sm border border-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <BookOpen className="w-5 h-5 mr-3 text-cricket-green" />
-                        My Bookings
-                      </Link>
-                      <Link
-                        to="/favorites"
-                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base shadow-sm border border-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Heart className="w-5 h-5 mr-3 text-cricket-green" />
-                        Favorites
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center px-4 py-4 text-gray-700 hover:text-cricket-green hover:bg-gray-50 rounded-lg transition-colors duration-200 text-base shadow-sm border border-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Settings className="w-5 h-5 mr-3 text-cricket-green" />
-                        Settings
-                      </Link>
-                    </div>
-
-                    <div className="border-t border-gray-200 my-2"></div>
-
+                  <div className="pt-4 border-t border-gray-200 space-y-2">
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-4 py-3 text-gray-700 hover:text-emerald-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User className="w-4 h-4 mr-3" />
+                      Profile
+                    </Link>
                     <button
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center w-full text-left px-4 py-4 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 text-base shadow-sm border border-red-100 mt-2"
+                      className="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 w-full text-left"
                     >
-                      <LogOut className="w-5 h-5 mr-3 text-red-500" />
+                      <LogOut className="w-4 h-4 mr-3" />
                       Sign Out
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-3 pt-6 border-t border-gray-200">
+                  <div className="pt-4 border-t border-gray-200 space-y-2">
                     <Button
-                      variant="outline"
-                      size="lg"
-                      className="py-3 h-12 text-base shadow-sm border border-gray-200 hover:border-cricket-green/50 hover:text-cricket-green transition-all"
+                      variant="ghost"
                       onClick={() => {
                         handleAuthClick("login");
                         setIsMenuOpen(false);
                       }}
+                      className="w-full justify-start h-10 text-gray-700 hover:text-emerald-600"
                     >
-                      <User className="w-5 h-5 mr-3 text-cricket-green" />
                       Login
                     </Button>
                     <Button
-                      size="lg"
-                      className="py-3 h-12 bg-cricket-green hover:bg-cricket-green/90 text-white font-semibold text-base shadow-sm"
                       onClick={() => {
                         handleAuthClick("register");
                         setIsMenuOpen(false);
                       }}
+                      className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl"
                     >
-                      <User className="w-5 h-5 mr-3 text-white" />
                       Sign Up
                     </Button>
                   </div>

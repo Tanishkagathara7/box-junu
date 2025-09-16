@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
-import { Star, MapPin, Clock, Users, Wifi, Car, Shield, Heart, Eye, Calendar, Zap } from "lucide-react";
+import { Star, MapPin, Car, Eye, Zap, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import ShareModal from "@/components/ShareModal";
 
 interface GroundCardProps {
   ground: any; // API ground data structure
@@ -15,6 +16,8 @@ interface GroundCardProps {
 const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
 
   const handleImageNavigation = (direction: "prev" | "next") => {
     if (direction === "next") {
@@ -64,18 +67,19 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
   // Get available slots or default to 1 if not available
   const availableSlots = ground.availableSlots ?? 1;
 
+
   return (
     <Card
-      className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-white/90 backdrop-blur-sm hover:bg-white/95 w-full max-w-full"
+      className="group hover:shadow-2xl hover:shadow-cricket-green/10 transition-all duration-300 border-2 border-transparent hover:border-cricket-green/20 bg-white/90 backdrop-blur-sm hover:bg-white w-full max-w-full relative overflow-hidden transform hover:-translate-y-2 hover:scale-[1.02] active:scale-[0.98] active:shadow-lg cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onViewDetails?.(ground._id)}
     >
       <div className="relative">
         {/* Image Carousel with swipe support */}
         <div
-          className="relative h-48 xs:h-52 sm:h-56 md:h-48 lg:h-56 overflow-hidden cursor-pointer"
+          className="relative h-48 xs:h-52 sm:h-56 md:h-48 lg:h-56 overflow-hidden cursor-pointer bg-gradient-to-br from-cricket-green/5 to-transparent"
           {...swipeHandlers}
-          onClick={() => onViewDetails?.(ground._id)}
         >
           <img
             src={
@@ -87,6 +91,8 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             draggable={false}
           />
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Image Navigation */}
           {ground.images && ground.images.length > 1 && (
             <>
@@ -129,7 +135,20 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
               </div>
             </>
           )}
-          {/* Availability Status - Removed as per request */}
+          {/* Share Button */}
+          <div className="absolute top-3 right-3 z-20">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsShareModalOpen(true);
+              }}
+              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-200 group/share hover:scale-110"
+              aria-label="Share ground"
+            >
+              <Share2 className="w-4 h-4 text-gray-600 group-hover/share:text-cricket-green transition-all duration-200 group-hover/share:rotate-12" />
+            </button>
+          </div>
+          
           {/* Price Display */}
           <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
             <div className="text-gray-600 text-right">
@@ -142,8 +161,11 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
           {/* Header */}
           <div className="mb-3 sm:mb-4">
             <h3 
-              className="font-bold text-lg sm:text-xl lg:text-xl text-gray-900 group-hover:text-cricket-green transition-colors duration-200 mb-2 sm:mb-3 cursor-pointer"
-              onClick={() => onViewDetails?.(ground._id)}
+              className="font-bold text-lg sm:text-xl lg:text-xl text-gray-900 group-hover:text-cricket-green transition-all duration-300 mb-2 sm:mb-3 cursor-pointer transform group-hover:translate-x-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(ground._id);
+              }}
             >
               {ground.name}
             </h3>
@@ -159,21 +181,14 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
               )}
             </div>
           </div>
-          {/* Rating and Info */}
-          <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between mb-3 sm:mb-4 space-y-2 xs:space-y-0 xs:space-x-3">
+          {/* Rating */}
+          <div className="mb-3 sm:mb-4">
             <div className="flex items-center space-x-2">
               <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
               <span className="font-bold text-lg sm:text-xl">{ground.rating.average}</span>
               <span className="text-sm text-gray-500">
                 ({ground.rating.count})
               </span>
-            </div>
-            <div className="flex items-center space-x-3 text-sm text-gray-600">
-              <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4" />
-                <span>{ground.features.capacity}</span>
-              </div>
-
             </div>
           </div>
           {/* Enhanced Amenities */}
@@ -183,7 +198,7 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
                 <Badge
                   key={index}
                   variant="secondary"
-                  className="text-xs flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 transition-colors px-2 py-1"
+                  className="text-xs flex items-center space-x-1 bg-gray-100 hover:bg-cricket-green/10 hover:border-cricket-green/20 hover:text-cricket-green transition-all duration-200 px-2 py-1 cursor-pointer transform hover:scale-105"
                 >
                   {getAmenityIcon(amenity)}
                   <span className="text-xs">{amenity}</span>
@@ -221,16 +236,22 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-gray-300 hover:border-cricket-green hover:text-cricket-green py-3 h-12 text-base"
-              onClick={() => onViewDetails?.(ground._id)}
+              className="flex-1 border-gray-300 hover:border-cricket-green hover:text-cricket-green hover:bg-cricket-green/5 py-3 h-12 text-base transition-all duration-200 transform hover:scale-105 active:scale-95 hover:shadow-md"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(ground._id);
+              }}
             >
-              <Eye className="w-5 h-5 mr-2" />
+              <Eye className="w-5 h-5 mr-2 group-hover:animate-pulse" />
               View Details
             </Button>
             <Button
               size="lg"
-              className="flex-1 bg-cricket-green hover:bg-cricket-green/90 text-white font-semibold py-3 h-12 text-base"
-              onClick={() => onBook?.(ground._id)}
+              className="flex-1 bg-cricket-green hover:bg-cricket-green/90 text-white font-semibold py-3 h-12 text-base transition-all duration-200 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-cricket-green/25"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBook?.(ground._id);
+              }}
               disabled={availableSlots === 0}
             >
               {availableSlots === 0 ? "Fully Booked" : "Book Now"}
@@ -238,6 +259,13 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
           </div>
         </CardContent>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        ground={ground}
+      />
     </Card>
   );
 };

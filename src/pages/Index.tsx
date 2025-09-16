@@ -162,6 +162,7 @@ const Index = () => {
   // Add loading state for initial page load
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     // Simulate initial page load
@@ -176,6 +177,29 @@ const Index = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle('dark');
   };
+
+  // Scroll event listener for back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowBackToTop(scrollTop > 300); // Show button when scrolled more than 300px
+    };
+
+    // Throttle scroll events for better performance
+    let ticking = false;
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', throttledHandleScroll);
+  }, []);
 
   // Test API connection on mount
   useEffect(() => {
@@ -223,12 +247,23 @@ const Index = () => {
     return () => document.removeEventListener('click', smoothScroll);
   }, []);
 
-  // Fetch grounds when city or filters change
+  // Debounced search effect
+  useEffect(() => {
+    if (!selectedCity) return;
+    
+    const timeoutId = setTimeout(() => {
+      fetchGrounds();
+    }, 300); // Wait 300ms after user stops typing
+    
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Fetch grounds when city or filters change (immediate)
   useEffect(() => {
     if (selectedCity) {
       fetchGrounds();
     }
-  }, [selectedCity, searchQuery, filters]);
+  }, [selectedCity, filters]);
 
   // Restore selected city from localStorage on mount
   useEffect(() => {
@@ -379,6 +414,13 @@ const Index = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    // Provide immediate visual feedback
+    if (query.trim() === '') {
+      // If search is cleared, reset to show all grounds
+      console.log('🔍 Search cleared, showing all grounds');
+    } else {
+      console.log('🔍 Searching for:', query);
+    }
   };
 
   const handleFiltersChange = (newFilters: FilterOptions) => {
@@ -565,16 +607,16 @@ const Index = () => {
         <section className="py-8 sm:py-12 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             {/* Section Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
-              <div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                  Cricket Grounds in {selectedCity.name}
-                </h2>
-                <p className="text-gray-600 text-sm sm:text-base">
-                  {realGrounds.length} amazing grounds available for booking
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
+            <div className="mb-6 sm:mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                    Cricket Grounds in {selectedCity.name}
+                  </h2>
+                  <p className="text-gray-600 text-sm sm:text-base">
+                    {realGrounds.length} amazing grounds available for booking
+                  </p>
+                </div>
                 {Object.values(filters).some((value, index) =>
                   index === 0
                     ? (value as [number, number])[0] !== 500 ||
@@ -591,18 +633,10 @@ const Index = () => {
                               ? value > 0
                               : value !== "all",
                 ) && (
-                  <Badge variant="secondary" className="text-sm">
+                  <Badge variant="secondary" className="text-sm self-start sm:self-center">
                     Filters Applied
                   </Badge>
                 )}
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setIsFilterPanelOpen(true)}
-                  className="flex items-center space-x-2 py-2 px-4 h-10 sm:h-11"
-                >
-                  <span className="text-sm sm:text-base">Filters</span>
-                </Button>
               </div>
             </div>
 
@@ -1004,20 +1038,29 @@ const Index = () => {
       <NewBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
-        ground={selectedGround}
+        selectedGround={selectedGround}
         onBookingCreated={handleBookingCreated}
       />
 
       {/* Scroll to Top Button */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-6 right-6 bg-cricket-green hover:bg-cricket-green/90 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40"
-        aria-label="Scroll to top"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-        </svg>
-      </button>
+      {showBackToTop && (
+        <button
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Add a small haptic feedback simulation
+            navigator.vibrate && navigator.vibrate(50);
+          }}
+          className="fixed bottom-6 right-6 bg-gradient-to-r from-cricket-green to-green-600 hover:from-cricket-green/90 hover:to-green-600/90 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 z-40 animate-in fade-in slide-in-from-bottom-4 backdrop-blur-sm border border-white/10"
+          aria-label="Scroll to top"
+          title="Back to top"
+        >
+          <svg className="w-5 h-5 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+          {/* Pulse animation */}
+          <div className="absolute inset-0 rounded-full bg-cricket-green opacity-20 animate-ping"></div>
+        </button>
+      )}
     </div>
   );
 };

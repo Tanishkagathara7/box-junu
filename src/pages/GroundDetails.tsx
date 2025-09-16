@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import NewBookingModal from "@/components/NewBookingModal";
+import ShareModal from "@/components/ShareModal";
 import { groundsApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ const GroundDetails = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [slotRetryCount, setSlotRetryCount] = useState(0);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>(() => {
     try {
       const saved = localStorage.getItem('boxcric_notifications');
@@ -363,8 +365,13 @@ const GroundDetails = () => {
               />
               {isFavorite ? "Saved" : "Save"}
             </Button>
-            <Button variant="outline" size="sm">
-              <Share2 className="w-4 h-4 mr-2" />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsShareModalOpen(true)}
+              className="group hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white hover:border-transparent transition-all duration-300 hover:shadow-lg hover:shadow-blue-200/50 transform hover:scale-105"
+            >
+              <Share2 className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
               Share
             </Button>
           </div>
@@ -737,38 +744,27 @@ const GroundDetails = () => {
                 </div>
                 <div>
                   <span className="text-gray-600">Phone:</span>
-                  <div className="font-medium">{safeGround.owner.contact}</div>
+                  <div className="font-medium">
+                    {safeGround.owner.contact ? 
+                      safeGround.owner.contact.slice(0, 3) + '********' + safeGround.owner.contact.slice(-2) 
+                      : '***********'
+                    }
+                  </div>
                 </div>
                 <div>
                   <span className="text-gray-600">Email:</span>
-                  <div className="font-medium">{safeGround.owner.email}</div>
+                  <div className="font-medium">
+                    {safeGround.owner.email ? 
+                      safeGround.owner.email.split('@')[0].slice(0, 2) + '****@' + safeGround.owner.email.split('@')[1]
+                      : '****@*****.com'
+                    }
+                  </div>
                 </div>
                 {safeGround.owner.verified && (
                   <Badge className="bg-green-100 text-green-800">
                     Verified Owner
                   </Badge>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Bookings:</span>
-                  <span className="font-medium">{safeGround.totalBookings}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Average Rating:</span>
-                  <span className="font-medium">{safeGround.rating.average}/5</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Response Rate:</span>
-                  <span className="font-medium text-green-600">98%</span>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -779,8 +775,15 @@ const GroundDetails = () => {
       <NewBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
-        ground={safeGround}
+        selectedGround={safeGround}
         onBookingCreated={handleBookingCreated}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        ground={safeGround}
       />
     </div>
   );

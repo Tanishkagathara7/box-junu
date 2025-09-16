@@ -60,9 +60,9 @@ export default function NotificationPanel() {
             20%, 40% { transform: rotate(10deg); }
           }
           @keyframes pulseGlow {
-            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
           }
           @keyframes slideDown {
             from { 
@@ -112,22 +112,22 @@ export default function NotificationPanel() {
           style={{
             position: 'relative',
             padding: '12px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: unreadCount > 0 ? '2px solid #f44336' : '2px solid transparent',
+            backgroundColor: unreadCount > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+            border: unreadCount > 0 ? '2px solid #10b981' : '2px solid transparent',
             borderRadius: '12px',
             cursor: 'pointer',
             fontSize: '22px',
-            color: unreadCount > 0 ? '#f44336' : '#666',
+            color: unreadCount > 0 ? '#10b981' : '#666',
             transition: 'all 0.3s ease',
             backdropFilter: 'blur(10px)',
             animation: unreadCount > 0 ? 'bellShake 2s ease-in-out infinite' : 'none'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(244, 67, 54, 0.1)';
+            e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)';
             e.currentTarget.style.transform = 'scale(1.1)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)';
             e.currentTarget.style.transform = 'scale(1)';
           }}
           title={`${unreadCount} new notifications`}
@@ -139,7 +139,7 @@ export default function NotificationPanel() {
                 position: 'absolute',
                 top: '-8px',
                 right: '-8px',
-                backgroundColor: '#f44336',
+                backgroundColor: '#dc2626',
                 color: 'white',
                 borderRadius: '50%',
                 padding: '4px 8px',
@@ -151,7 +151,7 @@ export default function NotificationPanel() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '2px solid white',
-                boxShadow: '0 2px 8px rgba(244, 67, 54, 0.3)',
+                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
                 animation: 'pulseGlow 2s infinite'
               }}
             >
@@ -186,7 +186,7 @@ export default function NotificationPanel() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: 'white'
             }}>
               <div>
@@ -354,19 +354,20 @@ export default function NotificationPanel() {
                         padding: '16px 20px',
                         borderBottom: index < recentNotifications.length - 1 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
                         cursor: 'pointer',
-                        backgroundColor: !notification.isRead ? colors.bg : 'white',
+                        backgroundColor: !notification.isRead ? '#dcfce7' : 'white',
                         transition: 'all 0.3s ease',
                         position: 'relative',
-                        borderLeft: !notification.isRead ? `4px solid ${colors.border}` : '4px solid transparent',
-                        animationDelay: `${index * 0.1}s`
+                        borderLeft: !notification.isRead ? '6px solid #10b981' : '4px solid transparent',
+                        animationDelay: `${index * 0.1}s`,
+                        border: !notification.isRead ? '1px solid #10b981' : '1px solid #e5e7eb'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = !notification.isRead ? colors.bg : '#f8fafc';
+                        e.currentTarget.style.backgroundColor = !notification.isRead ? '#bbf7d0' : '#f8fafc';
                         e.currentTarget.style.transform = 'translateX(2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = !notification.isRead ? colors.bg : 'white';
+                        e.currentTarget.style.backgroundColor = !notification.isRead ? '#dcfce7' : 'white';
                         e.currentTarget.style.transform = 'translateX(0)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}
@@ -380,9 +381,11 @@ export default function NotificationPanel() {
                           width: '36px',
                           height: '36px',
                           borderRadius: '12px',
-                          backgroundColor: !notification.isRead ? colors.border + '20' : '#f1f5f9',
+                          backgroundColor: !notification.isRead ? '#10b981' : '#f1f5f9',
+                          color: !notification.isRead ? 'white' : '#64748b',
                           fontSize: '16px',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          border: !notification.isRead ? '2px solid white' : 'none'
                         }}>
                           {typeIcons[notification.type] || '🔔'}
                         </div>
@@ -494,7 +497,7 @@ export default function NotificationPanel() {
                                   }}
                                   style={{
                                     padding: '4px 8px',
-                                    backgroundColor: '#3b82f6',
+                                    backgroundColor: '#059669',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '6px',
@@ -504,10 +507,10 @@ export default function NotificationPanel() {
                                     transition: 'all 0.2s ease'
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#2563eb';
+                                    e.currentTarget.style.backgroundColor = '#047857';
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#3b82f6';
+                                    e.currentTarget.style.backgroundColor = '#059669';
                                   }}
                                 >
                                   ✓
@@ -535,7 +538,7 @@ export default function NotificationPanel() {
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '12px',
@@ -547,15 +550,15 @@ export default function NotificationPanel() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.4)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
                   }}
                 >
                   👁 View all notifications

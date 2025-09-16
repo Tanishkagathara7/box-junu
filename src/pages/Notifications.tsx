@@ -13,11 +13,7 @@ export default function Notifications() {
     refreshNotifications,
   } = useNotifications();
 
-  const [message, setMessage] = useState("");
-
   useEffect(() => {
-    console.log("📱 Notifications page loaded for user:", user?.id);
-    console.log("📊 Notifications data:", { notifications, unreadCount, loading });
     refreshNotifications();
   }, []);
 
@@ -26,158 +22,96 @@ export default function Notifications() {
 
   const handleMarkAllRead = () => {
     markAllAsRead();
-    setMessage("✅ All notifications marked as read!");
   };
 
   const handleRefresh = () => {
     refreshNotifications();
-    setMessage("🔄 Refreshed notifications");
-  };
-
-  // Debug function to test notifications
-  const handleTestUserNotifications = async () => {
-    if (!user?.id) {
-      setMessage("❌ No user ID available");
-      return;
-    }
-
-    console.log("🧪 Testing user notifications for:", user.id);
-    try {
-      const response = await fetch(`http://localhost:3001/api/notifications/${user.id}`);
-      const result = await response.json();
-      
-      console.log("🔍 Direct API result:", result);
-      setMessage(`🔍 API returned ${result.notifications?.length || 0} notifications`);
-    } catch (error) {
-      console.error("❌ Direct API test failed:", error);
-      setMessage("❌ API test failed: " + error.message);
-    }
-  };
-
-  // Create a test notification for this specific user
-  const handleCreateTestForMe = async () => {
-    if (!user?.id) {
-      setMessage("❌ No user ID available");
-      return;
-    }
-
-    console.log("🔭 Creating test notification for user:", user.id, user.name);
-    try {
-      const response = await fetch('http://localhost:3001/api/test-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user.id })
-      });
-      
-      const result = await response.json();
-      console.log("📨 Create test result:", result);
-      
-      if (result.success) {
-        setMessage("✅ Test notification created for you! Refreshing...");
-        setTimeout(() => {
-          refreshNotifications();
-        }, 1000);
-      } else {
-        setMessage("❌ Failed to create test: " + result.message);
-      }
-    } catch (error) {
-      console.error("❌ Create test error:", error);
-      setMessage("❌ Create test failed: " + error.message);
-    }
-  };
-
-  // Create a test notification for ALL users
-  const handleCreateTestForAll = async () => {
-    console.log("📢 Creating test notification for ALL users...");
-    try {
-      const response = await fetch('http://localhost:3001/api/create-test-for-all', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      const result = await response.json();
-      console.log("🎉 Create for all result:", result);
-      
-      if (result.success) {
-        setMessage("✅ Test notification created for ALL users! Refreshing...");
-        setTimeout(() => {
-          refreshNotifications();
-        }, 1000);
-      } else {
-        setMessage("❌ Failed to create for all: " + result.message);
-      }
-    } catch (error) {
-      console.error("❌ Create for all error:", error);
-      setMessage("❌ Create for all failed: " + error.message);
-    }
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
-        🔔 Notifications
-      </h1>
-      
-      {user && (
-        <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
-          <strong>User:</strong> {user.name} ({user.id})
-        </div>
-      )}
-      
-      {message && (
-        <div style={{ 
-          padding: '12px', 
-          marginBottom: '20px', 
-          backgroundColor: '#e3f2fd', 
-          border: '1px solid #2196f3',
-          borderRadius: '4px'
-        }}>
-          {message}
-        </div>
-      )}
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', backgroundColor: '#f8fffe', minHeight: '100vh' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        color: 'white',
+        padding: '24px',
+        borderRadius: '16px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 20px rgba(16, 185, 129, 0.2)'
+      }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          🔔 Notifications
+        </h1>
+        <p style={{ fontSize: '16px', opacity: '0.9', margin: 0 }}>
+          Stay updated with your booking status and important updates
+        </p>
+      </div>
 
       <div style={{ marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>📊 Stats</h2>
+        <h2 style={{ fontSize: '20px', marginBottom: '16px', color: '#065f46', fontWeight: '600' }}>📊 Stats</h2>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '20px' }}>
-          <div style={{ padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '4px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ 
+            padding: '20px', 
+            backgroundColor: 'white', 
+            borderRadius: '12px', 
+            textAlign: 'center',
+            border: '2px solid #d1fae5',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+          }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#059669' }}>
               {notifications.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#666' }}>Total</div>
+            <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Total</div>
           </div>
           
-          <div style={{ padding: '15px', backgroundColor: '#ffebee', borderRadius: '4px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#d32f2f' }}>
+          <div style={{ 
+            padding: '20px', 
+            backgroundColor: unreadCount > 0 ? '#fef3f2' : 'white', 
+            borderRadius: '12px', 
+            textAlign: 'center',
+            border: unreadCount > 0 ? '2px solid #fecaca' : '2px solid #d1fae5',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+          }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: unreadCount > 0 ? '#dc2626' : '#059669' }}>
               {unreadCount}
             </div>
-            <div style={{ fontSize: '14px', color: '#666' }}>Unread</div>
+            <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Unread</div>
           </div>
           
-          <div style={{ padding: '15px', backgroundColor: '#e8f5e8', borderRadius: '4px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2e7d32' }}>
+          <div style={{ 
+            padding: '20px', 
+            backgroundColor: 'white', 
+            borderRadius: '12px', 
+            textAlign: 'center',
+            border: '2px solid #d1fae5',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+          }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#059669' }}>
               {readNotifications.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#666' }}>Read</div>
+            <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Read</div>
           </div>
         </div>
         
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
           <button
             onClick={handleRefresh}
             disabled={loading}
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#2196f3',
+              padding: '10px 20px',
+              backgroundColor: '#10b981',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer'
+              borderRadius: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)',
+              transition: 'all 0.2s ease',
+              opacity: loading ? 0.7 : 1
             }}
+            onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#059669')}
+            onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#10b981')}
           >
             {loading ? '⏳ Loading...' : '🔄 Refresh'}
           </button>
@@ -186,59 +120,23 @@ export default function Notifications() {
             <button
               onClick={handleMarkAllRead}
               style={{
-                padding: '8px 16px',
-                backgroundColor: '#4caf50',
+                padding: '10px 20px',
+                backgroundColor: '#059669',
                 color: 'white',
                 border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.2)',
+                transition: 'all 0.2s ease'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#047857'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#059669'}
             >
               ✅ Mark all read
             </button>
           )}
-          
-          <button
-            onClick={handleTestUserNotifications}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#ff9800',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            🧪 Test API
-          </button>
-          
-          <button
-            onClick={handleCreateTestForMe}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#9c27b0',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            🔭 Create Test
-          </button>
-          
-          <button
-            onClick={handleCreateTestForAll}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#4caf50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            📢 For All Users
-          </button>
         </div>
       </div>
 
@@ -248,10 +146,17 @@ export default function Notifications() {
           <p>Loading notifications...</p>
         </div>
       ) : notifications.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f9f9f9', borderRadius: '4px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '10px' }}>🔔</div>
-          <h3 style={{ margin: '10px 0', color: '#333' }}>No notifications yet</h3>
-          <p style={{ color: '#666' }}>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 40px', 
+          backgroundColor: 'white', 
+          borderRadius: '16px',
+          border: '2px solid #d1fae5',
+          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.1)'
+        }}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🔔</div>
+          <h3 style={{ margin: '0 0 12px 0', color: '#065f46', fontSize: '22px', fontWeight: '600' }}>No notifications yet</h3>
+          <p style={{ color: '#6b7280', fontSize: '16px', lineHeight: '1.5', margin: 0 }}>
             You'll receive notifications here about your bookings, offers, and updates.
           </p>
         </div>
@@ -259,50 +164,114 @@ export default function Notifications() {
         <div>
           {/* Unread Notifications */}
           {unreadNotifications.length > 0 && (
-            <div style={{ marginBottom: '30px' }}>
-              <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#d32f2f' }}>
+            <div style={{ marginBottom: '32px' }}>
+              <h2 style={{ 
+                fontSize: '20px', 
+                marginBottom: '16px', 
+                color: '#dc2626',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
                 🔴 Unread Notifications ({unreadCount})
               </h2>
               
-              <div>
-                {unreadNotifications.map((notification) => (
-                  <div key={notification._id} style={{
-                    padding: '15px',
-                    border: '2px solid #2196f3',
-                    borderRadius: '4px',
-                    marginBottom: '10px',
-                    backgroundColor: '#e3f2fd'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: '#1976d2' }}>
-                          {notification.title}
-                        </h3>
-                        <p style={{ margin: '0 0 10px 0', color: '#333' }}>
-                          {notification.message}
-                        </p>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
-                          Type: {notification.type} | Priority: {notification.priority} | 
-                          Created: {new Date(notification.createdAt).toLocaleString()}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {unreadNotifications.map((notification) => {
+                  const getTypeIcon = (type: string) => {
+                    switch(type) {
+                      case 'booking_pending': return '⏰';
+                      case 'booking_confirmed': return '✅';
+                      case 'booking_cancelled': return '❌';
+                      case 'payment_success': return '💳';
+                      case 'payment_failed': return '⚠️';
+                      default: return '📢';
+                    }
+                  };
+                  
+                  return (
+                    <div key={notification._id} style={{
+                      padding: '20px',
+                      border: '2px solid #10b981',
+                      borderRadius: '12px',
+                      backgroundColor: '#dcfce7',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
+                      transition: 'all 0.2s ease',
+                      borderLeft: '6px solid #10b981'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '16px' }}>
+                        <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                          <div style={{
+                            fontSize: '24px',
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            borderRadius: '8px',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            border: '2px solid white'
+                          }}>
+                            {getTypeIcon(notification.type)}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <h3 style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#065f46', fontSize: '16px' }}>
+                              {notification.title}
+                            </h3>
+                            <p style={{ margin: '0 0 12px 0', color: '#374151', fontSize: '14px', lineHeight: '1.5' }}>
+                              {notification.message}
+                            </p>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: '#6b7280',
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: '12px'
+                            }}>
+                              <span style={{ 
+                                backgroundColor: '#e5f3ff', 
+                                color: '#0369a1', 
+                                padding: '2px 8px', 
+                                borderRadius: '4px',
+                                fontWeight: '500'
+                              }}>
+                                {notification.type?.replace('_', ' ')}
+                              </span>
+                              <span>{new Date(notification.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</span>
+                            </div>
+                          </div>
                         </div>
+                        <button
+                          onClick={() => markAsRead(notification._id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            transition: 'all 0.2s ease',
+                            whiteSpace: 'nowrap'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
+                        >
+                          ✓ Mark read
+                        </button>
                       </div>
-                      <button
-                        onClick={() => markAsRead(notification._id)}
-                        style={{
-                          padding: '4px 8px',
-                          backgroundColor: '#4caf50',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        ✓ Mark read
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -310,32 +279,84 @@ export default function Notifications() {
           {/* Read Notifications */}
           {readNotifications.length > 0 && (
             <div>
-              <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#666' }}>
+              <h2 style={{ 
+                fontSize: '20px', 
+                marginBottom: '16px', 
+                color: '#059669',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
                 ✅ Read Notifications ({readNotifications.length})
               </h2>
               
-              <div>
-                {readNotifications.map((notification) => (
-                  <div key={notification._id} style={{
-                    padding: '15px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    marginBottom: '10px',
-                    backgroundColor: '#f5f5f5',
-                    opacity: 0.7
-                  }}>
-                    <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: '#666' }}>
-                      {notification.title}
-                    </h3>
-                    <p style={{ margin: '0 0 10px 0', color: '#666' }}>
-                      {notification.message}
-                    </p>
-                    <div style={{ fontSize: '12px', color: '#999' }}>
-                      Type: {notification.type} | Priority: {notification.priority} | 
-                      Created: {new Date(notification.createdAt).toLocaleString()}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {readNotifications.map((notification) => {
+                  const getTypeIcon = (type: string) => {
+                    switch(type) {
+                      case 'booking_pending': return '⏰';
+                      case 'booking_confirmed': return '✅';
+                      case 'booking_cancelled': return '❌';
+                      case 'payment_success': return '💳';
+                      case 'payment_failed': return '⚠️';
+                      default: return '📢';
+                    }
+                  };
+                  
+                  return (
+                    <div key={notification._id} style={{
+                      padding: '16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      backgroundColor: 'white',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+                      opacity: 0.8
+                    }}>
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{
+                          fontSize: '20px',
+                          backgroundColor: '#f3f4f6',
+                          borderRadius: '6px',
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {getTypeIcon(notification.type)}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: '0 0 6px 0', fontWeight: '500', color: '#374151', fontSize: '14px' }}>
+                            {notification.title}
+                          </h3>
+                          <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '13px' }}>
+                            {notification.message}
+                          </p>
+                          <div style={{ 
+                            fontSize: '11px', 
+                            color: '#9ca3af',
+                            display: 'flex',
+                            gap: '8px'
+                          }}>
+                            <span style={{ 
+                              backgroundColor: '#f3f4f6', 
+                              padding: '2px 6px', 
+                              borderRadius: '3px'
+                            }}>
+                              {notification.type?.replace('_', ' ')}
+                            </span>
+                            <span>{new Date(notification.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

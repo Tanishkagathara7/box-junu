@@ -77,27 +77,33 @@ const Navbar = ({
         <div className="absolute inset-0 bg-white/60 backdrop-blur-sm"></div>
         
         <div className="w-full relative">
-          <div className="flex items-center justify-between h-16 pl-4 pr-4 sm:pr-6 lg:pr-8">
+          <div className="flex items-center justify-between h-16 px-4">
             
-            {/* Logo - Farest Top Left */}
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+            {/* Logo - Mobile Responsive */}
+            <div className="flex items-center">
               <Link to="/" className="flex items-center group">
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200 shadow-lg">
-                  <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
-                    <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-105 transition-transform duration-200 shadow-lg">
+                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white rounded-sm flex items-center justify-center">
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-600 rounded-full"></div>
                   </div>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition-colors duration-200">
+                <div className="hidden sm:block">
+                  <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition-colors duration-200">
                     BoxCric
                   </h1>
                   <p className="text-xs text-emerald-600 font-semibold -mt-1 tracking-wide">PREMIUM GROUNDS</p>
                 </div>
+                {/* Mobile Logo Text */}
+                <div className="block sm:hidden">
+                  <h1 className="text-lg font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition-colors duration-200">
+                    BoxCric
+                  </h1>
+                </div>
               </Link>
             </div>
 
-            {/* Navigation Items - Properly Centered */}
-            <div className="hidden lg:flex items-center justify-center space-x-10 flex-1 ml-64">
+            {/* Navigation Items - Desktop Only */}
+            <div className="hidden lg:flex items-center justify-center space-x-10 flex-1">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -111,7 +117,7 @@ const Navbar = ({
             </div>
 
             {/* Right Side Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               
               {/* Location Selector - Sleek Pill */}
               <DropdownMenu>
@@ -164,7 +170,7 @@ const Navbar = ({
                 </form>
               </div>
 
-              {/* Filters CTA Button */}
+              {/* Filters CTA Button - Desktop */}
               {onFilterToggle && (
                 <Button
                   onClick={onFilterToggle}
@@ -174,20 +180,33 @@ const Navbar = ({
                   <span>Filters</span>
                 </Button>
               )}
-
-              {/* Notification Bell */}
-              {isAuthenticated && user && (
-                <NotificationPanel />
+              
+              {/* Filters Button - Mobile */}
+              {onFilterToggle && (
+                <Button
+                  onClick={onFilterToggle}
+                  className="md:hidden p-2 h-10 w-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </Button>
               )}
 
-              {/* User Profile - Far Right */}
+              {/* Notification Bell - Hidden on Mobile */}
+              {isAuthenticated && user && (
+                <div className="hidden md:block">
+                  <NotificationPanel />
+                </div>
+              )}
+
+              {/* User Profile - Hidden on Mobile */}
               {isAuthenticated && user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center space-x-2 h-10 px-3 py-2 rounded-full hover:bg-gray-100 transition-all duration-200"
-                    >
+                <div className="hidden md:block">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center space-x-2 h-10 px-3 py-2 rounded-full hover:bg-gray-100 transition-all duration-200"
+                      >
                       <Avatar className="w-8 h-8">
                         <AvatarImage src={user.avatar} />
                         <AvatarFallback className="bg-emerald-600 text-white text-sm font-semibold">
@@ -226,8 +245,9 @@ const Navbar = ({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               ) : (
-                <div className="flex items-center space-x-3">
+                <div className="hidden md:flex items-center space-x-3">
                   <Button
                     variant="ghost"
                     onClick={() => handleAuthClick("login")}
@@ -243,14 +263,12 @@ const Navbar = ({
                   </Button>
                 </div>
               )}
-            </div>
-
               {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                className="lg:hidden p-2 h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors duration-200 ml-2"
               >
                 {isMenuOpen ? (
                   <X className="w-5 h-5" />
@@ -258,109 +276,198 @@ const Navbar = ({
                   <Menu className="w-5 h-5" />
                 )}
               </Button>
+            </div>
           </div>
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-40">
-              <div className="px-4 py-6 space-y-4">
-                {/* Mobile Search */}
-                <form onSubmit={handleSearch}>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Search cricket grounds…"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        // Trigger search on every keystroke for instant results
-                        onSearch?.(e.target.value);
-                      }}
-                      className="w-full pl-10 pr-10 h-10 bg-white border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-xl"
-                    />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSearchQuery("");
-                          onSearch?.("");
-                        }}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+            <div className="lg:hidden absolute top-16 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-emerald-100/50 shadow-2xl z-40">
+              <div className="px-4 py-6 space-y-5 max-h-[calc(100vh-4rem)] overflow-y-auto">
+                {/* Mobile Auth - At Top */}
+                {isAuthenticated && user && (
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100">
+                    {/* User Info Header */}
+                    <div className="flex items-center mb-4 pb-3 border-b border-emerald-200">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-green-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
+                        <User className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 text-base">{user.name}</h4>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                      </div>
+                    </div>
+                    
+                    {/* User Actions */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        to="/profile/bookings"
+                        className="flex flex-col items-center px-3 py-3 text-gray-700 hover:text-emerald-600 hover:bg-white/60 active:bg-emerald-100 rounded-xl transition-all duration-200 group text-center"
+                        onClick={() => setIsMenuOpen(false)}
                       >
-                        <X className="w-4 h-4" />
+                        <BookOpen className="w-5 h-5 mb-1 text-gray-500 group-hover:text-emerald-600 transition-colors" />
+                        <span className="text-xs font-medium">Bookings</span>
+                      </Link>
+                      <Link
+                        to="/favorites"
+                        className="flex flex-col items-center px-3 py-3 text-gray-700 hover:text-emerald-600 hover:bg-white/60 active:bg-emerald-100 rounded-xl transition-all duration-200 group text-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Heart className="w-5 h-5 mb-1 text-gray-500 group-hover:text-emerald-600 transition-colors" />
+                        <span className="text-xs font-medium">Favorites</span>
+                      </Link>
+                      <Link
+                        to="/profile"
+                        className="flex flex-col items-center px-3 py-3 text-gray-700 hover:text-emerald-600 hover:bg-white/60 active:bg-emerald-100 rounded-xl transition-all duration-200 group text-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User className="w-5 h-5 mb-1 text-gray-500 group-hover:text-emerald-600 transition-colors" />
+                        <span className="text-xs font-medium">Profile</span>
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex flex-col items-center px-3 py-3 text-gray-700 hover:text-emerald-600 hover:bg-white/60 active:bg-emerald-100 rounded-xl transition-all duration-200 group text-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Settings className="w-5 h-5 mb-1 text-gray-500 group-hover:text-emerald-600 transition-colors" />
+                        <span className="text-xs font-medium">Settings</span>
+                      </Link>
+                    </div>
+                    
+                    {/* Sign Out Button */}
+                    <div className="mt-4 pt-3 border-t border-emerald-200">
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center justify-center w-full px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 active:bg-red-100 rounded-xl transition-all duration-200 group"
+                      >
+                        <LogOut className="w-4 h-4 mr-2 text-red-500 group-hover:text-red-600 transition-colors" />
+                        <span className="text-sm font-medium">Sign Out</span>
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mobile Search Section */}
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100 space-y-3">
+                  <div className="text-sm font-semibold text-emerald-700 flex items-center mb-2">
+                    <Search className="w-4 h-4 mr-2" />
+                    Search & Explore
+                  </div>
+                  
+                  {/* Mobile Search Bar */}
+                  <form onSubmit={handleSearch} className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search cricket grounds..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          // Trigger search on every keystroke for instant results
+                          onSearch?.(e.target.value);
+                        }}
+                        className="w-full pl-10 pr-10 h-12 bg-white/90 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-300 rounded-xl shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400 text-base"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery("");
+                            onSearch?.("");
+                          }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                          <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      )}
+                    </div>
+                  </form>
+
+                  {/* Location and Filters Section */}
+                  <div className="flex space-x-2">
+                    {/* Mobile Location */}
+                    <Button
+                      variant="outline"
+                      onClick={onCitySelect}
+                      className="flex-1 justify-center h-11 bg-white/80 backdrop-blur border-emerald-200 hover:bg-white hover:border-emerald-400 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-center"
+                    >
+                      <MapPin className="w-4 h-4 mr-2 text-emerald-600" />
+                      <span className="text-sm font-medium truncate">{selectedCity || "Location"}</span>
+                    </Button>
+
+                    {/* Mobile Filters */}
+                    {onFilterToggle && (
+                      <Button
+                        onClick={() => {
+                          onFilterToggle();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex-1 justify-center h-11 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+                      >
+                        <SlidersHorizontal className="w-4 h-4 mr-2" />
+                        <span className="text-sm font-semibold">Filters</span>
+                      </Button>
                     )}
                   </div>
-                </form>
-
-                {/* Mobile Location */}
-                <Button
-                  variant="outline"
-                  onClick={onCitySelect}
-                  className="w-full justify-start h-10 bg-white border-emerald-200 hover:bg-emerald-50"
-                >
-                  <MapPin className="w-4 h-4 mr-2 text-emerald-600" />
-                  {selectedCity || "Select Location"}
-                </Button>
-
-                {/* Mobile Navigation */}
-                <div className="space-y-2">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      className="flex items-center px-4 py-3 text-gray-700 hover:text-emerald-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
                 </div>
 
-                {/* Mobile Auth */}
-                {isAuthenticated && user ? (
-                  <div className="pt-4 border-t border-gray-200 space-y-2">
-                    <Link
-                      to="/profile"
-                      className="flex items-center px-4 py-3 text-gray-700 hover:text-emerald-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <User className="w-4 h-4 mr-3" />
-                      Profile
-                    </Link>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 w-full text-left"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Sign Out
-                    </button>
+                {/* Navigation Section */}
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-4 border border-gray-100 space-y-2">
+                  <div className="text-sm font-semibold text-gray-700 flex items-center mb-3">
+                    <Home className="w-4 h-4 mr-2" />
+                    Quick Navigation
                   </div>
-                ) : (
-                  <div className="pt-4 border-t border-gray-200 space-y-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        handleAuthClick("login");
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full justify-start h-10 text-gray-700 hover:text-emerald-600"
-                    >
-                      Login
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleAuthClick("register");
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl"
-                    >
-                      Sign Up
-                    </Button>
+                  {/* Mobile Navigation */}
+                  {navItems.map((item, index) => {
+                    const icons = [Home, Info, HelpCircle];
+                    const Icon = icons[index] || Home;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className="flex items-center px-4 py-3 text-gray-700 hover:text-emerald-600 hover:bg-emerald-50/80 active:bg-emerald-100 rounded-xl transition-all duration-200 group bg-white border border-gray-100/60 shadow-sm hover:shadow-md hover:border-emerald-200"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Icon className="w-5 h-5 mr-3 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+                        <span className="text-base font-medium group-hover:font-semibold transition-all">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Non-authenticated users */}
+                {!isAuthenticated && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+                    <div className="text-center mb-4">
+                      <h4 className="font-semibold text-gray-900 mb-1">Welcome to BoxCric!</h4>
+                      <p className="text-sm text-gray-600">Sign in to book your favorite grounds</p>
+                    </div>
+                    <div className="space-y-3">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          handleAuthClick("login");
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full h-12 text-gray-700 hover:text-blue-600 hover:bg-white/60 font-medium rounded-xl border border-gray-200 transition-all duration-200"
+                      >
+                        <User className="w-5 h-5 mr-2" />
+                        Login
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          handleAuthClick("register");
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        <User className="w-5 h-5 mr-2" />
+                        Sign Up
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

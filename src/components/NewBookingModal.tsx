@@ -1312,8 +1312,102 @@ const NewBookingModal: React.FC<NewBookingModalProps> = ({
         
         {/* BookMyShow-style Sticky Summary Footer */}
         {selectedGround && selectedDate && selectedTimeSlots.length > 0 && (
-          <div className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 text-white p-4 shadow-2xl">
-            <div className="flex items-center justify-between">
+          <div className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 text-white p-3 sm:p-4 shadow-2xl">
+            {/* Mobile Layout - Vertical Stacking */}
+            <div className="flex flex-col sm:hidden gap-3">
+              {/* Booking Summary - Compact for Mobile */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm truncate">{selectedGround.name}</div>
+                      <div className="text-xs text-green-100 truncate">{selectedGround.location.area || selectedGround.location.address}</div>
+                    </div>
+                  </div>
+                  
+                  {Array.isArray(selectedGround?.price?.ranges) && selectedGround.price.ranges.length > 0 && (
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-lg font-bold text-white">
+                        ₹{Math.min(...selectedGround.price.ranges.map(r => r.perHour))}
+                      </div>
+                      <div className="text-xs text-green-100">per hour</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Date, Time & Players - Mobile */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-sm">{format(selectedDate, 'EEE, MMM d')}</div>
+                    <div className="text-xs text-green-100 truncate">
+                      {selectedTimeSlots.length > 1 
+                        ? `${selectedTimeSlots[0].split('-')[0]} - ${selectedTimeSlots[selectedTimeSlots.length - 1].split('-')[1]}` 
+                        : selectedTimeSlots[0]
+                      }
+                    </div>
+                  </div>
+                </div>
+                
+                {playerCount && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
+                      <Users className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">{playerCount}</div>
+                      <div className="text-xs text-green-100">Players</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Action Button - Full Width on Mobile */}
+              <div className="pt-2">
+                {step === 'details' ? (
+                  <Button
+                    onClick={handleBook}
+                    disabled={!playerCount || !contactName || !contactPhone || isCreatingBooking}
+                    className="w-full bg-white text-green-600 hover:bg-green-50 font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 text-base"
+                  >
+                    {isCreatingBooking ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
+                        <span>Creating Booking...</span>
+                      </div>
+                    ) : (
+                      <span>Proceed to Payment</span>
+                    )}
+                  </Button>
+                ) : step === 'datetime' && selectedTimeSlots.length > 0 ? (
+                  <Button
+                    onClick={() => setStep('details')}
+                    className="w-full bg-white text-green-600 hover:bg-green-50 font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-base"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Continue to Booking Details</span>
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </Button>
+                ) : (
+                  <div className="text-center py-2">
+                    <div className="text-sm text-green-100">
+                      Select date & time to continue
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Desktop Layout - Original Horizontal */}
+            <div className="hidden sm:flex items-center justify-between">
               {/* Booking Summary */}
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">

@@ -486,90 +486,79 @@ const Index = () => {
         clearNotifications={clearNotifications}
       />
 
-      {/* Enhanced Hero Section */}
-      <section className="relative py-8 sm:py-12 md:py-16 lg:py-20 px-3 sm:px-4 md:px-6 overflow-hidden">
-        {/* Dynamic Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cricket-green/20 via-transparent to-sky-blue/20">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
-        </div>
-        
-        {/* Animated Cricket Elements - Better mobile positioning */}
-        <div className="absolute top-6 left-2 animate-float hidden sm:block">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cricket-green/20 rounded-full flex items-center justify-center">
-            <span className="text-lg sm:text-xl">🏏</span>
-          </div>
-        </div>
-        <div className="absolute top-16 sm:top-32 right-2 sm:right-4 animate-float hidden sm:block" style={{ animationDelay: '1s' }}>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-cricket-yellow/20 rounded-full flex items-center justify-center">
-            <span className="text-base sm:text-lg">⚾</span>
-          </div>
-        </div>
-        <div className="absolute bottom-8 sm:bottom-10 left-1/4 animate-float hidden sm:block" style={{ animationDelay: '2s' }}>
-          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-sky-blue/20 rounded-full flex items-center justify-center">
-            <span className="text-sm sm:text-base">🏟️</span>
-          </div>
-        </div>
+      {/* Simplified Hero Section */}
+      <section className="relative py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 md:px-8 overflow-hidden">
+        {/* Simplified Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-white to-blue-50/30"></div>
 
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          {/* Main Heading */}
-          <div className="relative mb-4 sm:mb-6 md:mb-8">
-            <div className="absolute inset-0 bg-gradient-cricket opacity-20 blur-3xl rounded-full"></div>
-            <h1 className="relative text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold font-display text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
+          {/* Main Heading - Consistent Design */}
+          <div className="relative mb-8 sm:mb-10 md:mb-12">
+            <h1 className="relative text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-gray-900 mb-6 sm:mb-8 md:mb-10 leading-tight px-4 sm:px-6">
               Book Your Perfect{" "}
-              <span className="block xs:inline text-transparent bg-gradient-to-r from-cricket-green via-cricket-yellow to-sky-blue bg-clip-text animate-pulse">
+              <span className="block xs:inline text-transparent bg-gradient-to-r from-emerald-600 via-emerald-700 to-blue-600 bg-clip-text">
                 Cricket Ground
               </span>
             </h1>
-            <p className="text-sm xs:text-base sm:text-lg md:text-xl text-gray-600 mb-4 sm:mb-6 md:mb-8 max-w-sm xs:max-w-md sm:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed px-3 sm:px-4">
+            <p className="text-lg xs:text-xl sm:text-2xl md:text-3xl text-gray-700 font-medium mb-8 sm:mb-10 md:mb-12 max-w-md xs:max-w-lg sm:max-w-4xl lg:max-w-5xl mx-auto leading-relaxed px-6 sm:px-8">
               Discover amazing box cricket grounds near you. From premium facilities to budget-friendly options, 
               find the perfect pitch for your game in just a few clicks.
             </p>
           </div>
 
-          {/* Animated Stats */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 md:mb-12 max-w-4xl mx-auto px-3 sm:px-4">
-            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105">
-              <CardContent className="p-3 xs:p-4 sm:p-5 lg:p-6 text-center">
-                <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-cricket-green/10 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                  <Trophy className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-green" />
+          {/* Enhanced Stat Cards with Better Hierarchy */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-6 xs:gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12 md:mb-16 max-w-5xl mx-auto px-4 sm:px-6">
+            <Card className="border-0 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 xs:p-5 sm:p-6 lg:p-8 text-center relative">
+                <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-6 shadow-lg">
+                  <Trophy className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-emerald-600" />
                 </div>
-                <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.grounds}+</h3>
-                <p className="text-gray-600 font-medium text-xs xs:text-sm lg:text-base">Premium Cricket Grounds</p>
+                <h3 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-2 sm:mb-3 drop-shadow-sm">{heroStats.grounds}+</h3>
+                <p className="text-gray-700 font-bold text-sm xs:text-base lg:text-lg">Premium Cricket Grounds</p>
+                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-100/30 rounded-full -mr-8 -mt-8"></div>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105">
-              <CardContent className="p-3 xs:p-4 sm:p-5 lg:p-6 text-center">
-                <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-cricket-yellow/10 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                  <Users className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-yellow" />
+            <Card className="border-0 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 xs:p-5 sm:p-6 lg:p-8 text-center relative">
+                <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-yellow-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-6 shadow-lg">
+                  <Users className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-orange-600" />
                 </div>
-                <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.players}+</h3>
-                <p className="text-gray-600 font-medium text-xs xs:text-sm lg:text-base">Happy Players</p>
+                <h3 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-2 sm:mb-3 drop-shadow-sm">{heroStats.players}+</h3>
+                <p className="text-gray-700 font-bold text-sm xs:text-base lg:text-lg">Happy Players</p>
+                <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-100/30 rounded-full -mr-8 -mt-8"></div>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105 xs:col-span-2 sm:col-span-1">
-              <CardContent className="p-3 xs:p-4 sm:p-5 lg:p-6 text-center">
-                <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-sky-blue/10 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                  <Play className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-sky-blue" />
+            <Card className="border-0 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 rounded-2xl overflow-hidden xs:col-span-2 sm:col-span-1">
+              <CardContent className="p-4 xs:p-5 sm:p-6 lg:p-8 text-center relative">
+                <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-6 shadow-lg">
+                  <Play className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-blue-600" />
                 </div>
-                <h3 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.bookings}+</h3>
-                <p className="text-gray-600 font-medium text-xs xs:text-sm lg:text-base">Successful Bookings</p>
+                <h3 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-2 sm:mb-3 drop-shadow-sm">{heroStats.bookings}+</h3>
+                <p className="text-gray-700 font-bold text-sm xs:text-base lg:text-lg">Successful Bookings</p>
+                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/30 rounded-full -mr-8 -mt-8"></div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center items-center gap-x-3 xs:gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-500 px-3 sm:px-4">
-            <div className="flex items-center space-x-1.5 xs:space-x-2">
-              <Shield className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-cricket-green flex-shrink-0" />
-              <span className="whitespace-nowrap">100% Secure Booking</span>
+          {/* Enhanced Trust Indicators */}
+          <div className="flex flex-wrap justify-center items-center gap-x-6 xs:gap-x-8 gap-y-4 text-sm sm:text-base px-3 sm:px-4">
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-emerald-50 to-green-50 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-sm">
+                <Shield className="w-5 h-5 text-white flex-shrink-0" />
+              </div>
+              <span className="whitespace-nowrap font-bold text-gray-800">100% Secure Booking</span>
             </div>
-            <div className="flex items-center space-x-1.5 xs:space-x-2">
-              <Clock className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-cricket-green flex-shrink-0" />
-              <span className="whitespace-nowrap">Instant Confirmation</span>
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-sky-50 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                <Clock className="w-5 h-5 text-white flex-shrink-0" />
+              </div>
+              <span className="whitespace-nowrap font-bold text-gray-800">Instant Confirmation</span>
             </div>
-            <div className="flex items-center space-x-1.5 xs:space-x-2">
-              <Star className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-cricket-green flex-shrink-0" />
-              <span className="whitespace-nowrap">Verified Grounds</span>
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300">
+              <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                <Star className="w-5 h-5 text-white flex-shrink-0" />
+              </div>
+              <span className="whitespace-nowrap font-bold text-gray-800">Verified Grounds</span>
             </div>
           </div>
         </div>
@@ -587,46 +576,110 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Grounds Listing */}
+      {/* Grounds Listing - Premium Enhanced */}
       {selectedCity && (
-        <section className="py-8 sm:py-12 px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Section Header */}
-            <div className="mb-6 sm:mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                    Cricket Grounds in {selectedCity.name}
-                  </h2>
-                  <p className="text-gray-600 text-sm sm:text-base">
-                    {realGrounds.length} amazing grounds available for booking
-                  </p>
+        <section className="py-16 sm:py-20 px-6 sm:px-8 bg-gradient-to-br from-emerald-50/30 via-white to-blue-50/20 relative overflow-hidden">
+          {/* Background Decorations */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23059669%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
+          
+          {/* Floating Cricket Elements */}
+          <div className="absolute top-10 right-10 animate-float hidden lg:block">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-2xl">🏟️</span>
+            </div>
+          </div>
+          <div className="absolute bottom-20 left-10 animate-float hidden lg:block" style={{ animationDelay: '1s' }}>
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-xl">🏏</span>
+            </div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto relative z-10">
+            {/* Premium Section Header */}
+            <div className="mb-12 sm:mb-16">
+              <div className="text-center mb-8 sm:mb-10">
+                {/* City Badge */}
+                <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-sm font-bold mb-6 shadow-lg transform hover:scale-105 transition-all duration-300">
+                  <span className="text-lg">📍</span>
+                  <span>{selectedCity.name}</span>
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                 </div>
-                {Object.values(filters).some((value, index) =>
-                  index === 0
-                    ? (value as [number, number])[0] !== 500 ||
-                      (value as [number, number])[1] !== 2000
-                    : index === 1
-                      ? value !== 25
-                      : index === 2
-                        ? (value as string[]).length > 0
-                        : index === 3
-                          ? value !== "all"
-                          : index >= 4 && index <= 5
-                            ? value === true
-                            : index === 6
-                              ? value > 0
-                              : value !== "all",
-                ) && (
-                  <Badge variant="secondary" className="text-sm self-start sm:self-center">
-                    Filters Applied
-                  </Badge>
-                )}
+                
+                {/* Main Heading with Enhanced Design */}
+                <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 mb-6 leading-tight">
+                  <span className="block text-2xl sm:text-3xl font-medium text-gray-600 mb-2">Discover Amazing</span>
+                  <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-blue-600 bg-clip-text text-transparent">
+                    Cricket Grounds
+                  </span>
+                </h2>
+                
+                {/* Results Counter with Animation */}
+                <div className="flex items-center justify-center gap-4 mb-8">
+                  <div className="bg-white rounded-2xl px-6 py-4 shadow-lg border border-emerald-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <span className="text-2xl font-bold text-emerald-700">{realGrounds.length}</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-gray-900">Available Grounds</p>
+                        <p className="text-xs text-gray-500">Ready to book now</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Enhanced Trust Indicators */}
+                <div className="flex justify-center items-center gap-3 sm:gap-5 lg:gap-8 px-4 py-2">
+                  <div className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-white to-green-50 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg border border-green-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0 min-w-fit">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-white font-bold text-sm">✓</span>
+                    </div>
+                    <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 whitespace-nowrap">Verified</span>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-white to-yellow-50 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg border border-yellow-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0 min-w-fit">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-white text-sm font-bold">⚡</span>
+                    </div>
+                    <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 whitespace-nowrap">Instant</span>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-white to-blue-50 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg border border-blue-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0 min-w-fit">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-white text-sm font-bold">🔒</span>
+                    </div>
+                    <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 whitespace-nowrap">Secure</span>
+                  </div>
+                </div>
               </div>
+              
+              {/* Filter Status Badge - Enhanced */}
+              {Object.values(filters).some((value, index) =>
+                index === 0
+                  ? (value as [number, number])[0] !== 500 ||
+                    (value as [number, number])[1] !== 2000
+                  : index === 1
+                    ? value !== 25
+                    : index === 2
+                      ? (value as string[]).length > 0
+                      : index === 3
+                        ? value !== "all"
+                        : index >= 4 && index <= 5
+                          ? value === true
+                          : index === 6
+                            ? value > 0
+                            : value !== "all",
+              ) && (
+                <div className="flex justify-center mb-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-200 rounded-full shadow-md">
+                    <span className="text-orange-600">🔍</span>
+                    <span className="text-sm font-semibold text-orange-700">Filters Applied</span>
+                    <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Quick Filters */}
-            <div className="flex flex-wrap gap-2 mb-6 sm:mb-8 px-1">
+            {/* Quick Filters - Enhanced with icons */}
+            <div className="flex flex-wrap gap-3 mb-8 sm:mb-10 px-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -634,67 +687,71 @@ const Index = () => {
                   setFilters({ ...filters, priceRange: [500, 1000] })
                 }
                 className={cn(
-                  "text-xs sm:text-sm py-2 px-2.5 xs:px-3 h-8 xs:h-9 sm:h-10 touch-target",
-                  filters.priceRange[1] <= 1000 &&
-                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
+                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
+                  filters.priceRange[1] <= 1000
+                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
+                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
                 )}
               >
-                Budget Friendly
+                💰 Budget Friendly
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFilters({ ...filters, lighting: true })}
                 className={cn(
-                  "text-xs sm:text-sm py-2 px-2.5 xs:px-3 h-8 xs:h-9 sm:h-10 touch-target",
-                  filters.lighting &&
-                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
+                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
+                  filters.lighting
+                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
+                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
                 )}
               >
-                Night Games
+                🌙 Night Games
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFilters({ ...filters, rating: 4.5 })}
                 className={cn(
-                  "text-xs sm:text-sm py-2 px-2.5 xs:px-3 h-8 xs:h-9 sm:h-10 touch-target",
-                  filters.rating >= 4.5 &&
-                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
+                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
+                  filters.rating >= 4.5
+                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
+                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
                 )}
               >
-                Highly Rated
+                ⭐ Highly Rated
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFilters({ ...filters, distance: 5 })}
                 className={cn(
-                  "text-xs sm:text-sm py-2 px-2.5 xs:px-3 h-8 xs:h-9 sm:h-10 touch-target",
-                  filters.distance <= 5 &&
-                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
+                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
+                  filters.distance <= 5
+                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
+                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
                 )}
               >
-                Nearby
+                📍 Nearby
               </Button>
             </div>
 
-            {/* Grounds Grid */}
+            {/* Grounds Grid - Enhanced spacing */}
             {isLoadingGrounds ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <div className="h-48 sm:h-52 bg-gray-200 rounded-t-lg"></div>
-                    <CardContent className="p-4 sm:p-5 space-y-3">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-full"></div>
+                  <Card key={i} className="animate-pulse rounded-xl">
+                    <div className="h-56 sm:h-60 bg-gray-200 rounded-t-xl"></div>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-full"></div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : realGrounds.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
                 {realGrounds.map((ground) => (
                   <GroundCard
                     key={ground._id}

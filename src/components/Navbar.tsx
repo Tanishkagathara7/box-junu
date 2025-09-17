@@ -77,27 +77,28 @@ const Navbar = ({
         <div className="absolute inset-0 bg-white/60 backdrop-blur-sm"></div>
         
         <div className="w-full relative">
-          <div className="flex items-center justify-between h-16 px-4 relative">
+          <div className="flex items-center justify-between h-16 lg:h-20 px-4 lg:px-6 relative">
             
             {/* Logo & Mobile Search - Mobile Responsive */}
             <div className="flex items-center flex-1 lg:flex-initial">
               <Link to="/" className="flex items-center group flex-shrink-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-105 transition-transform duration-200 shadow-lg">
-                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white rounded-sm flex items-center justify-center">
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-600 rounded-full"></div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 rounded-xl flex items-center justify-center mr-3 sm:mr-4 group-hover:scale-110 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                  <div className="w-5 h-5 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white rounded-lg flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-full shadow-sm"></div>
                   </div>
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition-colors duration-200">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black bg-gradient-to-r from-emerald-700 via-emerald-800 to-emerald-900 bg-clip-text text-transparent tracking-tight group-hover:from-emerald-600 group-hover:via-emerald-700 group-hover:to-emerald-800 transition-all duration-300">
                     BoxCric
                   </h1>
-                  <p className="text-xs text-emerald-600 font-semibold -mt-1 tracking-wide">PREMIUM GROUNDS</p>
+                  <p className="text-xs sm:text-sm lg:text-base text-emerald-600 font-bold -mt-1 tracking-wider drop-shadow-sm">PREMIUM GROUNDS</p>
                 </div>
                 {/* Mobile Logo Text */}
                 <div className="block sm:hidden">
-                  <h1 className="text-lg font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition-colors duration-200">
+                  <h1 className="text-xl font-black bg-gradient-to-r from-emerald-700 to-emerald-900 bg-clip-text text-transparent tracking-tight group-hover:from-emerald-600 group-hover:to-emerald-800 transition-all duration-300">
                     BoxCric
                   </h1>
+                  <p className="text-xs text-emerald-600 font-bold -mt-0.5 tracking-wide">PREMIUM</p>
                 </div>
               </Link>
               
@@ -114,7 +115,7 @@ const Navbar = ({
                         setSearchQuery(e.target.value);
                         onSearch?.(e.target.value);
                       }}
-                      className="w-full pl-9 pr-9 h-9 bg-white/90 border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-lg shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400 text-sm"
+                      className="w-full pl-9 pr-9 h-10 bg-white/90 border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-lg shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400 text-sm"
                     />
                     {searchQuery && (
                       <button
@@ -141,7 +142,7 @@ const Navbar = ({
             </div>
 
             {/* Navigation Items - Desktop Only */}
-            <div className="hidden lg:flex items-center justify-center space-x-10 flex-1">
+            <div className="hidden lg:flex items-center justify-center space-x-8 flex-1 ml-8">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -162,7 +163,7 @@ const Navbar = ({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="hidden md:flex items-center space-x-2 h-10 px-4 bg-white/80 backdrop-blur border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/50 rounded-full transition-all duration-200 shadow-sm"
+                    className="hidden md:flex items-center space-x-2 h-11 px-3 bg-white/80 backdrop-blur border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/50 rounded-full transition-all duration-200 shadow-sm"
                   >
                     <MapPin className="w-4 h-4 text-emerald-600" />
                     <span className="text-sm font-medium text-gray-700">{selectedCity || "Location"}</span>
@@ -176,21 +177,21 @@ const Navbar = ({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Centered Search Bar */}
+              {/* Optimized Central Search Bar */}
               <div className="hidden md:block">
                 <form onSubmit={handleSearch} className="relative">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className="relative group">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-emerald-500 group-focus-within:text-emerald-600 transition-colors" />
                     <Input
                       type="text"
-                      placeholder="Search cricket grounds…"
+                      placeholder="🔍 Search grounds…"
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
                         // Trigger search on every keystroke for instant results
                         onSearch?.(e.target.value);
                       }}
-                      className="w-80 pl-10 pr-10 h-10 bg-white/90 border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-xl shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400"
+                      className="w-64 lg:w-80 xl:w-96 pl-10 pr-10 h-11 bg-gradient-to-r from-white via-white to-emerald-50/30 border-2 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-300 focus:ring-2 rounded-xl shadow-lg focus:shadow-xl transition-all duration-300 placeholder:text-gray-500 text-sm font-medium hover:shadow-md"
                     />
                     {searchQuery && (
                       <button
@@ -199,59 +200,83 @@ const Navbar = ({
                           setSearchQuery("");
                           onSearch?.("");
                         }}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-full p-0.5 transition-all duration-200"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </button>
                     )}
+                    {/* Search glow effect */}
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400/20 to-blue-400/20 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 -z-10 blur-xl"></div>
                   </div>
                 </form>
               </div>
 
-              {/* Filters CTA Button - Desktop */}
+              {/* Optimized Filters CTA Button - Desktop */}
               {onFilterToggle && (
                 <Button
                   onClick={onFilterToggle}
-                  className="hidden md:flex items-center space-x-2 h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                  className="hidden md:flex items-center space-x-2 h-11 px-4 bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:via-emerald-800 hover:to-emerald-900 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-sm transform hover:scale-105 active:scale-95"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   <span>Filters</span>
+                  <div className="w-1.5 h-1.5 bg-yellow-300 rounded-full animate-pulse"></div>
                 </Button>
               )}
               
-              {/* Filters Button - Mobile */}
+              {/* Enhanced Filters Button - Mobile */}
               {onFilterToggle && (
                 <Button
                   onClick={onFilterToggle}
-                  className="md:hidden p-2 h-10 w-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                  className="md:hidden p-3 h-12 w-12 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95"
                 >
-                  <SlidersHorizontal className="w-4 h-4" />
+                  <SlidersHorizontal className="w-5 h-5" />
                 </Button>
               )}
-
-              {/* Notification Bell - Desktop Only (Mobile shows in search area) */}
-              {isAuthenticated && user && (
-                <div className="hidden lg:block relative z-50">
-                  <NotificationPanel />
+              
+              {/* Mobile Login/Signup Buttons - Only show when not authenticated */}
+              {!isAuthenticated && (
+                <div className="flex items-center space-x-2 md:hidden">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleAuthClick("login")}
+                    className="h-10 px-3 text-xs font-medium text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 rounded-lg transition-all duration-200"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    onClick={() => handleAuthClick("register")}
+                    className="h-10 px-3 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    Sign Up
+                  </Button>
                 </div>
               )}
 
-              {/* User Profile - Hidden on Mobile */}
+              {/* Notification Bell - Visible on medium and up */}
+              {isAuthenticated && user && (
+                <div className="hidden md:block relative z-50">
+                  <div className="transform scale-105 hover:scale-110 transition-transform duration-200">
+                    <NotificationPanel />
+                  </div>
+                </div>
+              )}
+
+              {/* User Profile - Optimized visibility */}
               {isAuthenticated && user ? (
                 <div className="hidden md:block">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="flex items-center space-x-2 h-10 px-3 py-2 rounded-full hover:bg-gray-100 transition-all duration-200"
+                        className="flex items-center space-x-1 h-12 px-2 py-2 rounded-full hover:bg-emerald-50 hover:shadow-md border border-transparent hover:border-emerald-200 transition-all duration-200"
                       >
-                      <Avatar className="w-8 h-8">
+                      <Avatar className="w-10 h-10 ring-2 ring-emerald-200 hover:ring-emerald-400 transition-all duration-200">
                         <AvatarImage src={user.avatar} />
-                        <AvatarFallback className="bg-emerald-600 text-white text-sm font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white text-sm font-bold">
                           {getUserInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <ChevronDown className="w-3 h-3 text-gray-500 hidden lg:block" />
+                      <ChevronDown className="w-3 h-3 text-gray-600 hidden xl:block" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -285,33 +310,33 @@ const Navbar = ({
                 </DropdownMenu>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center space-x-3">
+                <div className="hidden md:flex items-center space-x-2">
                   <Button
                     variant="ghost"
                     onClick={() => handleAuthClick("login")}
-                    className="h-10 px-4 text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200"
+                    className="h-11 px-4 text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200"
                   >
                     Login
                   </Button>
                   <Button
                     onClick={() => handleAuthClick("register")}
-                    className="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                    className="h-11 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Sign Up
                   </Button>
                 </div>
               )}
-              {/* Mobile Menu Button */}
+              {/* Mobile Menu Button - Optimized */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors duration-200 ml-2"
+                className="lg:hidden p-2 h-12 w-12 rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition-all duration-200 ml-1 border-2 border-transparent bg-gray-50/80"
               >
                 {isMenuOpen ? (
-                  <X className="w-5 h-5" />
+                  <X className="w-6 h-6 text-gray-700" />
                 ) : (
-                  <Menu className="w-5 h-5" />
+                  <Menu className="w-6 h-6 text-gray-700" />
                 )}
               </Button>
             </div>
@@ -319,8 +344,8 @@ const Navbar = ({
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="lg:hidden absolute top-16 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-emerald-100/50 shadow-2xl z-40">
-              <div className="px-4 py-6 space-y-5 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="lg:hidden absolute top-16 lg:top-20 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-emerald-100/50 shadow-2xl z-40">
+              <div className="px-4 py-6 space-y-5 max-h-[calc(100vh-5rem)] lg:max-h-[calc(100vh-7rem)] overflow-y-auto">
                 {/* Mobile Auth - At Top */}
                 {isAuthenticated && user && (
                   <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100">

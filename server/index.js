@@ -70,49 +70,59 @@ const io = new Server(server, {
   },
 });
 
-// Middleware
+// Middleware - Simplified CORS for better reliability
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
+    console.log('🔍 CORS Check - Origin:', origin);
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 FRONTEND_URL:', process.env.FRONTEND_URL);
     
-    const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? [
-          process.env.FRONTEND_URL,
-          'https://boxcric.netlify.app',
-          'https://box-host.netlify.app',
-          'https://box-9t8s1yy3n-tanishs-projects-fa8014b4.vercel.app',
-          'https://box-new.vercel.app',
-          'https://box-cash.vercel.app',
-          'https://box-junu.vercel.app'
-        ]
-      : [
-          "http://localhost:5173",
-          "http://localhost:8080",
-          "http://localhost:8081",
-          "http://localhost:8082",
-          "http://localhost:3000",
-          "http://localhost:4000",
-          "http://10.91.186.90:8080"
-        ];
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
+    
+    // Define allowed origins explicitly
+    const allowedOrigins = [
+      // Production domains
+      'https://box-junu.vercel.app',
+      'https://boxcric.netlify.app',
+      'https://box-host.netlify.app',
+      'https://box-9t8s1yy3n-tanishs-projects-fa8014b4.vercel.app',
+      'https://box-new.vercel.app',
+      'https://box-cash.vercel.app',
+      // From environment variable
+      process.env.FRONTEND_URL,
+      // Development domains
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'http://localhost:8082',
+      'http://localhost:3000',
+      'http://localhost:4000',
+      'http://10.91.186.90:8080'
+    ].filter(Boolean); // Remove undefined values
+    
+    console.log('🔍 Allowed origins:', allowedOrigins);
     
     // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS: Origin allowed');
       return callback(null, true);
     }
     
-    // Check if origin matches Vercel pattern (for production)
-    if (process.env.NODE_ENV === 'production' && origin.match(/https:\/\/.*\.vercel\.app$/)) {
+    // Check if origin matches Vercel pattern
+    if (origin.match(/https:\/\/.*\.vercel\.app$/)) {
+      console.log('✅ CORS: Vercel domain pattern matched');
       return callback(null, true);
     }
     
-    // For development, be more permissive
-    if (process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    
-    callback(new Error('Not allowed by CORS'));
+    console.log('❌ CORS: Origin not allowed:', origin);
+    callback(new Error('Not allowed by CORS - Origin: ' + origin));
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
 }));
 app.use(express.json());
@@ -196,6 +206,16 @@ app.get("/api", (req, res) => {
   });
 });
 
+// Manual OPTIONS handler for preflight requests (fallback)
+app.options('*', (req, res) => {
+  console.log('🔍 Manual OPTIONS preflight handler:', req.path, 'Origin:', req.get('Origin'));
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/grounds", groundRoutes);
@@ -223,6 +243,22 @@ app.get("/api/test", (req, res) => {
     message: "Server is running!",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
+  });
+});
+
+// CORS Test endpoint
+app.get("/api/cors-test", (req, res) => {
+  console.log('🔍 CORS Test - Origin:', req.get('Origin'));
+  console.log('🔍 CORS Test - Headers:', req.headers);
+  
+  res.json({
+    success: true,
+    message: "CORS test successful!",
+    origin: req.get('Origin'),
+    userAgent: req.get('User-Agent'),
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    frontendUrl: process.env.FRONTEND_URL
   });
 });
 

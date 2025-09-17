@@ -216,6 +216,16 @@ import { healthCheck } from "./lib/healthCheck.js";
 // Health Check endpoint
 app.get("/api/health", healthCheck);
 
+// Simple test endpoint
+app.get("/api/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Server is running!",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+});
+
 // Test endpoints for notification system validation
 app.post("/api/test-admin-notification", async (req, res) => {
   try {

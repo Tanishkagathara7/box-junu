@@ -103,8 +103,6 @@ const Navbar = ({
               
               {/* Mobile Search Bar & Notification - Next to Logo */}
               <div className="flex items-center flex-1 mx-3 lg:hidden gap-2 relative">
-                {/* Debug logging for mobile search visibility */}
-                {console.log('Mobile search area rendering - isAuthenticated:', isAuthenticated, 'user:', user)}
                 <form onSubmit={handleSearch} className="relative flex-1">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -134,13 +132,10 @@ const Navbar = ({
                 </form>
                 
                 {/* Mobile Notification Bell */}
-                {isAuthenticated && user ? (
+                {isAuthenticated && user && (
                   <div className="flex-shrink-0 relative z-50">
-                    {console.log('Rendering mobile NotificationPanel for user:', user?.name)}
                     <NotificationPanel />
                   </div>
-                ) : (
-                  console.log('Mobile notification not rendered - auth state:', { isAuthenticated, hasUser: !!user })
                 )}
               </div>
             </div>

@@ -77,11 +77,11 @@ const Navbar = ({
         <div className="absolute inset-0 bg-white/60 backdrop-blur-sm"></div>
         
         <div className="w-full relative">
-          <div className="flex items-center justify-between h-16 px-4">
+          <div className="flex items-center justify-between h-16 px-4 relative">
             
-            {/* Logo - Mobile Responsive */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center group">
+            {/* Logo & Mobile Search - Mobile Responsive */}
+            <div className="flex items-center flex-1 lg:flex-initial">
+              <Link to="/" className="flex items-center group flex-shrink-0">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-105 transition-transform duration-200 shadow-lg">
                   <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white rounded-sm flex items-center justify-center">
                     <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-600 rounded-full"></div>
@@ -100,6 +100,49 @@ const Navbar = ({
                   </h1>
                 </div>
               </Link>
+              
+              {/* Mobile Search Bar & Notification - Next to Logo */}
+              <div className="flex items-center flex-1 mx-3 lg:hidden gap-2 relative">
+                {/* Debug logging for mobile search visibility */}
+                {console.log('Mobile search area rendering - isAuthenticated:', isAuthenticated, 'user:', user)}
+                <form onSubmit={handleSearch} className="relative flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search grounds..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        onSearch?.(e.target.value);
+                      }}
+                      className="w-full pl-9 pr-9 h-9 bg-white/90 border-gray-200 focus:border-emerald-300 focus:ring-emerald-200 rounded-lg shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400 text-sm"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          onSearch?.("");
+                        }}
+                        className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </form>
+                
+                {/* Mobile Notification Bell */}
+                {isAuthenticated && user ? (
+                  <div className="flex-shrink-0 relative z-50">
+                    {console.log('Rendering mobile NotificationPanel for user:', user?.name)}
+                    <NotificationPanel />
+                  </div>
+                ) : (
+                  console.log('Mobile notification not rendered - auth state:', { isAuthenticated, hasUser: !!user })
+                )}
+              </div>
             </div>
 
             {/* Navigation Items - Desktop Only */}
@@ -191,9 +234,9 @@ const Navbar = ({
                 </Button>
               )}
 
-              {/* Notification Bell - Hidden on Mobile */}
+              {/* Notification Bell - Desktop Only (Mobile shows in search area) */}
               {isAuthenticated && user && (
-                <div className="hidden md:block">
+                <div className="hidden lg:block relative z-50">
                   <NotificationPanel />
                 </div>
               )}
@@ -349,49 +392,21 @@ const Navbar = ({
                   </div>
                 )}
 
-                {/* Mobile Search Section */}
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100 space-y-3">
-                  <div className="text-sm font-semibold text-emerald-700 flex items-center mb-2">
-                    <Search className="w-4 h-4 mr-2" />
-                    Search & Explore
+                {/* Mobile Location & Filters Section */}
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100">
+                  <div className="text-sm font-semibold text-emerald-700 flex items-center mb-3">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Location & Filters
                   </div>
                   
-                  {/* Mobile Search Bar */}
-                  <form onSubmit={handleSearch} className="relative">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input
-                        type="text"
-                        placeholder="Search cricket grounds..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          // Trigger search on every keystroke for instant results
-                          onSearch?.(e.target.value);
-                        }}
-                        className="w-full pl-10 pr-10 h-12 bg-white/90 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-300 rounded-xl shadow-sm focus:shadow-md transition-all duration-200 placeholder:text-gray-400 text-base"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchQuery("");
-                            onSearch?.("");
-                          }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                        >
-                          <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                        </button>
-                      )}
-                    </div>
-                  </form>
-
-                  {/* Location and Filters Section */}
                   <div className="flex space-x-2">
                     {/* Mobile Location */}
                     <Button
                       variant="outline"
-                      onClick={onCitySelect}
+                      onClick={() => {
+                        onCitySelect?.();
+                        setIsMenuOpen(false);
+                      }}
                       className="flex-1 justify-center h-11 bg-white/80 backdrop-blur border-emerald-200 hover:bg-white hover:border-emerald-400 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-center"
                     >
                       <MapPin className="w-4 h-4 mr-2 text-emerald-600" />

@@ -201,21 +201,6 @@ const Index = () => {
     return () => window.removeEventListener('scroll', throttledHandleScroll);
   }, []);
 
-  // Test API connection on mount
-  useEffect(() => {
-    const API = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
-    const testAPI = async () => {
-      try {
-        console.log("🧪 Testing API connection...");
-        const response = await fetch(`${API}/test`);
-        const data = await response.json();
-        console.log("✅ API Test Result:", data);
-      } catch (error) {
-        console.error("❌ API Test Failed:", error);
-      }
-    };
-    testAPI();
-  }, []);
 
   // Auto-open location selector on first visit
   useEffect(() => {

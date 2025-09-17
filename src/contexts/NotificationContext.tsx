@@ -55,24 +55,40 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // API call helper with admin panel server base URL
+  // API call helper with correct server base URL
   const apiCall = async (endpoint: string, options?: RequestInit) => {
-    const baseURL = import.meta.env.VITE_ADMIN_API_URL || "http://localhost:3001"; // Admin panel server URL
+    const baseURL = import.meta.env.VITE_API_URL || 
+      (import.meta.env.DEV ? "http://localhost:3001" : "https://box-junu.onrender.com");
     const url = endpoint.startsWith("http") ? endpoint : `${baseURL}${endpoint}`;
     
-    const response = await fetch(url, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
-      ...options,
-    });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+        },
+        signal: controller.signal,
+        ...options,
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - the server is taking too long to respond');
+      }
+      throw error;
     }
-
-    return response.json();
   };
 
   const fetchNotifications = async () => {
@@ -84,7 +100,8 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     
     console.log("🔄 Fetching notifications for user:", user.id);
     console.log("🔄 Full user object:", user);
-    const baseURL = import.meta.env.VITE_ADMIN_API_URL || "http://localhost:3001";
+    const baseURL = import.meta.env.VITE_API_URL || 
+      (import.meta.env.DEV ? "http://localhost:3001" : "https://box-junu.onrender.com");
     console.log("🔄 API URL will be:", `${baseURL}/api/notifications/`);
     
     setLoading(true);
@@ -120,6 +137,15 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         message: error.message,
         stack: error.stack
       });
+      
+      // Don't show error toast for timeout or network issues in production
+      // as notifications are not critical for app functionality
+      if (import.meta.env.DEV) {
+        console.warn("Development mode: Notification fetch failed", error.message);
+      }
+      
+      // Set empty array so UI doesn't break
+      setNotifications([]);
     } finally {
       setLoading(false);
     }

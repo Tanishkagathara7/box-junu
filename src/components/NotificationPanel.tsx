@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useNavigate } from "react-router-dom";
 
@@ -13,7 +13,45 @@ export default function NotificationPanel() {
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [animationClass, setAnimationClass] = useState('');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Handle click outside to close panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      const notificationPanel = document.querySelector('.notification-panel');
+      const notificationButton = document.querySelector('.notification-button');
+      
+      if (isOpen && 
+          notificationPanel && 
+          !notificationPanel.contains(target) && 
+          notificationButton && 
+          !notificationButton.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      // Add a small delay to prevent immediate closing
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Get the latest 5 notifications for the dropdown
   const recentNotifications = notifications.slice(0, 5);
@@ -98,11 +136,18 @@ export default function NotificationPanel() {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
         `}
       </style>
       <div style={{ position: 'relative', display: 'inline-block' }}>
         <button
-          onClick={() => {
+          className="notification-button"
+          onClick={(e) => {
+            e.stopPropagation();
+// console.log('🔔 Notification button clicked! Mobile:', isMobile, 'Current state:', isOpen);
             setIsOpen(!isOpen);
             if (unreadCount > 0) {
               setAnimationClass('animate-pulse');
@@ -111,28 +156,49 @@ export default function NotificationPanel() {
           }}
           style={{
             position: 'relative',
-            padding: '12px',
-            backgroundColor: unreadCount > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-            border: unreadCount > 0 ? '2px solid #10b981' : '2px solid transparent',
-            borderRadius: '12px',
+            padding: isMobile ? '10px' : '12px',
+            backgroundColor: unreadCount > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.15)',
+            border: unreadCount > 0 ? '2px solid #10b981' : '2px solid rgba(209, 213, 219, 0.3)',
+            borderRadius: isMobile ? '10px' : '12px',
             cursor: 'pointer',
-            fontSize: '22px',
-            color: unreadCount > 0 ? '#10b981' : '#666',
+            fontSize: isMobile ? '20px' : '22px',
+            color: unreadCount > 0 ? '#10b981' : '#6b7280',
             transition: 'all 0.3s ease',
             backdropFilter: 'blur(10px)',
-            animation: unreadCount > 0 ? 'bellShake 2s ease-in-out infinite' : 'none'
+            animation: unreadCount > 0 ? 'bellShake 2s ease-in-out infinite' : 'none',
+            minWidth: isMobile ? '44px' : 'auto',
+            minHeight: isMobile ? '44px' : 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)';
-            e.currentTarget.style.transform = 'scale(1.1)';
+            if (!isMobile) {
+              e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.15)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.transform = 'scale(1)';
+            if (!isMobile) {
+              e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }
+          }}
+          onMouseDown={(e) => {
+            if (isMobile) {
+              e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.15)';
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }
+          }}
+          onMouseUp={(e) => {
+            if (isMobile) {
+              e.currentTarget.style.backgroundColor = unreadCount > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }
           }}
           title={`${unreadCount} new notifications`}
         >
-          🔔
+          {isMobile ? '🔔' : '🔔'}
           {unreadCount > 0 && (
             <span
               style={{
@@ -161,27 +227,49 @@ export default function NotificationPanel() {
         </button>
         
         {isOpen && (
-          <div
-            className="notification-panel"
-            style={{
-              position: 'absolute',
-              top: '100%',
-              right: '0',
-              width: '380px',
-              maxHeight: '500px',
+          <>
+            {/* Mobile backdrop */}
+            {isMobile && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  zIndex: 9998,
+                  opacity: 0,
+                  animation: 'fadeIn 0.3s ease-out forwards'
+                }}
+                onClick={() => setIsOpen(false)}
+              />
+            )}
+            
+            <div
+              className="notification-panel"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+              position: isMobile ? 'fixed' : 'absolute',
+              top: isMobile ? '70px' : '100%',
+              right: isMobile ? '8px' : '0',
+              left: isMobile ? '8px' : 'auto',
+              width: isMobile ? 'auto' : '380px',
+              maxWidth: isMobile ? 'calc(100vw - 16px)' : '380px',
+              maxHeight: isMobile ? 'calc(100vh - 80px)' : '500px',
               background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
               border: 'none',
               borderRadius: '16px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-              zIndex: 1000,
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+              zIndex: isMobile ? 9999 : 1000,
               overflow: 'hidden',
               backdropFilter: 'blur(10px)',
-              marginTop: '8px'
+              marginTop: isMobile ? '0' : '8px'
             }}
           >
             {/* Header */}
             <div style={{
-              padding: '20px 24px 16px',
+              padding: isMobile ? '16px 16px 12px' : '20px 24px 16px',
               borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
               display: 'flex',
               justifyContent: 'space-between',
@@ -351,7 +439,7 @@ export default function NotificationPanel() {
                       className="notification-item"
                       onClick={() => handleNotificationClick(notification)}
                       style={{
-                        padding: '16px 20px',
+                        padding: isMobile ? '12px 16px' : '16px 20px',
                         borderBottom: index < recentNotifications.length - 1 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
                         cursor: 'pointer',
                         backgroundColor: !notification.isRead ? '#dcfce7' : 'white',
@@ -529,7 +617,7 @@ export default function NotificationPanel() {
             {/* Footer */}
             {recentNotifications.length > 0 && (
               <div style={{
-                padding: '16px 20px',
+                padding: isMobile ? '12px 16px' : '16px 20px',
                 borderTop: '1px solid rgba(0, 0, 0, 0.05)',
                 background: 'linear-gradient(90deg, #f8fafc 0%, #e2e8f0 100%)'
               }}>
@@ -566,6 +654,7 @@ export default function NotificationPanel() {
               </div>
             )}
           </div>
+          </>
         )}
       </div>
     </>

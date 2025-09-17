@@ -69,7 +69,20 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
     const { groundId, bookingDate, timeSlot } = req.body;
     const userId = req.userId;
 
-    console.log("Temporary hold request:", { groundId, bookingDate, timeSlot, userId });
+    console.log("\n🔍 === TEMPORARY HOLD REQUEST ===");
+    console.log("Request data:", { groundId, bookingDate, timeSlot, userId });
+    
+    // Check MongoDB connection
+    const isMongoConnected = req.app.get("mongoConnected")();
+    console.log(`🔌 MongoDB connected: ${isMongoConnected}`);
+    
+    if (!isMongoConnected) {
+      console.log('❌ MongoDB not connected, returning error');
+      return res.status(503).json({
+        success: false,
+        message: "Database connection is not available. Please try again later."
+      });
+    }
 
     // Validate required fields
     if (!groundId || !bookingDate || !timeSlot) {
@@ -111,9 +124,10 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
     }
 
     try {
+      console.log('🧹 Starting temporary hold cleanup...');
       // Clean up expired holds first
       const now = new Date();
-      await Booking.updateMany(
+      const cleanupResult = await Booking.updateMany(
         {
           "temporaryHold.isOnHold": true,
           "temporaryHold.holdExpiresAt": { $lt: now }
@@ -129,7 +143,9 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
         },
         { session }
       );
+      console.log(`🧹 Cleaned up ${cleanupResult.modifiedCount} expired holds`);
 
+      console.log('🔍 Checking for conflicting bookings...');
       // Check for existing confirmed bookings or active temporary holds
       const conflictingBookings = await Booking.find({
         groundId,
@@ -142,6 +158,7 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
           }
         ]
       }).session(session);
+      console.log(`🔍 Found ${conflictingBookings.length} potentially conflicting bookings`);
 
       // Check for overlaps
       const overlappingBooking = conflictingBookings.find(booking => {
@@ -181,6 +198,11 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
         });
       }
 
+      console.log('⚙️ Creating temporary hold booking...');
+      // Calculate duration
+      const duration = calculateDuration(startTime, endTime);
+      console.log(`⏱️ Calculated duration: ${duration} hours`);
+      
       // Create temporary hold booking
       const holdBooking = new Booking({
         userId,
@@ -189,7 +211,7 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
         timeSlot: {
           startTime,
           endTime,
-          duration: calculateDuration(startTime, endTime)
+          duration
         },
         status: "pending",
         // Minimal required fields for temporary hold
@@ -208,11 +230,19 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
         bookingId: `TEMP${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase()
       });
 
+      console.log(`🖼️ Generated booking ID: ${holdBooking.bookingId}`);
+      
       // Start temporary hold
+      console.log('🔒 Starting temporary hold (5 minutes)...');
       holdBooking.startTemporaryHold(5); // 5 minutes
       
+      console.log('💾 Saving temporary hold booking...');
       await holdBooking.save({ session });
+      console.log('✅ Temporary hold booking saved successfully');
+      
+      console.log('📝 Committing transaction...');
       await session.commitTransaction();
+      console.log('✅ Transaction committed successfully');
 
       console.log(`Temporary hold created: ${holdBooking.bookingId} for ${startTime}-${endTime}`);
 
@@ -224,17 +254,37 @@ router.post("/temp-hold", authMiddleware, async (req, res) => {
       });
 
     } catch (error) {
-      await session.abortTransaction();
+      console.error('❌ Error in transaction block:', error.message);
+      console.error('❌ Error stack in transaction:', error.stack);
+      
+      try {
+        await session.abortTransaction();
+        console.log('🔄 Transaction aborted successfully');
+      } catch (abortError) {
+        console.error('❌ Failed to abort transaction:', abortError.message);
+      }
+      
       throw error;
     } finally {
-      session.endSession();
+      try {
+        session.endSession();
+        console.log('🗏 Session ended successfully');
+      } catch (endError) {
+        console.error('❌ Failed to end session:', endError.message);
+      }
     }
 
   } catch (error) {
     console.error("Error creating temporary hold:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({ 
       success: false, 
-      message: "Failed to reserve slot temporarily" 
+      message: "Failed to reserve slot temporarily",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? {
+        name: error.name,
+        stack: error.stack
+      } : undefined
     });
   }
 });

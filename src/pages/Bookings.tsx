@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { User, Calendar, Clock, ArrowLeft, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,79 +50,33 @@ interface BookingData {
 const BookingCountdown = ({ createdAt, onExpired }: { createdAt: string; onExpired: () => void }) => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isExpired, setIsExpired] = useState<boolean>(false);
-  const onExpiredRef = useRef(onExpired);
-  const hasCalledOnExpiredRef = useRef(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Update the ref when onExpired changes
-  useEffect(() => {
-    onExpiredRef.current = onExpired;
-  }, [onExpired]);
 
   useEffect(() => {
-    // Clear any existing timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    
-    // Calculate initial time left
-    const bookingTime = new Date(createdAt).getTime();
-    const expiryTime = bookingTime + (5 * 60 * 1000); // 5 minutes
-    const now = new Date().getTime();
-    const initialRemaining = Math.max(0, expiryTime - now);
-    
-    // Reset the called flag when createdAt changes (new booking)
-    hasCalledOnExpiredRef.current = false;
-    
-    // If already expired when component mounts, mark as expired immediately
-    if (initialRemaining <= 0) {
-      setTimeLeft(0);
-      setIsExpired(true);
-      if (!hasCalledOnExpiredRef.current) {
-        hasCalledOnExpiredRef.current = true;
-        // Use setTimeout to avoid immediate re-render issues
-        setTimeout(() => {
-          onExpiredRef.current();
-        }, 100);
-      }
-      return;
-    }
-    
-    setTimeLeft(initialRemaining);
-    setIsExpired(false);
-
-    timerRef.current = setInterval(() => {
+    const calculateTimeLeft = () => {
+      const bookingTime = new Date(createdAt).getTime();
+      const expiryTime = bookingTime + (5 * 60 * 1000); // 5 minutes
       const now = new Date().getTime();
       const remaining = Math.max(0, expiryTime - now);
       
-      setTimeLeft(remaining);
-      
-      // Only call onExpired once when timer reaches 0
-      if (remaining <= 0 && !hasCalledOnExpiredRef.current) {
+      if (remaining <= 0 && !isExpired) {
         setIsExpired(true);
-        hasCalledOnExpiredRef.current = true;
-        
-        // Clear the timer immediately to prevent further calls
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-        
-        // Use setTimeout to avoid re-render issues
-        setTimeout(() => {
-          onExpiredRef.current();
-        }, 100);
+        onExpired();
       }
+      
+      return remaining;
+    };
+
+    const timer = setInterval(() => {
+      const remaining = calculateTimeLeft();
+      setTimeLeft(remaining);
     }, 1000);
 
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [createdAt]); // Only createdAt as dependency
+    // Initial calculation
+    const initial = calculateTimeLeft();
+    setTimeLeft(initial);
+
+    return () => clearInterval(timer);
+  }, [createdAt, isExpired, onExpired]);
 
   if (timeLeft <= 0) {
     return (
@@ -166,93 +120,63 @@ const Bookings = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
-  const [expiredBookings, setExpiredBookings] = useState<Set<string>>(new Set());
-  const fetchInProgressRef = useRef(false);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchUserBookings();
     }
   }, [isAuthenticated]);
-  
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
 
-  const fetchUserBookings = useCallback(async () => {
-    // Prevent concurrent fetches or fetches after unmount
-    if (fetchInProgressRef.current || !mountedRef.current) {
-      console.log('Fetch already in progress or component unmounted, skipping...');
-      return;
-    }
-    
+  const fetchUserBookings = async () => {
     try {
-      fetchInProgressRef.current = true;
-      if (mountedRef.current) {
-        setIsLoadingBookings(true);
-      }
-      
+      setIsLoadingBookings(true);
       const response: any = await bookingsApi.getMyBookings();
       //@ts-ignore
-      if (response.success && mountedRef.current) {
+      if (response.success) {
         //@ts-ignore
-        const newBookings = response.bookings || [];
-        setBookings(newBookings);
-        
-        // Clean up expired bookings set for bookings that are no longer pending
-        setExpiredBookings(prev => {
-          const stillPendingIds = new Set(newBookings.filter((b: BookingData) => b.status === 'pending').map((b: BookingData) => b._id));
-          const cleanedExpired = new Set([...prev].filter(id => stillPendingIds.has(id)));
-          return cleanedExpired;
-        });
+        setBookings(response.bookings || []);
       }
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
-      if (mountedRef.current) {
-        toast.error("Failed to load your bookings");
-      }
+      toast.error("Failed to load your bookings");
     } finally {
-      if (mountedRef.current) {
-        setIsLoadingBookings(false);
-      }
-      fetchInProgressRef.current = false;
+      setIsLoadingBookings(false);
     }
-  }, []);
+  };
 
-  const handleBookingExpired = useCallback((bookingId: string) => {
-    // Check if component is unmounted
-    if (!mountedRef.current) {
-      console.log(`Component unmounted, skipping expiry handling for ${bookingId}`);
-      return;
-    }
-    
-    // Check if this booking has already been marked as expired
-    if (expiredBookings.has(bookingId)) {
-      console.log(`Booking ${bookingId} already marked as expired, skipping refresh...`);
-      return;
-    }
-    
-    console.log(`Booking ${bookingId} has expired, marking and scheduling refresh...`);
-    
-    // Mark this booking as expired immediately to prevent multiple calls
-    setExpiredBookings(prev => {
-      const newSet = new Set(prev);
-      newSet.add(bookingId);
-      return newSet;
-    });
-    
-    // Add a delay before refreshing to allow for any concurrent expiry handling
-    setTimeout(() => {
-      if (mountedRef.current) {
-        console.log(`Refreshing bookings after expiry for ${bookingId}...`);
-        fetchUserBookings();
-      }
-    }, 2000); // Increased to 2 seconds to be more conservative
-  }, [fetchUserBookings, expiredBookings]);
+  const handleBookingExpired = (bookingId: string) => {
+    console.log(`Booking ${bookingId} has expired, refreshing booking list...`);
+    // Refresh the booking list to get updated status
+    fetchUserBookings();
+  };
 
+  // Manual cleanup function for testing
+  const triggerManualCleanup = async () => {
+    try {
+      const token = localStorage.getItem('boxcric_token');
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : 'https://box-junu.onrender.com/api');
+      
+      const response = await fetch(`${apiBase}/bookings/cleanup-expired`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Cleanup completed: ${data.expiredCount} expired bookings processed`);
+        fetchUserBookings(); // Refresh the booking list
+      } else {
+        toast.error('Cleanup failed: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Manual cleanup error:', error);
+      toast.error('Failed to trigger cleanup');
+    }
+  };
 
   const getStatusColor = (status: BookingData["status"]) => {
     switch (status) {
@@ -333,6 +257,16 @@ const Bookings = () => {
             >
               Book New Ground
             </Button>
+            {/* Development cleanup button */}
+            {import.meta.env.DEV && (
+              <Button 
+                variant="outline"
+                className="border-orange-500 text-orange-500 hover:bg-orange-50 w-full sm:w-auto"
+                onClick={triggerManualCleanup}
+              >
+                🧹 Force Cleanup
+              </Button>
+            )}
           </div>
         </div>
 
@@ -399,19 +333,11 @@ const Bookings = () => {
                       </div>
                       
                       {/* Countdown Timer for Pending Bookings */}
-                      {booking.status === "pending" && !expiredBookings.has(booking._id) && (
+                      {booking.status === "pending" && (
                         <BookingCountdown 
                           createdAt={booking.createdAt} 
                           onExpired={() => handleBookingExpired(booking._id)}
                         />
-                      )}
-                      {booking.status === "pending" && expiredBookings.has(booking._id) && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
-                          <div className="flex items-center space-x-2 text-red-700">
-                            <Timer className="w-4 h-4" />
-                            <span className="text-sm font-medium">⏰ Booking has expired - being processed...</span>
-                          </div>
-                        </div>
                       )}
                     </div>
 

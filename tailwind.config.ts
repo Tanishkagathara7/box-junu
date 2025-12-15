@@ -146,16 +146,6 @@ export default {
             transform: "translateY(0)",
           },
         },
-        "fadeInUp": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(20px)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
-        },
         "slide-up": {
           "0%": {
             opacity: "0",
@@ -176,7 +166,6 @@ export default {
         marquee: "marquee 20s linear infinite",
         "fade-in": "fade-in 0.6s ease-out",
         "slide-up": "slide-up 0.8s ease-out",
-        "fadeInUp": "fadeInUp 0.4s ease-out forwards",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui"],

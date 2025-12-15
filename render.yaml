@@ -34,7 +34,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
-        sync: false
+        value: https://boxcric.netlify.app
 
 databases:
   - name: boxcric-db

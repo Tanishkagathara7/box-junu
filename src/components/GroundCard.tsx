@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
-import { Star, MapPin, Car, Eye, Zap, Share2 } from "lucide-react";
+import { Star, MapPin, Clock, Users, Wifi, Car, Shield, Heart, Eye, Calendar, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import ShareModal from "@/components/ShareModal";
 
 interface GroundCardProps {
   ground: any; // API ground data structure
@@ -16,8 +15,6 @@ interface GroundCardProps {
 const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
 
   const handleImageNavigation = (direction: "prev" | "next") => {
     if (direction === "next") {
@@ -41,23 +38,20 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
 
   const getAmenityIcon = (amenity: string) => {
     const iconMap: Record<string, React.ReactNode> = {
-      Floodlights: <span className="text-yellow-500 text-lg">💡</span>,
-      Parking: <span className="text-blue-500 text-lg">🅿️</span>,
-      Washroom: <span className="text-blue-400 text-lg">🚿</span>,
-      "Changing Room": <span className="text-gray-600 text-lg">👕</span>,
-      "AC Changing Room": <span className="text-blue-400 text-lg">❄️</span>,
-      "Drinking Water": <span className="text-blue-400 text-lg">💧</span>,
-      "First Aid": <span className="text-red-400 text-lg">🏥</span>,
-      "Equipment Rental": <span className="text-orange-500 text-lg">🏏</span>,
-      Cafeteria: <span className="text-orange-600 text-lg">☕</span>,
-      Scoreboard: <span className="text-green-500 text-lg">📊</span>,
-      Referee: <span className="text-purple-500 text-lg">👨‍⚖️</span>,
-      "Equipment Storage": <span className="text-gray-500 text-lg">📦</span>,
-      Seating: <span className="text-indigo-500 text-lg">🪑</span>,
-      "CCTV Security": <span className="text-red-500 text-lg">📹</span>,
-      "Water Cooler": <span className="text-blue-400 text-lg">🧊</span>,
+      Floodlights: <Zap className="w-3 h-3 text-yellow-500" />,
+      Parking: <Car className="w-3 h-3 text-blue-500" />,
+      Washroom: <span className="text-blue-400">🚿</span>,
+      "Changing Room": <span className="text-gray-500">👕</span>,
+      "AC Changing Room": <span className="text-blue-400">❄️👕</span>,
+      "Drinking Water": <span className="text-blue-400">💧</span>,
+      "First Aid": <span className="text-red-400">🏥</span>,
+      "Equipment Rental": <span className="text-orange-400">🏏</span>,
+      Cafeteria: <span className="text-brown-400">☕</span>,
+      Scoreboard: <span className="text-green-400">📊</span>,
+      Referee: <span className="text-purple-400">👨‍⚖️</span>,
+      "Equipment Storage": <span className="text-gray-400">📦</span>,
     };
-    return iconMap[amenity] || <span className="text-gray-400 text-lg">✨</span>;
+    return iconMap[amenity] || <span className="text-gray-400">✨</span>;
   };
 
   // Removed slot-related calculations as per request
@@ -70,19 +64,18 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
   // Get available slots or default to 1 if not available
   const availableSlots = ground.availableSlots ?? 1;
 
-
   return (
     <Card
-      className="group hover:shadow-2xl hover:shadow-cricket-green/10 transition-all duration-300 border-2 border-transparent hover:border-cricket-green/20 bg-white/90 backdrop-blur-sm hover:bg-white w-full max-w-full relative overflow-hidden transform hover:-translate-y-2 hover:scale-[1.02] active:scale-[0.98] active:shadow-lg cursor-pointer"
+      className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-white/90 backdrop-blur-sm hover:bg-white/95 w-full max-w-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onViewDetails?.(ground._id)}
     >
       <div className="relative">
         {/* Image Carousel with swipe support */}
         <div
-          className="relative h-48 xs:h-52 sm:h-56 md:h-48 lg:h-56 overflow-hidden cursor-pointer bg-gradient-to-br from-cricket-green/5 to-transparent"
+          className="relative h-48 xs:h-52 sm:h-56 md:h-48 lg:h-56 overflow-hidden cursor-pointer"
           {...swipeHandlers}
+          onClick={() => onViewDetails?.(ground._id)}
         >
           <img
             src={
@@ -94,8 +87,6 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             draggable={false}
           />
-          {/* Hover Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Image Navigation */}
           {ground.images && ground.images.length > 1 && (
             <>
@@ -138,20 +129,7 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
               </div>
             </>
           )}
-          {/* Share Button */}
-          <div className="absolute top-3 right-3 z-20">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsShareModalOpen(true);
-              }}
-              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-200 group/share hover:scale-110"
-              aria-label="Share ground"
-            >
-              <Share2 className="w-4 h-4 text-gray-600 group-hover/share:text-cricket-green transition-all duration-200 group-hover/share:rotate-12" />
-            </button>
-          </div>
-          
+          {/* Availability Status - Removed as per request */}
           {/* Price Display */}
           <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
             <div className="text-gray-600 text-right">
@@ -164,11 +142,8 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
           {/* Header */}
           <div className="mb-3 sm:mb-4">
             <h3 
-              className="font-bold text-lg sm:text-xl lg:text-xl text-gray-900 group-hover:text-cricket-green transition-all duration-300 mb-2 sm:mb-3 cursor-pointer transform group-hover:translate-x-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails?.(ground._id);
-              }}
+              className="font-bold text-lg sm:text-xl lg:text-xl text-gray-900 group-hover:text-cricket-green transition-colors duration-200 mb-2 sm:mb-3 cursor-pointer"
+              onClick={() => onViewDetails?.(ground._id)}
             >
               {ground.name}
             </h3>
@@ -184,8 +159,8 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
               )}
             </div>
           </div>
-          {/* Rating */}
-          <div className="mb-3 sm:mb-4">
+          {/* Rating and Info */}
+          <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between mb-3 sm:mb-4 space-y-2 xs:space-y-0 xs:space-x-3">
             <div className="flex items-center space-x-2">
               <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
               <span className="font-bold text-lg sm:text-xl">{ground.rating.average}</span>
@@ -193,34 +168,31 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
                 ({ground.rating.count})
               </span>
             </div>
-          </div>
-          {/* Premium Amenities Section */}
-          <div className="mb-4 sm:mb-5">
-            <div className="bg-gradient-to-r from-gray-50 to-emerald-50/30 rounded-xl p-4 border border-emerald-100/50">
-              <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                🏢 Facilities
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                {ground.amenities.slice(0, 4).map((amenity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm border border-white hover:shadow-md transition-all duration-200 hover:scale-102"
-                    title={amenity}
-                  >
-                    <div className="flex-shrink-0">
-                      {getAmenityIcon(amenity)}
-                    </div>
-                    <span className="text-xs font-medium text-gray-700 truncate">{amenity}</span>
-                  </div>
-                ))}
+            <div className="flex items-center space-x-3 text-sm text-gray-600">
+              <div className="flex items-center space-x-1">
+                <Users className="w-4 h-4" />
+                <span>{ground.features.capacity}</span>
               </div>
+
+            </div>
+          </div>
+          {/* Enhanced Amenities */}
+          <div className="mb-3 sm:mb-4">
+            <div className="flex flex-wrap gap-2">
+              {ground.amenities.slice(0, 4).map((amenity, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="text-xs flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 transition-colors px-2 py-1"
+                >
+                  {getAmenityIcon(amenity)}
+                  <span className="text-xs">{amenity}</span>
+                </Badge>
+              ))}
               {ground.amenities.length > 4 && (
-                <div className="mt-3 text-center">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold hover:bg-emerald-200 transition-colors cursor-pointer">
-                    <span>✨</span>
-                    <span>+{ground.amenities.length - 4} more facilities</span>
-                  </span>
-                </div>
+                <Badge variant="outline" className="text-xs px-2 py-1">
+                  +{ground.amenities.length - 4} more
+                </Badge>
               )}
             </div>
           </div>
@@ -244,59 +216,28 @@ const GroundCard = ({ ground, onBook, onViewDetails }: GroundCardProps) => {
               </div>
             </div>
           </div>
-          {/* Actions - Premium Button Layout */}
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mt-6">
+          {/* Actions - View Details and Book Now buttons always visible below features */}
+          <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-2 border-emerald-200 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 py-3 h-14 text-base font-bold transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg rounded-xl bg-white/80 backdrop-blur-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails?.(ground._id);
-              }}
+              className="flex-1 border-gray-300 hover:border-cricket-green hover:text-cricket-green py-3 h-12 text-base"
+              onClick={() => onViewDetails?.(ground._id)}
             >
-              <div className="flex items-center justify-center gap-2">
-                <Eye className="w-5 h-5 group-hover:animate-pulse" />
-                <span>View Details</span>
-              </div>
+              <Eye className="w-5 h-5 mr-2" />
+              View Details
             </Button>
             <Button
               size="lg"
-              className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-black py-3 h-14 text-base transition-all duration-300 transform hover:scale-110 active:scale-95 hover:shadow-2xl hover:shadow-emerald-500/50 border-0 rounded-xl relative overflow-hidden group/btn shadow-lg min-w-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                onBook?.(ground._id);
-              }}
+              className="flex-1 bg-cricket-green hover:bg-cricket-green/90 text-white font-semibold py-3 h-12 text-base"
+              onClick={() => onBook?.(ground._id)}
               disabled={availableSlots === 0}
             >
-              {/* Shine effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-out"></div>
-              {/* Gradient overlay for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/20 to-transparent"></div>
-              <span className="relative z-10 flex items-center justify-center gap-2 w-full px-2">
-                {availableSlots === 0 ? (
-                  <>
-                    <span className="text-lg flex-shrink-0">🚫</span>
-                    <span className="whitespace-nowrap text-sm font-bold">Fully Booked</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-lg animate-pulse flex-shrink-0">🏏</span>
-                    <span className="whitespace-nowrap text-base font-bold">Book Now</span>
-                  </>
-                )}
-              </span>
+              {availableSlots === 0 ? "Fully Booked" : "Book Now"}
             </Button>
           </div>
         </CardContent>
       </div>
-      
-      {/* Share Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        ground={ground}
-      />
     </Card>
   );
 };

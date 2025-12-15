@@ -119,15 +119,6 @@ export function validateTimeSlotForToday(timeSlot, bookingDate) {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
-    // Handle late night slots (00:00 - 06:00) which are considered for the next day
-    // These slots are always valid if booked on the same calendar day because
-    // they represent early morning hours of the next day
-    if (startHour >= 0 && startHour < 6) {
-      // Late night slots (12 AM - 6 AM) are always valid for same-day booking
-      return { isValid: true };
-    }
-    
-    // For regular hours (6 AM - 11:59 PM), check if they're in the past
     if (startHour < currentHour || (startHour === currentHour && startMinute <= currentMinute)) {
       return { isValid: false, error: 'Cannot book time slots in the past' };
     }

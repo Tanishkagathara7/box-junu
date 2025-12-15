@@ -162,7 +162,6 @@ const Index = () => {
   // Add loading state for initial page load
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     // Simulate initial page load
@@ -178,29 +177,21 @@ const Index = () => {
     document.documentElement.classList.toggle('dark');
   };
 
-  // Scroll event listener for back to top button
+  // Test API connection on mount
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      setShowBackToTop(scrollTop > 300); // Show button when scrolled more than 300px
-    };
-
-    // Throttle scroll events for better performance
-    let ticking = false;
-    const throttledHandleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
+    const API = import.meta.env.VITE_API_URL || "https://box-junu.onrender.com/api";
+    const testAPI = async () => {
+      try {
+        console.log("🧪 Testing API connection...");
+        const response = await fetch(`${API}/test`);
+        const data = await response.json();
+        console.log("✅ API Test Result:", data);
+      } catch (error) {
+        console.error("❌ API Test Failed:", error);
       }
     };
-
-    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', throttledHandleScroll);
+    testAPI();
   }, []);
-
 
   // Auto-open location selector on first visit
   useEffect(() => {
@@ -232,23 +223,12 @@ const Index = () => {
     return () => document.removeEventListener('click', smoothScroll);
   }, []);
 
-  // Debounced search effect
-  useEffect(() => {
-    if (!selectedCity) return;
-    
-    const timeoutId = setTimeout(() => {
-      fetchGrounds();
-    }, 300); // Wait 300ms after user stops typing
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // Fetch grounds when city or filters change (immediate)
+  // Fetch grounds when city or filters change
   useEffect(() => {
     if (selectedCity) {
       fetchGrounds();
     }
-  }, [selectedCity, filters]);
+  }, [selectedCity, searchQuery, filters]);
 
   // Restore selected city from localStorage on mount
   useEffect(() => {
@@ -399,13 +379,6 @@ const Index = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Provide immediate visual feedback
-    if (query.trim() === '') {
-      // If search is cleared, reset to show all grounds
-      console.log('🔍 Search cleared, showing all grounds');
-    } else {
-      console.log('🔍 Searching for:', query);
-    }
   };
 
   const handleFiltersChange = (newFilters: FilterOptions) => {
@@ -486,79 +459,90 @@ const Index = () => {
         clearNotifications={clearNotifications}
       />
 
-      {/* Simplified Hero Section */}
-      <section className="relative py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 md:px-8 overflow-hidden">
-        {/* Simplified Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-white to-blue-50/30"></div>
+      {/* Enhanced Hero Section */}
+      <section className="relative py-12 sm:py-16 md:py-20 px-4 sm:px-6 overflow-hidden">
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-cricket-green/20 via-transparent to-sky-blue/20">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2322c55e%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+        </div>
+        
+        {/* Animated Cricket Elements */}
+        <div className="absolute top-10 left-2 animate-float hidden sm:block">
+          <div className="w-12 h-12 bg-cricket-green/20 rounded-full flex items-center justify-center">
+            <span className="text-xl">🏏</span>
+          </div>
+        </div>
+        <div className="absolute top-32 right-4 animate-float hidden sm:block" style={{ animationDelay: '1s' }}>
+          <div className="w-10 h-10 bg-cricket-yellow/20 rounded-full flex items-center justify-center">
+            <span className="text-lg">⚾</span>
+          </div>
+        </div>
+        <div className="absolute bottom-10 left-1/4 animate-float hidden sm:block" style={{ animationDelay: '2s' }}>
+          <div className="w-8 h-8 bg-sky-blue/20 rounded-full flex items-center justify-center">
+            <span className="text-base">🏟️</span>
+          </div>
+        </div>
 
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          {/* Main Heading - Consistent Design */}
-          <div className="relative mb-8 sm:mb-10 md:mb-12">
-            <h1 className="relative text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-gray-900 mb-6 sm:mb-8 md:mb-10 leading-tight px-4 sm:px-6">
+          {/* Main Heading */}
+          <div className="relative mb-6 sm:mb-8">
+            <div className="absolute inset-0 bg-gradient-cricket opacity-20 blur-3xl rounded-full"></div>
+            <h1 className="relative text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display text-gray-900 mb-4 sm:mb-6 leading-tight">
               Book Your Perfect{" "}
-              <span className="block xs:inline text-transparent bg-gradient-to-r from-emerald-600 via-emerald-700 to-blue-600 bg-clip-text">
+              <span className="text-transparent bg-gradient-to-r from-cricket-green via-cricket-yellow to-sky-blue bg-clip-text animate-pulse">
                 Cricket Ground
               </span>
             </h1>
-            <p className="text-lg xs:text-xl sm:text-2xl md:text-3xl text-gray-700 font-medium mb-8 sm:mb-10 md:mb-12 max-w-md xs:max-w-lg sm:max-w-4xl lg:max-w-5xl mx-auto leading-relaxed px-6 sm:px-8">
+            <p className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-6 sm:mb-8 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed px-4">
               Discover amazing box cricket grounds near you. From premium facilities to budget-friendly options, 
               find the perfect pitch for your game in just a few clicks.
             </p>
           </div>
 
-          {/* Enhanced Stat Cards with Better Hierarchy */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-6 xs:gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12 md:mb-16 max-w-5xl mx-auto px-4 sm:px-6">
-            <Card className="border-0 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 rounded-2xl overflow-hidden">
-              <CardContent className="p-4 xs:p-5 sm:p-6 lg:p-8 text-center relative">
-                <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-6 shadow-lg">
-                  <Trophy className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-emerald-600" />
+          {/* Animated Stats */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 max-w-4xl mx-auto px-4">
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105">
+              <CardContent className="p-4 sm:p-5 lg:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-cricket-green/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-green" />
                 </div>
-                <h3 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-2 sm:mb-3 drop-shadow-sm">{heroStats.grounds}+</h3>
-                <p className="text-gray-700 font-bold text-sm xs:text-base lg:text-lg">Premium Cricket Grounds</p>
-                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-100/30 rounded-full -mr-8 -mt-8"></div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.grounds}+</h3>
+                <p className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">Premium Cricket Grounds</p>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 rounded-2xl overflow-hidden">
-              <CardContent className="p-4 xs:p-5 sm:p-6 lg:p-8 text-center relative">
-                <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-yellow-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-6 shadow-lg">
-                  <Users className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-orange-600" />
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105">
+              <CardContent className="p-4 sm:p-5 lg:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-cricket-yellow/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-cricket-yellow" />
                 </div>
-                <h3 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-2 sm:mb-3 drop-shadow-sm">{heroStats.players}+</h3>
-                <p className="text-gray-700 font-bold text-sm xs:text-base lg:text-lg">Happy Players</p>
-                <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-100/30 rounded-full -mr-8 -mt-8"></div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.players}+</h3>
+                <p className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">Happy Players</p>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 rounded-2xl overflow-hidden xs:col-span-2 sm:col-span-1">
-              <CardContent className="p-4 xs:p-5 sm:p-6 lg:p-8 text-center relative">
-                <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-6 shadow-lg">
-                  <Play className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-blue-600" />
+            <Card className="border-0 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 hover:scale-105 xs:col-span-2 sm:col-span-1">
+              <CardContent className="p-4 sm:p-5 lg:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-sky-blue/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Play className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-sky-blue" />
                 </div>
-                <h3 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-2 sm:mb-3 drop-shadow-sm">{heroStats.bookings}+</h3>
-                <p className="text-gray-700 font-bold text-sm xs:text-base lg:text-lg">Successful Bookings</p>
-                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100/30 rounded-full -mr-8 -mt-8"></div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{heroStats.bookings}+</h3>
+                <p className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">Successful Bookings</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Enhanced Trust Indicators */}
-          <div className="flex flex-wrap justify-center items-center gap-x-6 xs:gap-x-8 gap-y-4 text-sm sm:text-base px-3 sm:px-4">
-            <div className="flex items-center space-x-3 bg-gradient-to-r from-emerald-50 to-green-50 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-sm">
-                <Shield className="w-5 h-5 text-white flex-shrink-0" />
-              </div>
-              <span className="whitespace-nowrap font-bold text-gray-800">100% Secure Booking</span>
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-0 px-4">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-4 h-4 text-cricket-green" />
+              <span>100% Secure Booking</span>
             </div>
-            <div className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-sky-50 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
-                <Clock className="w-5 h-5 text-white flex-shrink-0" />
-              </div>
-              <span className="whitespace-nowrap font-bold text-gray-800">Instant Confirmation</span>
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4 text-cricket-green" />
+              <span>Instant Confirmation</span>
             </div>
-            <div className="flex items-center space-x-3 bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300">
-              <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
-                <Star className="w-5 h-5 text-white flex-shrink-0" />
-              </div>
-              <span className="whitespace-nowrap font-bold text-gray-800">Verified Grounds</span>
+            <div className="flex items-center space-x-2">
+              <Star className="w-4 h-4 text-cricket-green" />
+              <span>Verified Grounds</span>
             </div>
           </div>
         </div>
@@ -576,110 +560,54 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Grounds Listing - Premium Enhanced */}
+      {/* Grounds Listing */}
       {selectedCity && (
-        <section className="py-16 sm:py-20 px-6 sm:px-8 bg-gradient-to-br from-emerald-50/30 via-white to-blue-50/20 relative overflow-hidden">
-          {/* Background Decorations */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23059669%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
-          
-          {/* Floating Cricket Elements */}
-          <div className="absolute top-10 right-10 animate-float hidden lg:block">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-2xl">🏟️</span>
-            </div>
-          </div>
-          <div className="absolute bottom-20 left-10 animate-float hidden lg:block" style={{ animationDelay: '1s' }}>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-xl">🏏</span>
-            </div>
-          </div>
-          
-          <div className="max-w-7xl mx-auto relative z-10">
-            {/* Premium Section Header */}
-            <div className="mb-12 sm:mb-16">
-              <div className="text-center mb-8 sm:mb-10">
-                {/* City Badge */}
-                <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-sm font-bold mb-6 shadow-lg transform hover:scale-105 transition-all duration-300">
-                  <span className="text-lg">📍</span>
-                  <span>{selectedCity.name}</span>
-                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                </div>
-                
-                {/* Main Heading with Enhanced Design */}
-                <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 mb-6 leading-tight">
-                  <span className="block text-2xl sm:text-3xl font-medium text-gray-600 mb-2">Discover Amazing</span>
-                  <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-blue-600 bg-clip-text text-transparent">
-                    Cricket Grounds
-                  </span>
+        <section className="py-8 sm:py-12 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Section Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
+              <div>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                  Cricket Grounds in {selectedCity.name}
                 </h2>
-                
-                {/* Results Counter with Animation */}
-                <div className="flex items-center justify-center gap-4 mb-8">
-                  <div className="bg-white rounded-2xl px-6 py-4 shadow-lg border border-emerald-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl font-bold text-emerald-700">{realGrounds.length}</span>
-                      </div>
-                      <div className="text-left">
-                        <p className="text-sm font-semibold text-gray-900">Available Grounds</p>
-                        <p className="text-xs text-gray-500">Ready to book now</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Enhanced Trust Indicators */}
-                <div className="flex justify-center items-center gap-3 sm:gap-5 lg:gap-8 px-4 py-2">
-                  <div className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-white to-green-50 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg border border-green-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0 min-w-fit">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-sm">
-                      <span className="text-white font-bold text-sm">✓</span>
-                    </div>
-                    <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 whitespace-nowrap">Verified</span>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-white to-yellow-50 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg border border-yellow-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0 min-w-fit">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
-                      <span className="text-white text-sm font-bold">⚡</span>
-                    </div>
-                    <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 whitespace-nowrap">Instant</span>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-white to-blue-50 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg border border-blue-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0 min-w-fit">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
-                      <span className="text-white text-sm font-bold">🔒</span>
-                    </div>
-                    <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 whitespace-nowrap">Secure</span>
-                  </div>
-                </div>
+                <p className="text-gray-600 text-sm sm:text-base">
+                  {realGrounds.length} amazing grounds available for booking
+                </p>
               </div>
-              
-              {/* Filter Status Badge - Enhanced */}
-              {Object.values(filters).some((value, index) =>
-                index === 0
-                  ? (value as [number, number])[0] !== 500 ||
-                    (value as [number, number])[1] !== 2000
-                  : index === 1
-                    ? value !== 25
-                    : index === 2
-                      ? (value as string[]).length > 0
-                      : index === 3
-                        ? value !== "all"
-                        : index >= 4 && index <= 5
-                          ? value === true
-                          : index === 6
-                            ? value > 0
-                            : value !== "all",
-              ) && (
-                <div className="flex justify-center mb-8">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-200 rounded-full shadow-md">
-                    <span className="text-orange-600">🔍</span>
-                    <span className="text-sm font-semibold text-orange-700">Filters Applied</span>
-                    <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center space-x-2">
+                {Object.values(filters).some((value, index) =>
+                  index === 0
+                    ? (value as [number, number])[0] !== 500 ||
+                      (value as [number, number])[1] !== 2000
+                    : index === 1
+                      ? value !== 25
+                      : index === 2
+                        ? (value as string[]).length > 0
+                        : index === 3
+                          ? value !== "all"
+                          : index >= 4 && index <= 5
+                            ? value === true
+                            : index === 6
+                              ? value > 0
+                              : value !== "all",
+                ) && (
+                  <Badge variant="secondary" className="text-sm">
+                    Filters Applied
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setIsFilterPanelOpen(true)}
+                  className="flex items-center space-x-2 py-2 px-4 h-10 sm:h-11"
+                >
+                  <span className="text-sm sm:text-base">Filters</span>
+                </Button>
+              </div>
             </div>
 
-            {/* Quick Filters - Enhanced with icons */}
-            <div className="flex flex-wrap gap-3 mb-8 sm:mb-10 px-2">
+            {/* Quick Filters */}
+            <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
               <Button
                 variant="outline"
                 size="sm"
@@ -687,71 +615,67 @@ const Index = () => {
                   setFilters({ ...filters, priceRange: [500, 1000] })
                 }
                 className={cn(
-                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
-                  filters.priceRange[1] <= 1000
-                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
-                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
+                  "text-xs sm:text-sm py-2 px-3 h-9 sm:h-10",
+                  filters.priceRange[1] <= 1000 &&
+                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
                 )}
               >
-                💰 Budget Friendly
+                Budget Friendly
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFilters({ ...filters, lighting: true })}
                 className={cn(
-                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
-                  filters.lighting
-                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
-                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
+                  "text-xs sm:text-sm py-2 px-3 h-9 sm:h-10",
+                  filters.lighting &&
+                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
                 )}
               >
-                🌙 Night Games
+                Night Games
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFilters({ ...filters, rating: 4.5 })}
                 className={cn(
-                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
-                  filters.rating >= 4.5
-                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
-                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
+                  "text-xs sm:text-sm py-2 px-3 h-9 sm:h-10",
+                  filters.rating >= 4.5 &&
+                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
                 )}
               >
-                ⭐ Highly Rated
+                Highly Rated
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setFilters({ ...filters, distance: 5 })}
                 className={cn(
-                  "text-sm sm:text-base py-3 px-4 h-12 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95",
-                  filters.distance <= 5
-                    ? "bg-emerald-100 border-emerald-400 text-emerald-700 shadow-md"
-                    : "bg-white border-gray-300 hover:border-emerald-300 hover:bg-emerald-50",
+                  "text-xs sm:text-sm py-2 px-3 h-9 sm:h-10",
+                  filters.distance <= 5 &&
+                    "bg-cricket-green/10 border-cricket-green text-cricket-green",
                 )}
               >
-                📍 Nearby
+                Nearby
               </Button>
             </div>
 
-            {/* Grounds Grid - Enhanced spacing */}
+            {/* Grounds Grid */}
             {isLoadingGrounds ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse rounded-xl">
-                    <div className="h-56 sm:h-60 bg-gray-200 rounded-t-xl"></div>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="h-5 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <Card key={i} className="animate-pulse">
+                    <div className="h-48 sm:h-52 bg-gray-200 rounded-t-lg"></div>
+                    <CardContent className="p-4 sm:p-5 space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-full"></div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : realGrounds.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {realGrounds.map((ground) => (
                   <GroundCard
                     key={ground._id}
@@ -789,44 +713,44 @@ const Index = () => {
       )}
 
       {/* How It Works */}
-      <section className="py-8 sm:py-12 lg:py-16 bg-white">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6">
-          <div className="text-center mb-6 sm:mb-8 lg:mb-12">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 px-2">
+      <section className="py-12 sm:py-16 bg-white">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               How It Works
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base px-3">
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
               Book your cricket ground in just 3 simple steps
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
-            <div className="text-center px-2">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 lg:mb-6">
-                <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">1</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <span className="text-white font-bold text-xl sm:text-2xl">1</span>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 lg:mb-4">Search & Select</h3>
-              <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Search & Select</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
                 Find cricket grounds near you, filter by location, price, and amenities to find the perfect match.
               </p>
             </div>
             
-            <div className="text-center px-2">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 lg:mb-6">
-                <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">2</span>
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <span className="text-white font-bold text-xl sm:text-2xl">2</span>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 lg:mb-4">Choose Time Slot</h3>
-              <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Choose Time Slot</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
                 Pick your preferred date and time slot from the available options. Real-time availability updates.
               </p>
             </div>
             
-            <div className="text-center px-2 sm:col-span-2 lg:col-span-1">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 lg:mb-6">
-                <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">3</span>
+            <div className="text-center sm:col-span-2 lg:col-span-1">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <span className="text-white font-bold text-xl sm:text-2xl">3</span>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 lg:mb-4">Book & Play</h3>
-              <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Book & Play</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
                 Complete your payment securely and get instant confirmation. Show up and enjoy your game!
               </p>
             </div>
@@ -835,56 +759,56 @@ const Index = () => {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-r from-green-50 to-blue-50">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6">
-          <div className="text-center mb-6 sm:mb-8 lg:mb-12">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 px-2">
+      <section className="py-12 sm:py-16 bg-gradient-to-r from-green-50 to-blue-50">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Why Choose BoxCric?
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base px-3">
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
               We're committed to making cricket ground booking simple, secure, and enjoyable
             </p>
           </div>
           
-          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6 max-w-5xl mx-auto">
-            <div className="bg-white rounded-xl p-3 xs:p-4 sm:p-6 shadow-lg text-center">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-sm xs:text-base sm:text-lg font-semibold text-gray-900 mb-1 xs:mb-2">Instant Booking</h3>
-              <p className="text-gray-600 text-xs xs:text-sm leading-relaxed">Book your slot instantly with real-time availability</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Instant Booking</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">Book your slot instantly with real-time availability</p>
             </div>
             
-            <div className="bg-white rounded-xl p-3 xs:p-4 sm:p-6 shadow-lg text-center">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-sm xs:text-base sm:text-lg font-semibold text-gray-900 mb-1 xs:mb-2">Verified Grounds</h3>
-              <p className="text-gray-600 text-xs xs:text-sm leading-relaxed">All grounds are verified for quality and safety</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Verified Grounds</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">All grounds are verified for quality and safety</p>
             </div>
             
-            <div className="bg-white rounded-xl p-3 xs:p-4 sm:p-6 shadow-lg text-center">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-sm xs:text-base sm:text-lg font-semibold text-gray-900 mb-1 xs:mb-2">Secure Payments</h3>
-              <p className="text-gray-600 text-xs xs:text-sm leading-relaxed">Multiple secure payment options available</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Secure Payments</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">Multiple secure payment options available</p>
             </div>
             
-            <div className="bg-white rounded-xl p-3 xs:p-4 sm:p-6 shadow-lg text-center xs:col-span-2 lg:col-span-1">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2 xs:mb-3 sm:mb-4">
-                <svg className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg text-center">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
                 </svg>
               </div>
-              <h3 className="text-sm xs:text-base sm:text-lg font-semibold text-gray-900 mb-1 xs:mb-2">24/7 Support</h3>
-              <p className="text-gray-600 text-xs xs:text-sm leading-relaxed">Round-the-clock customer support for any queries</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">24/7 Support</h3>
+              <p className="text-gray-600 text-xs sm:text-sm">Round-the-clock customer support for any queries</p>
             </div>
           </div>
         </div>
@@ -907,26 +831,26 @@ const Index = () => {
       )}
 
       {/* Newsletter Signup */}
-      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-r from-cricket-green to-green-600">
-        <div className="container mx-auto px-3 sm:px-4">
+      <section className="py-16 bg-gradient-to-r from-cricket-green to-green-600">
+        <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4 px-2">
+            <h2 className="text-3xl font-bold text-white mb-4">
               Stay Updated
             </h2>
-            <p className="text-green-100 mb-6 sm:mb-8 text-sm sm:text-base px-3">
+            <p className="text-green-100 mb-8">
               Get notified about new grounds, special offers, and cricket events in your area
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto px-3">
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-0 focus:ring-2 focus:ring-white/20 focus:outline-none text-sm sm:text-base"
+                className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white/20 focus:outline-none"
               />
-              <Button className="bg-white text-cricket-green hover:bg-gray-100 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold touch-target">
+              <Button className="bg-white text-cricket-green hover:bg-gray-100">
                 Subscribe
               </Button>
             </div>
-            <p className="text-green-100 text-xs sm:text-sm mt-3 sm:mt-4 px-3">
+            <p className="text-green-100 text-sm mt-4">
               We respect your privacy. Unsubscribe at any time.
             </p>
           </div>
@@ -1080,29 +1004,20 @@ const Index = () => {
       <NewBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
-        selectedGround={selectedGround}
+        ground={selectedGround}
         onBookingCreated={handleBookingCreated}
       />
 
       {/* Scroll to Top Button */}
-      {showBackToTop && (
-        <button
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            // Add a small haptic feedback simulation
-            navigator.vibrate && navigator.vibrate(50);
-          }}
-          className="fixed bottom-6 right-6 bg-gradient-to-r from-cricket-green to-green-600 hover:from-cricket-green/90 hover:to-green-600/90 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 z-40 animate-in fade-in slide-in-from-bottom-4 backdrop-blur-sm border border-white/10"
-          aria-label="Scroll to top"
-          title="Back to top"
-        >
-          <svg className="w-5 h-5 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-          </svg>
-          {/* Pulse animation */}
-          <div className="absolute inset-0 rounded-full bg-cricket-green opacity-20 animate-ping"></div>
-        </button>
-      )}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 bg-cricket-green hover:bg-cricket-green/90 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40"
+        aria-label="Scroll to top"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+      </button>
     </div>
   );
 };

@@ -123,23 +123,18 @@ const Footer = () => {
                   </li>
                 </ul>
                 
-                <div className="pt-4">
-                  <h4 className="text-base font-bold mb-3 flex items-center gap-2">
-                    📧 Stay Updated
-                  </h4>
-                  <div className="flex flex-col sm:flex-row gap-2">
+                <div className="pt-2">
+                  <h4 className="text-sm font-semibold mb-2">Stay Updated</h4>
+                  <div className="flex">
                     <input
                       type="email"
-                      placeholder="Enter your email address"
-                      className="flex-1 px-4 py-3 text-sm bg-white/90 border-2 border-white/30 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:border-emerald-300 focus:bg-white transition-all duration-300 shadow-lg"
+                      placeholder="Your email"
+                      className="flex-1 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-l text-white placeholder-white/60 focus:outline-none focus:border-white/40"
                     />
-                    <button className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 rounded-xl text-sm font-bold text-white shadow-lg transform hover:scale-105 active:scale-95">
-                      🚀 Subscribe
+                    <button className="px-4 py-2 bg-white/20 hover:bg-white/30 transition-colors rounded-r text-sm font-medium">
+                      →
                     </button>
                   </div>
-                  <p className="text-xs text-white/70 mt-2">
-                    Get updates on new grounds, offers & tournaments!
-                  </p>
                 </div>
               </div>
             )}
@@ -228,22 +223,17 @@ const Footer = () => {
             </ul>
             
             <div className="mt-6">
-              <h4 className="text-base font-bold mb-3 flex items-center gap-2">
-                📧 Stay Updated
-              </h4>
-              <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-semibold mb-2">Stay Updated</h4>
+              <div className="flex">
                 <input
                   type="email"
-                  placeholder="Enter your email address"
-                  className="w-full px-4 py-3 text-sm bg-white/90 border-2 border-white/30 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:border-emerald-300 focus:bg-white transition-all duration-300 shadow-lg"
+                  placeholder="Your email"
+                  className="flex-1 px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-l text-white placeholder-white/60 focus:outline-none focus:border-white/40"
                 />
-                <button className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 rounded-xl text-sm font-bold text-white shadow-lg transform hover:scale-105 active:scale-95">
-                  🚀 Subscribe
+                <button className="px-4 py-2 bg-white/20 hover:bg-white/30 transition-colors rounded-r text-sm font-medium">
+                  →
                 </button>
               </div>
-              <p className="text-xs text-white/70 mt-2">
-                Get updates on new grounds, offers & tournaments!
-              </p>
             </div>
           </div>
         </div>
